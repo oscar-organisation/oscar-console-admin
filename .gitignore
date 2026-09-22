@@ -1,0 +1,28 @@
+# Secrets, exclus par motif et pas par nom
+.env
+.env.*
+!.env.example
+*secret*
+*credential*
+*token*
+*.pem
+*.key
+
+# Dependances et sorties de construction, toujours regenerables
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.next/
+dist/
+build/
+
+# Artefacts de tests
+**/test-results/
+**/playwright-report/
+**/blob-report/
+
+# Systeme
+.DS_Store
+*.log
