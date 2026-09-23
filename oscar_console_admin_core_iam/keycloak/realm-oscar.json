@@ -1,0 +1,97 @@
+{
+  "realm": "oscar",
+  "enabled": true,
+  "displayName": "OSCAR",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "organizationsEnabled": true,
+  "attributes": {
+    "frontendUrl": "${KC_FRONTEND_URL:}"
+  },
+  "clients": [
+    {
+      "clientId": "oscar-frontend",
+      "name": "OSCAR Frontend (SPA)",
+      "description": "Client public SPA (Authorization Code + PKCE S256).",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "${OSCAR_FRONTEND_REDIRECT_URIS:http://localhost:5173/*}"
+      ],
+      "webOrigins": [
+        "${OSCAR_FRONTEND_WEB_ORIGINS:http://localhost:5173}"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "${OSCAR_FRONTEND_POST_LOGOUT_URIS:http://localhost:5173/*}"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-oscar-backend",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "oscar-backend",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "organizations",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-organization-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "organizations",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "oscar-backend",
+      "name": "OSCAR Backend (API)",
+      "description": "Client confidentiel backend : audience + service account pour le provisioning.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "${OSCAR_BACKEND_CLIENT_SECRET:change-me-in-env}",
+      "redirectUris": [],
+      "webOrigins": [],
+      "attributes": {
+        "use.refresh.tokens": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience-oscar-backend",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "oscar-backend",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}
