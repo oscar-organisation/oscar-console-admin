@@ -1,0 +1,32 @@
+# Fiche d identite de ce depot, lue par le portail technique.
+#
+# Elle repond a quatre questions, dans l ordre ou on se les pose :
+#   qu est-ce que c est, a quoi ca sert, qui s en occupe, ou est sa doc.
+#
+# Ecrite en francais simple : le portail doit etre comprehensible par
+# quelqu un qui n a jamais code.
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: oscar-console-admin
+  title: Console admin
+  description: >-
+    L outil de travail quotidien du client. Il peut etre installe chez lui. Il porte cinq espaces : mon entreprise, la console d administration, la teleoperation sur ecran, la teleoperation en casque, et le studio.
+  annotations:
+    github.com/project-slug: oscar-organisation/oscar-console-admin
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - console
+    - auto-hebergeable
+    - teleoperation
+    - studio
+  links:
+    - url: https://github.com/oscar-organisation/oscar-console-admin
+      title: Le depot sur GitHub
+      icon: github
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/equipe-oscar
+  system: console
