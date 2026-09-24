@@ -2,7 +2,7 @@
 
 L outil de travail du client, auto-hebergeable.
 
-**Dépôt GitHub prévu :** `oscar-organisation/oscar-console-admin`. Pas encore créé.
+**Dépôt GitHub :** `oscar-organisation/oscar-console-admin`.
 
 L'arborescence ci-dessous est relevée sur l'image du schéma directeur,
 pas sur l'ordre du texte. L'imbrication compte : un dossier de build
@@ -10,28 +10,21 @@ contient son SDK, un environnement contient ses services.
 
 ```
 oscar-console-admin
-├── oscar_console_admin_frontend
-│   ├── Espace_mon_entreprise
-│   ├── Espace_console_admin
-│   ├── Espace_teleoperation_2D
-│   ├── Espace_teleoperation_immersive_casque_xr_vr
-│   └── Espace_oscar_studio
-├── oscar_console_admin_api_backend
-├── oscar_console_admin_core_iam
-└── oscar_sample_app_and_services
-    ├── oscar_sample_env_remote
-    │   └── oscar_sample_app_teleoperation
-    ├── oscar_sample_env_server
-    │   ├── oscar_sample_service_detection_ia_server
-    │   └── oscar_sample_service_stream_server
-    ├── oscar_sample_env_robot
-    │   ├── oscar_sample_service_local_detection_ia_robot
-    │   ├── oscar_sample_service_commande
-    │   ├── oscar_sample_service_telemetrie
-    │   ├── oscar_sample_service_sensor
-    │   └── oscar_sample_service_state_robot
-    └── oscar_sample_config
+├── oscar_console_admin_frontend          l application web, et ses cinq espaces
+├── oscar_console_admin_api_backend       l API
+├── oscar_console_admin_core_iam          la configuration Keycloak
+├── oscar_console_admin_scripts           les scripts d exploitation
+└── oscar_sample_app_and_services         les exemples pour les integrateurs
+      ├── oscar_sample_env_remote
+      ├── oscar_sample_env_server
+      ├── oscar_sample_env_robot
+      └── oscar_sample_config
 ```
+
+**Les cinq Espaces ne sont pas des dossiers.** Ce sont les espaces applicatifs
+portés par le code du frontend. Ils avaient été créés comme dossiers vides par
+erreur de lecture du schéma, et sont décrits dans
+`oscar_console_admin_frontend/LISEZ-MOI-espaces.md`. Décision 50.
 
 ## Nommage
 
