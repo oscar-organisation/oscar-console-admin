@@ -1,0 +1,177 @@
+# La composition de l'API de la console d'administration: l'API et sa base de
+# données PostgreSQL, et rien d'autre.
+#
+# Coolify lit ce fichier, et lui seul, pour mettre en ligne le test et la
+# production (applications console-admin-api-test et console-admin-api-production).
+# En local, « docker compose up » le lit aussi, puis lui ajoute
+# compose.override.yaml, qui construit l'image sur le poste et publie les ports.
+#
+# CE QU'ELLE NE FAIT PAS, ET POURQUOI
+#
+# Elle ne publie aucun port, ne nomme aucun conteneur et ne rejoint aucun réseau
+# extérieur. Le proxy partagé du serveur (Traefik, réglé par Coolify) joint l'API
+# par le réseau de Docker, sur le port de la déclaration expose. Un nom de
+# conteneur ou un port publié est unique sur une machine: le test et la
+# production ne pourraient plus tourner côte à côte (leçon 5.4).
+#
+# Elle ne porte pas l'interface: l'interface a son propre dossier et sa propre
+# composition (oscar_console_admin_frontend/), pour qu'elle ne se remette pas en
+# ligne quand seule l'API change, et l'inverse. Le navigateur appelle l'API par
+# son adresse publique.
+#
+# LES IMAGES: CONSTRUITES UNE SEULE FOIS, PAR GITHUB
+#
+# Sur le serveur, rien ne se construit: l'API désigne son image dans l'entrepôt
+# d'images d'OSCAR (Harbor), où les vérifications automatiques de GitHub l'ont
+# rangée une seule fois. Coolify choisit la version par
+# ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE, posée par le déploiement automatique, et
+# lance la même image en test puis en production. Pour revenir en arrière, on y
+# met une étiquette en-production-depuis-le-<date> précédente. Sans étiquette,
+# la valeur par défaut n'existe pas dans l'entrepôt: la mise en ligne échoue au
+# téléchargement, avant d'arrêter la version en service.
+#
+# D'OÙ VIENNENT LES VALEURS
+#
+# En test et en production: des variables de l'application Coolify, posées par
+# l'assistant de déploiement; les secrets viennent de secret_root/, un jeu par
+# environnement. En local: du fichier .env placé à côté de ce fichier, copié de
+# .env.exemple, qui explique chaque variable. Aucun secret n'est écrit ici.
+#
+# Aucune variable n'est exigée ici: toujours la forme « :- », jamais « :? »
+# (leçon 6.7). L'exigence vit au démarrage: PostgreSQL refuse de s'initialiser
+# sans mot de passe, avec un message clair dans son journal.
+#
+# Les valeurs par défaut écrites ici sont celles du code (app/config.py), sauf
+# les secrets, toujours vides, et SEED_DEMO, éteint hors du poste. Le test
+# tests/test_composition.py le vérifie, et vérifie que chaque variable est
+# expliquée dans .env.exemple.
+
+# Le nom du déploiement. Il préfixe les conteneurs, le réseau et les volumes, ce
+# qui permet de lancer deux copies sur un même poste sans qu'elles se mêlent.
+name: ${OSCAR_NOM_DU_DEPLOIEMENT:-console-admin-api}
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # La base de données de la console: organisations, utilisateurs, robots,
+  # droits, journal d'audit.
+  # ---------------------------------------------------------------------------
+  base-de-donnees:
+    # Version figée, la même que le portail: une nouvelle version majeure de
+    # PostgreSQL ne relit pas les données de l'ancienne sans migration, ça se
+    # décide. La base de l'ancien serveur est en PostgreSQL 16.
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-oscar}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-}"
+      POSTGRES_DB: "${POSTGRES_DB:-oscar_admin}"
+    volumes:
+      # Un volume nommé, et pas un dossier de la machine: les données survivent
+      # à la mise à jour des images, et se sauvegardent d'une seule commande.
+      - console-admin-base-de-donnees:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready dit si la base accepte les connexions, pas seulement si le
+      # conteneur tourne. L'API attend ce feu vert pour démarrer.
+      test: ["CMD-SHELL", "pg_isready --username \"$$POSTGRES_USER\" --dbname \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - reseau-de-la-console-admin-api
+
+  # ---------------------------------------------------------------------------
+  # L'API de la console (FastAPI). Au démarrage, elle applique les migrations
+  # de la base (Alembic), puis crée l'administrateur initial s'il n'existe pas.
+  # ---------------------------------------------------------------------------
+  api:
+    image: ${ADRESSE_ENTREPOT_IMAGES:-registry-container.oscar-bot.com}/oscar/console-admin-api:${ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE:-construite-sur-le-poste-du-developpeur}
+    depends_on:
+      base-de-donnees:
+        condition: service_healthy
+    environment:
+      # La base, par le nom de son service: Docker le résout, et il reste vrai
+      # sur n'importe quelle machine. Le mot de passe entre tel quel dans
+      # l'adresse: il ne doit contenir que des lettres, des chiffres et des
+      # tirets (voir .env.exemple).
+      DATABASE_URL: "postgresql+psycopg2://${POSTGRES_USER:-oscar}:${POSTGRES_PASSWORD:-}@base-de-donnees:5432/${POSTGRES_DB:-oscar_admin}"
+
+      # La clé qui signe les jetons de connexion à la console.
+      SECRET_KEY: "${SECRET_KEY:-}"
+
+      # Les adresses de l'interface autorisées à appeler l'API depuis un
+      # navigateur, séparées par des virgules.
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}"
+      # L'adresse publique de l'interface, pour les liens des courriels.
+      PUBLIC_APP_URL: "${PUBLIC_APP_URL:-http://localhost:5173}"
+
+      # LiveKit, le serveur temps réel des robots et du cockpit: l'adresse
+      # donnée au navigateur et au robot (wss://...), l'adresse de son API vue
+      # depuis l'API de la console, et la clé et le secret qui signent les jetons.
+      LIVEKIT_URL: "${LIVEKIT_URL:-ws://localhost:7880}"
+      LIVEKIT_HOST_URL: "${LIVEKIT_HOST_URL:-http://oscar-livekit-server:7880}"
+      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-}"
+      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-}"
+
+      # L'administrateur créé au premier démarrage, seulement s'il n'existe pas:
+      # changer ces variables ensuite ne change pas un compte déjà créé.
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@oscar.fr}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+      ADMIN_NAME: "${ADMIN_NAME:-Super Admin}"
+
+      # Les données de démonstration (organisations, robots, comptes fictifs).
+      # Éteintes par défaut hors du poste: le code les allume si rien n'est dit.
+      SEED_DEMO: "${SEED_DEMO:-false}"
+
+      # Le courriel sortant. Vide: rien n'est envoyé, le message va au journal.
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-465}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      SMTP_FROM_NAME: "${SMTP_FROM_NAME:-OSCAR Control Plane}"
+
+      # Les clés des machines qui appellent l'API: le service de perception et
+      # l'agent embarqué des robots. Vides: ces appels sont refusés (503).
+      PERCEPTION_WORKER_API_KEY: "${PERCEPTION_WORKER_API_KEY:-}"
+      EDGE_AGENT_API_KEY: "${EDGE_AGENT_API_KEY:-}"
+
+      # Le mode de connexion: legacy, la connexion propre à la console. Keycloak
+      # n'est pas branché sur les routes et n'est pas déployé.
+      AUTH_MODE: "${AUTH_MODE:-legacy}"
+
+      # Les fichiers déposés: les modèles d'IA et les paquets embarqués des
+      # robots. Les dossiers sont fixés ici, à côté des volumes qui les portent.
+      MODEL_STORAGE_DIR: /app/storage/models
+      MODEL_MAX_UPLOAD_MB: "${MODEL_MAX_UPLOAD_MB:-512}"
+      EDGE_RELEASE_DIR: /app/storage/edge-releases
+      EDGE_RELEASE_MAX_MB: "${EDGE_RELEASE_MAX_MB:-64}"
+    volumes:
+      - console-admin-modeles-ia:/app/storage/models
+      # Les paquets embarqués publiés pour les robots. Sans ce volume, ils
+      # disparaissaient à chaque remplacement du conteneur (constaté sur
+      # l'ancien serveur, où le volume n'était plus monté).
+      - console-admin-paquets-embarques:/app/storage/edge-releases
+    # Le port sur lequel l'API écoute DANS son conteneur. Il ne sort pas sur la
+    # machine: c'est ce que le proxy lit pour savoir où envoyer les visiteurs.
+    expose:
+      - "8000"
+    healthcheck:
+      # /health répond 200 seulement si l'API répond ET si sa base répond, 503
+      # sinon (leçon 3.7). urlopen échoue sur un 503: le contrôle échoue aussi.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - reseau-de-la-console-admin-api
+
+volumes:
+  console-admin-base-de-donnees:
+  console-admin-modeles-ia:
+  console-admin-paquets-embarques:
+
+networks:
+  reseau-de-la-console-admin-api:

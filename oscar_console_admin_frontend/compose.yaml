@@ -1,0 +1,86 @@
+# La composition de l'interface de la console d'administration: un seul
+# service, le serveur web qui livre l'application et le cockpit XR.
+#
+# Coolify lit ce fichier, et lui seul, pour mettre en ligne le test et la
+# production (applications console-admin-interface-test et
+# console-admin-interface-production). En local, « docker compose up » le lit
+# aussi, puis lui ajoute compose.override.yaml, qui construit l'image sur le
+# poste et publie le port.
+#
+# CE QU'ELLE NE FAIT PAS, ET POURQUOI
+#
+# Elle ne publie aucun port, ne nomme aucun conteneur et ne rejoint aucun réseau
+# extérieur: le proxy partagé du serveur (Traefik, réglé par Coolify) joint
+# l'interface par le réseau de Docker, sur le port de la déclaration expose
+# (leçon 5.4).
+#
+# Elle ne porte pas l'API: c'est le navigateur du visiteur qui l'appelle, par
+# son adresse publique (OSCAR_API_BASE_URL). L'API a son propre dossier et sa
+# propre composition (oscar_console_admin_api_backend/).
+#
+# LES IMAGES: CONSTRUITES UNE SEULE FOIS, PAR GITHUB
+#
+# Sur le serveur, rien ne se construit: l'interface désigne son image dans
+# l'entrepôt d'images d'OSCAR (Harbor). Coolify choisit la version par
+# ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE, posée par le déploiement automatique, et
+# lance la même image en test puis en production. Sans étiquette, la valeur
+# par défaut n'existe pas dans l'entrepôt: la mise en ligne échoue au
+# téléchargement, avant d'arrêter la version en service.
+#
+# LES RÉGLAGES
+#
+# Ils sont publics: le serveur web les écrit au démarrage dans
+# runtime-config.js, que le navigateur lit. Aucun secret n'a sa place ici. En
+# test et en production, ils viennent des variables de l'application Coolify;
+# en local, du fichier .env placé à côté de ce fichier, copié de .env.exemple,
+# qui explique chacun. Aucune variable n'est exigée ici (leçon 6.7): sans
+# adresse de l'API, c'est l'application qui refuse de démarrer, avec un message
+# clair à l'écran.
+
+# Le nom du déploiement. Il préfixe le conteneur et le réseau, ce qui permet de
+# lancer deux copies sur un même poste sans qu'elles se mêlent.
+name: ${OSCAR_NOM_DU_DEPLOIEMENT:-console-admin-interface}
+
+services:
+
+  interface:
+    image: ${ADRESSE_ENTREPOT_IMAGES:-registry-container.oscar-bot.com}/oscar/console-admin-interface:${ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE:-construite-sur-le-poste-du-developpeur}
+    environment:
+      # L'adresse publique de l'API, préfixe /api compris.
+      OSCAR_API_BASE_URL: "${OSCAR_API_BASE_URL:-}"
+      # L'adresse publique du cockpit XR, servi par ce même serveur sous /xr/.
+      OSCAR_COCKPIT_URL: "${OSCAR_COCKPIT_URL:-}"
+      # local, test ou production: l'environnement, dit dans les journaux
+      # d'erreurs de l'application.
+      OSCAR_ENVIRONMENT: "${OSCAR_ENVIRONMENT:-local}"
+      # La version dite dans les journaux d'erreurs: l'étiquette de l'image en
+      # ligne, qui désigne exactement ce qui tourne.
+      OSCAR_VERSION: "${ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE:-construite-sur-le-poste-du-developpeur}"
+      # Les réglages d'affichage, avec les valeurs de l'ancien serveur.
+      OSCAR_BASE_PATH: "${OSCAR_BASE_PATH:-/}"
+      OSCAR_APPLICATION_NAME: "${OSCAR_APPLICATION_NAME:-OSCAR Control Plane}"
+      OSCAR_SHORT_NAME: "${OSCAR_SHORT_NAME:-OSCAR}"
+      OSCAR_DEFAULT_THEME: "${OSCAR_DEFAULT_THEME:-dark}"
+      OSCAR_API_TIMEOUT_MS: "${OSCAR_API_TIMEOUT_MS:-15000}"
+      OSCAR_SUPPORT_EMAIL: "${OSCAR_SUPPORT_EMAIL:-support@oscar-bot.com}"
+    # Le port sur lequel le serveur web écoute DANS son conteneur. Il ne sort
+    # pas sur la machine: c'est ce que le proxy lit pour savoir où envoyer les
+    # visiteurs.
+    expose:
+      - "3000"
+    healthcheck:
+      # index.html est servi tel quel, sans repli: si l'application manque, la
+      # réponse est 404 et le contrôle échoue (leçon 3.7). Une autre route
+      # répondrait par le repli de l'application. Le même chemin sert de santé
+      # au déploiement automatique.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/index.html"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - reseau-de-la-console-admin-interface
+
+networks:
+  reseau-de-la-console-admin-interface:
