@@ -30,6 +30,10 @@ curl http://127.0.0.1:18202/health     # {"status":"ok", ... "database":"ok"}
 docker compose down                    # arrêter; les données restent dans les volumes
 ```
 
+Pour sauvegarder les données, ou restaurer un instantané (une base
+`pg_dump -Fc` et les archives des deux volumes):
+[`docs/restaurer-un-instantane.md`](docs/restaurer-un-instantane.md).
+
 ## Les fichiers
 
 | Fichier | Ce qu'il fait |
@@ -42,6 +46,7 @@ docker compose down                    # arrêter; les données restent dans les
 | `compose.override.yaml` | le complément du poste: construction locale, ports 18202 et 18203 |
 | `.env.exemple` | chaque réglage de la composition expliqué, avec les valeurs du poste |
 | `tester.sh` | les tests, dans un conteneur jetable |
+| `sauvegarder-et-restaurer.sh` | sauvegarde et restaure la base et les deux volumes, dans des conteneurs, sur le poste comme sur le serveur ([`docs/restaurer-un-instantane.md`](docs/restaurer-un-instantane.md)) |
 | `requirements.txt`, `requirements-dev.txt` | les paquets Python de l'API, et ceux des tests |
 | `catalog-info.yaml`, `mkdocs.yml`, `docs/` | les fiches et la documentation du portail technique |
 | `README.md` | les notes des développeurs de la console: les deux profils d'administrateur, les périmètres |

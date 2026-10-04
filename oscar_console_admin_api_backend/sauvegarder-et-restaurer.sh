@@ -200,13 +200,12 @@ restaurer_un_volume() {
   api=$(conteneur_du_service "$SERVICE_API")
   volume=$(volume_monte_sur "$api" "$dossier_dans_l_api")
   image=$(image_de_la_base)
-  # L'archive se lit avant de toucher au volume; elle ne doit contenir aucun
-  # chemin absolu ni remontée de dossier.
-  liste=$(docker run --rm -i --network none --pull never "$image" tar -tf - < "$archive") \
+  # L'archive se lit avant de toucher au volume. L'extraction se fait dans un
+  # conteneur jetable où seul le volume est monté, et le tar de l'image retire
+  # les débuts de chemin qui sortiraient du dossier (« / », « ../ »,
+  # « a/../../ »): tout reste dans le volume (mesuré le 04/10/2026).
+  docker run --rm -i --network none --pull never "$image" tar -tf - < "$archive" > /dev/null \
     || erreur "$archive n'est pas une archive tar lisible: rien n'a été touché."
-  if printf '%s\n' "$liste" | grep -qE '^/|(^|/)\.\.(/|$)'; then
-    erreur "$archive contient un chemin absolu ou une remontée de dossier: rien n'a été touché."
-  fi
   arreter_l_api
   echo "Remplacement du contenu du volume $volume par $archive..." >&2
   docker run --rm -i --network none --pull never -v "$volume:/cible" "$image" \

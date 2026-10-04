@@ -92,8 +92,10 @@ qui ne peut pas lire sa base n'est pas déclarée saine. Les tests
 | `console-admin-modeles-ia` | `/app/storage/models` (l'API) | les fichiers des modèles d'IA déposés |
 | `console-admin-paquets-embarques` | `/app/storage/edge-releases` (l'API) | les paquets embarqués publiés pour les robots |
 
-La restauration des données de l'ancien serveur dans ces volumes est l'objet
-de la phase 3 du plan 20, qui en écrira la procédure pas à pas.
+Ils se sauvegardent et se restaurent par `sauvegarder-et-restaurer.sh`, sur le
+poste comme sur le serveur: procédure [Restaurer un instantané](restaurer-un-instantane.md).
+Les noms des services, des volumes et des dossiers où ils sont montés ne
+changent pas: le script et la procédure s'appuient dessus.
 
 ## Travailler sur son poste
 

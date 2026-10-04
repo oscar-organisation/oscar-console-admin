@@ -20,6 +20,7 @@ docs_dir: docs
 
 nav:
   - Commencer ici: index.md
+  - Restaurer un instantané: restaurer-un-instantane.md
   - L'intégration de l'IA et de la vision: integration-ia-et-vision.md
 
 # Hors du site: la composition qui construit cette documentation.
