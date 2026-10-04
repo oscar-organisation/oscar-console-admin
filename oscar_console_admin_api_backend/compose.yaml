@@ -46,6 +46,15 @@
 # tests/test_composition.py le vérifie, et vérifie que chaque variable est
 # expliquée dans .env.exemple.
 
+# LES NOMS QUI NE CHANGENT PAS
+#
+# Les services (api, base-de-donnees), les volumes (console-admin-...) et les
+# dossiers où l'API monte ses volumes (/app/storage/models,
+# /app/storage/edge-releases) sont repris par sauvegarder-et-restaurer.sh, par
+# la procédure de restauration (docs/restaurer-un-instantane.md), par le
+# déploiement commun et par les fiches du portail. Les changer demande de
+# changer tout cela en même temps (décision 113).
+
 # Le nom du déploiement. Il préfixe les conteneurs, le réseau et les volumes, ce
 # qui permet de lancer deux copies sur un même poste sans qu'elles se mêlent.
 name: ${OSCAR_NOM_DU_DEPLOIEMENT:-console-admin-api}

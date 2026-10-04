@@ -67,25 +67,45 @@ git switch -c travail/<sujet>         # une branche par sujet, partie de test
 
 ### 2. Lancer la console sur son poste
 
-L'API d'abord, puis l'interface, chacune depuis son dossier:
+Sur une machine neuve, il faut seulement **git** et **Docker** avec son
+greffon Compose (essayé avec Docker Compose 5.5.1), et trois ports libres sur
+la boucle locale: `18200`, `18202` et `18203`. Rien d'autre ne s'installe:
+chaque image se construit dans Docker. L'API d'abord, puis l'interface,
+chacune depuis son dossier.
+
+**L'API et sa base:**
 
 ```bash
 cd oscar_console_admin_api_backend
 cp .env.exemple .env                  # une fois: les réglages du poste, sans aucun secret réel
-docker compose up --build -d
+docker compose up --build -d          # construit l'image de l'API, démarre la base puis l'API
+docker compose ps                     # attendre « healthy » pour api et base-de-donnees (moins d'une minute)
 curl http://127.0.0.1:18202/health    # {"status":"ok", ... "database":"ok"}
+```
 
+Au premier démarrage, l'API crée le schéma de la base (13 migrations),
+l'administrateur du `.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) et, avec
+`SEED_DEMO=true`, des organisations, des robots et des comptes de
+démonstration.
+
+**L'interface:**
+
+```bash
 cd ../oscar_console_admin_frontend
 cp .env.exemple .env
 docker compose up --build -d
+docker compose ps                     # attendre « healthy » pour interface
 ```
 
-La console s'ouvre sur `http://127.0.0.1:18200`. Le compte administrateur du
-poste est celui du `.env` de l'API (`ADMIN_EMAIL` et `ADMIN_PASSWORD`); avec
-`SEED_DEMO=true`, des organisations, des robots et des comptes de
-démonstration sont créés au premier démarrage. Après une modification du code,
+La console s'ouvre sur `http://127.0.0.1:18200`, le cockpit XR sur
+`http://127.0.0.1:18200/xr/`. Après une modification du code,
 `docker compose up --build -d` dans le dossier touché la reconstruit.
-`docker compose down` arrête; les données de la base restent dans son volume.
+`docker compose down` arrête; les données de la base restent dans ses volumes
+(`console-admin-base-de-donnees`, `console-admin-modeles-ia`,
+`console-admin-paquets-embarques`). Pour mettre dans la base locale une copie
+des données d'un autre environnement, voir la procédure « Restaurer un
+instantané » de la documentation de l'API
+(`oscar_console_admin_api_backend/docs/restaurer-un-instantane.md`).
 
 **Limite connue au 04/10/2026, à régler.** Sur le poste, la connexion par
 l'interface échoue: sa politique de sécurité du contenu (CSP, dans
