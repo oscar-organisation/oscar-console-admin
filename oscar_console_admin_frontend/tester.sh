@@ -17,7 +17,7 @@
 # se lit dans le Dockerfile, pour qu'il n'y ait qu'un endroit où la changer.
 set -eu
 
-DOSSIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOSSIER=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 IMAGE_NODE=$(sed -n 's/^FROM \(node:[^ ]*\) AS build$/\1/p' "$DOSSIER/Dockerfile")
 if [ -z "$IMAGE_NODE" ]; then
   echo "Image de Node introuvable dans $DOSSIER/Dockerfile (ligne « FROM node:... AS build »)." >&2

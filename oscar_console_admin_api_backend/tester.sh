@@ -17,7 +17,7 @@
 # Dockerfile, pour qu'il n'y ait qu'un endroit où la changer.
 set -eu
 
-DOSSIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOSSIER=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 IMAGE_PYTHON=$(sed -n 's/^FROM \(python:[^ ]*\)$/\1/p' "$DOSSIER/Dockerfile")
 if [ -z "$IMAGE_PYTHON" ]; then
   echo "Image de Python introuvable dans $DOSSIER/Dockerfile (ligne « FROM python:... »)." >&2

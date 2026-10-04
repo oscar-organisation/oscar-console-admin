@@ -27,8 +27,8 @@
 # le Dockerfile, pour qu'il n'y ait qu'un endroit où la changer.
 set -eu
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-FRONTEND_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+FRONTEND_DIR=$(CDPATH='' cd -- "$SCRIPT_DIR/.." && pwd)
 XR_TARGET="$FRONTEND_DIR/public/xr"
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then

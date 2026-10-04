@@ -17,7 +17,7 @@
 # disparaît avec lui.
 set -eu
 
-DOSSIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOSSIER=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 VERSION_PLAYWRIGHT=$(sed -n '/"node_modules\/@playwright\/test": {/{n;s/.*"version": "\([^"]*\)".*/\1/p;}' "$DOSSIER/package-lock.json")
 if [ -z "$VERSION_PLAYWRIGHT" ]; then
   echo "Version de @playwright/test introuvable dans $DOSSIER/package-lock.json." >&2
