@@ -1,32 +1,21 @@
-# Fiche d identite de ce depot, lue par le portail technique.
+# Les fiches du dépôt oscar-console-admin, lues par le portail technique.
 #
-# Elle repond a quatre questions, dans l ordre ou on se les pose :
-#   qu est-ce que c est, a quoi ca sert, qui s en occupe, ou est sa doc.
+# Le portail cherche un fichier catalog-info.yaml à la racine de chaque dépôt
+# de l'organisation, sur main. Celui-ci ne décrit rien lui-même: c'est une
+# Location, qui nomme la fiche de chaque application, dans son propre dossier
+# (décision 62), comme le dépôt oscar-infrastructure.
 #
-# Ecrite en francais simple : le portail doit etre comprehensible par
-# quelqu un qui n a jamais code.
+# Il remplace la fiche d'avant, qui décrivait le dépôt entier comme un seul
+# composant (oscar-console-admin), avec une documentation (dir:.) qui
+# n'existait pas à la racine. Les deux applications, l'interface et l'API, se
+# mettent en ligne chacune de son côté: chacune a sa fiche et sa documentation.
 
 apiVersion: backstage.io/v1alpha1
-kind: Component
+kind: Location
 metadata:
   name: oscar-console-admin
-  title: Console admin
-  description: >-
-    L outil de travail quotidien du client. Il peut etre installe chez lui. Il porte cinq espaces : mon entreprise, la console d administration, la teleoperation sur ecran, la teleoperation en casque, et le studio.
-  annotations:
-    github.com/project-slug: oscar-organisation/oscar-console-admin
-    backstage.io/techdocs-ref: dir:.
-  tags:
-    - console
-    - auto-hebergeable
-    - teleoperation
-    - studio
-  links:
-    - url: https://github.com/oscar-organisation/oscar-console-admin
-      title: Le depot sur GitHub
-      icon: github
+  description: Les deux applications de la console d'administration, chacune dans son dossier.
 spec:
-  type: service
-  lifecycle: production
-  owner: group:default/equipe-oscar
-  system: console
+  targets:
+    - ./oscar_console_admin_frontend/catalog-info.yaml
+    - ./oscar_console_admin_api_backend/catalog-info.yaml
