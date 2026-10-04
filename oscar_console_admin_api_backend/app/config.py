@@ -20,7 +20,9 @@ class Settings(BaseSettings):
 
     # LiveKit (émission des jetons robot / opérateur)
     livekit_url: str = "ws://localhost:7880"           # URL cliente (navigateur) : wss://...
-    livekit_host_url: str = "http://oscar-livekit-server:7880"  # API serveur (RoomService) interne
+    # API serveur (RoomService). Par défaut le poste, comme livekit_url : le nom du
+    # conteneur LiveKit de l'ancien serveur ne vaut que là-bas (décision 113).
+    livekit_host_url: str = "http://localhost:7880"
     livekit_api_key: str = "oscar_prod_key"
     livekit_api_secret: str = "oscar_super_secret_prod_key"
     livekit_robot_ttl_hours: int = 24

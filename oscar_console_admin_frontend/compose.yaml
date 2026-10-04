@@ -56,13 +56,14 @@ services:
       # La version dite dans les journaux d'erreurs: l'étiquette de l'image en
       # ligne, qui désigne exactement ce qui tourne.
       OSCAR_VERSION: "${ETIQUETTE_IMAGE_A_METTRE_EN_LIGNE:-construite-sur-le-poste-du-developpeur}"
-      # Les réglages d'affichage, avec les valeurs de l'ancien serveur.
+      # Les réglages d'affichage, avec les valeurs de l'ancien serveur. L'adresse
+      # de support, vide par défaut, est posée par environnement.
       OSCAR_BASE_PATH: "${OSCAR_BASE_PATH:-/}"
       OSCAR_APPLICATION_NAME: "${OSCAR_APPLICATION_NAME:-OSCAR Control Plane}"
       OSCAR_SHORT_NAME: "${OSCAR_SHORT_NAME:-OSCAR}"
       OSCAR_DEFAULT_THEME: "${OSCAR_DEFAULT_THEME:-dark}"
       OSCAR_API_TIMEOUT_MS: "${OSCAR_API_TIMEOUT_MS:-15000}"
-      OSCAR_SUPPORT_EMAIL: "${OSCAR_SUPPORT_EMAIL:-support@oscar-bot.com}"
+      OSCAR_SUPPORT_EMAIL: "${OSCAR_SUPPORT_EMAIL:-}"
     # Le port sur lequel le serveur web écoute DANS son conteneur. Il ne sort
     # pas sur la machine: c'est ce que le proxy lit pour savoir où envoyer les
     # visiteurs.

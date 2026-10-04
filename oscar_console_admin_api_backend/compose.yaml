@@ -110,7 +110,7 @@ services:
       # donnée au navigateur et au robot (wss://...), l'adresse de son API vue
       # depuis l'API de la console, et la clé et le secret qui signent les jetons.
       LIVEKIT_URL: "${LIVEKIT_URL:-ws://localhost:7880}"
-      LIVEKIT_HOST_URL: "${LIVEKIT_HOST_URL:-http://oscar-livekit-server:7880}"
+      LIVEKIT_HOST_URL: "${LIVEKIT_HOST_URL:-http://localhost:7880}"
       LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-}"
       LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-}"
 
