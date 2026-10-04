@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
   Blocks,
   Bot,
   CalendarClock,
@@ -8,18 +11,22 @@ import {
   ChevronRight,
   CloudOff,
   Layers3,
+  LoaderCircle,
   Plus,
   Server,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 import { TARGETS } from "../../feature-domain/catalogue";
 import { createProject } from "../../feature-domain/model";
 import {
+  archiverProjet,
   creerProjet,
   etatSync,
   rafraichir,
+  supprimerProjet,
   useStudioEtat,
   useStudioProjects,
   useStudioPerimetre,
@@ -28,6 +35,7 @@ import PresetPicker from "../components/PresetPicker";
 import { listerPresets, projetDepuisPreset } from "../../feature-data/studioApi";
 import type { PresetServeur } from "../../feature-data/studioApi";
 import type { ProjectTarget } from "../../feature-domain/types";
+import type { OscarProject } from "../../feature-domain/types";
 import "../../feature-styles/studio.css";
 
 type Template = "DEMONSTRATION" | "ROBOT_MINIMAL" | "VIDE";
@@ -42,7 +50,7 @@ type Template = "DEMONSTRATION" | "ROBOT_MINIMAL" | "VIDE";
 type Depart = { sorte: "preset"; slug: string } | { sorte: "forme"; valeur: Template };
 
 const TEMPLATES: { value: Template; label: string; hint: string; icon: typeof Bot }[] = [
-  { value: "ROBOT_MINIMAL", label: "Robot minimal", hint: "Bundle, service, agent et premiers canaux.", icon: Bot },
+  { value: "ROBOT_MINIMAL", label: "Robot minimal", hint: "Bundle, service, module et premiers canaux.", icon: Bot },
   { value: "DEMONSTRATION", label: "Démonstration complète", hint: "Robot, média et télécommande déjà câblés.", icon: Sparkles },
   { value: "VIDE", label: "Plan vide", hint: "Uniquement un bundle de déploiement.", icon: Layers3 },
 ];
@@ -59,11 +67,17 @@ export default function StudioProjectsPage() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Nouveau projet robot");
-  const [description, setDescription] = useState("Configuration des services et agents OSCAR.");
+  const [description, setDescription] = useState("Configuration des services et modules OSCAR.");
   const [target, setTarget] = useState<ProjectTarget>("ENVIRONNEMENT_EXECUTION_ROBOT");
   const [depart, setDepart] = useState<Depart>({ sorte: "forme", valeur: "ROBOT_MINIMAL" });
   const [presets, setPresets] = useState<PresetServeur[]>([]);
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
+  const [aSupprimer, setASupprimer] = useState<OscarProject | null>(null);
+  const [suppression, setSuppression] = useState(false);
+  const [erreurSuppression, setErreurSuppression] = useState<string | null>(null);
+  const [archivesVisibles, setArchivesVisibles] = useState(false);
+  const [archivage, setArchivage] = useState<string | null>(null);
+  const [erreurArchivage, setErreurArchivage] = useState<string | null>(null);
 
   // Le serveur fait foi pour la liste ; le cache local prend le relais s'il
   // ne repond pas.
@@ -78,6 +92,9 @@ export default function StudioProjectsPage() {
       .catch(() => { if (vivant) setPresets([]); });
     return () => { vivant = false; };
   }, [perimetre]);
+
+  const archives = projects.filter((project) => project.archive);
+  const affiches = archivesVisibles ? projects : projects.filter((project) => !project.archive);
 
   const presetChoisi = depart.sorte === "preset"
     ? presets.find((item) => item.slug === depart.slug)
@@ -94,6 +111,36 @@ export default function StudioProjectsPage() {
     const project = await creerProjet(brouillon, target);
     setOpen(false);
     navigate(`/studio/${project.id}`);
+  };
+
+  const basculerArchive = async (project: OscarProject) => {
+    setArchivage(project.id);
+    setErreurArchivage(null);
+    try {
+      await archiverProjet(project, !project.archive);
+    } catch (erreur) {
+      setErreurArchivage(
+        erreur instanceof Error ? erreur.message : "Le projet n\u2019a pas pu \u00eatre archiv\u00e9.",
+      );
+    } finally {
+      setArchivage(null);
+    }
+  };
+
+  const confirmerSuppression = async () => {
+    if (!aSupprimer) return;
+    setSuppression(true);
+    setErreurSuppression(null);
+    try {
+      await supprimerProjet(aSupprimer);
+      setASupprimer(null);
+    } catch (erreur) {
+      setErreurSuppression(
+        erreur instanceof Error ? erreur.message : "Le projet n’a pas pu être supprimé.",
+      );
+    } finally {
+      setSuppression(false);
+    }
   };
 
   return (
@@ -116,11 +163,29 @@ export default function StudioProjectsPage() {
             </p>
           )}
 
-          {projects.length === 0 ? (
-            <p>{chargement ? "Chargement des projets…" : "Aucun projet pour l’instant. Créez-en un pour composer un bundle de déploiement."}</p>
+          {archives.length > 0 && (
+            <button className="archives-bascule" type="button"
+                    onClick={() => setArchivesVisibles((visible) => !visible)}>
+              {archivesVisibles ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+              {archivesVisibles
+                ? "Masquer les projets archivés"
+                : `Afficher les projets archivés (${archives.length})`}
+            </button>
+          )}
+
+          {erreurArchivage && <p className="dialog-erreur">{erreurArchivage}</p>}
+
+          {affiches.length === 0 ? (
+            <p>
+              {chargement
+                ? "Chargement des projets…"
+                : projects.length === 0
+                  ? "Aucun projet pour l’instant. Créez-en un pour composer un bundle de déploiement."
+                  : "Tous les projets sont archivés. Affichez-les pour en ressortir un."}
+            </p>
           ) : (
             <div className="project-grid">
-              {projects.map((project) => {
+              {affiches.map((project) => {
                 const targetLabel = TARGETS.find((item) => item.value === project.target)?.label;
                 // La liste sert des compteurs : on evite de telecharger chaque
                 // composition pour afficher une vignette.
@@ -130,43 +195,76 @@ export default function StudioProjectsPage() {
                   : project.summary?.agents || 0;
                 const local = etatSync(project) === "LOCAL";
                 return (
-                  <button
-                    className="project-card"
-                    key={project.id}
-                    onClick={() => navigate(`/studio/${project.id}`)}
-                    type="button"
-                  >
-                    <div className="project-card__preview">
-                      <Layers3 size={26} />
-                      <span className="preview-node preview-node--a" />
-                      <span className="preview-node preview-node--b" />
-                      <span className="preview-node preview-node--c" />
-                    </div>
-                    <div className="project-card__body">
-                      <div className="project-card__title">
-                        <div>
-                          <span>
-                            {local
-                              ? "Local"
-                              : project.status === "PRET_A_DEPLOYER" ? "Publié" : "Brouillon"}
-                          </span>
-                          <h3>{project.name}</h3>
+                  <article className={`project-card${project.archive ? " is-archived" : ""}`} key={project.id}>
+                    <button
+                      className="project-card__open"
+                      onClick={() => navigate(`/studio/${project.id}`)}
+                      type="button"
+                    >
+                      <div className="project-card__preview">
+                        <Layers3 size={26} />
+                        <span className="preview-node preview-node--a" />
+                        <span className="preview-node preview-node--b" />
+                        <span className="preview-node preview-node--c" />
+                      </div>
+                      <div className="project-card__body">
+                        <div className="project-card__title">
+                          <div>
+                            <span>
+                              {local
+                                ? "Local"
+                                : project.status === "PRET_A_DEPLOYER" ? "Publié" : "Brouillon"}
+                            </span>
+                            <h3>{project.name}</h3>
+                          </div>
+                          <ChevronRight size={18} />
                         </div>
-                        <ChevronRight size={18} />
+                        <p>{project.description}</p>
+                        <div className="project-card__meta">
+                          <span><Blocks size={14} /> {blocs} bloc{blocs > 1 ? "s" : ""} · {agents} module{agents > 1 ? "s" : ""}</span>
+                          <span><CalendarClock size={14} /> {formatDate(project.updatedAt)}</span>
+                        </div>
+                        <small>
+                          {targetLabel}
+                          {project.summary?.robots
+                            ? <> · <Server size={12} /> {project.summary.robots} robot{project.summary.robots > 1 ? "s" : ""}</>
+                            : null}
+                        </small>
                       </div>
-                      <p>{project.description}</p>
-                      <div className="project-card__meta">
-                        <span><Blocks size={14} /> {blocs} blocs · {agents} agents</span>
-                        <span><CalendarClock size={14} /> {formatDate(project.updatedAt)}</span>
-                      </div>
-                      <small>
-                        {targetLabel}
-                        {project.summary?.robots
-                          ? <> · <Server size={12} /> {project.summary.robots} robot{project.summary.robots > 1 ? "s" : ""}</>
-                          : null}
-                      </small>
+                    </button>
+                    <div className="project-card__actions">
+                      {project.bundleId && (
+                        <button
+                          className="project-card__action"
+                          aria-label={project.archive
+                            ? `Sortir ${project.name} des archives`
+                            : `Archiver le projet ${project.name}`}
+                          title={project.archive
+                            ? "Le remettre dans le plan de travail"
+                            : "Le ranger hors du plan de travail, sans rien effacer"}
+                          disabled={archivage === project.id}
+                          onClick={() => void basculerArchive(project)}
+                          type="button"
+                        >
+                          {archivage === project.id
+                            ? <LoaderCircle className="spin" size={15} />
+                            : project.archive ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+                        </button>
+                      )}
+                      <button
+                        className="project-card__action project-card__action--danger"
+                        aria-label={`Supprimer le projet ${project.name}`}
+                        title="Supprimer le projet"
+                        onClick={() => {
+                          setErreurSuppression(null);
+                          setASupprimer(project);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
-                  </button>
+                  </article>
                 );
               })}
             </div>
@@ -255,6 +353,34 @@ export default function StudioProjectsPage() {
               <button className="primary-button" type="submit"><Plus size={16} /> Créer et ouvrir</button>
             </footer>
           </form>
+        </div>
+      )}
+
+      {aSupprimer && (
+        <div className="modal-backdrop">
+          <section className="project-dialog project-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-project-title">
+            <header className="dialog-header">
+              <div className="dialog-icon dialog-icon--danger"><Trash2 size={20} /></div>
+              <div><span>Suppression</span><h2 id="delete-project-title">Supprimer ce projet ?</h2></div>
+              <button className="icon-button" disabled={suppression} onClick={() => setASupprimer(null)} type="button"><X size={18} /></button>
+            </header>
+            <div className="project-delete-dialog__body">
+              <strong>{aSupprimer.name}</strong>
+              <p>
+                Le projet et ses versions non déployées seront supprimés. Cette action est définitive.
+              </p>
+              {aSupprimer.bundleId && (
+                <small><AlertTriangle size={14} /> S’il a déjà été déployé, son historique le protège et le serveur refusera sa suppression.</small>
+              )}
+              {erreurSuppression && <div className="dialog-erreur">{erreurSuppression}</div>}
+            </div>
+            <footer className="dialog-footer">
+              <button className="secondary-button" disabled={suppression} onClick={() => setASupprimer(null)} type="button">Annuler</button>
+              <button className="danger-button" disabled={suppression} onClick={() => void confirmerSuppression()} type="button">
+                {suppression ? <><LoaderCircle className="spin" size={15} /> Suppression…</> : <><Trash2 size={15} /> Supprimer le projet</>}
+              </button>
+            </footer>
+          </section>
         </div>
       )}
 

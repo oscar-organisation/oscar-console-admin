@@ -1,5 +1,7 @@
 import {
   Activity,
+  Archive,
+  ArchiveRestore,
   ArrowRight,
   ArrowUpRight,
   BatteryMedium,
@@ -8,6 +10,7 @@ import {
   Building2,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   CircleAlert,
   Clock3,
@@ -18,6 +21,7 @@ import {
   EyeOff,
   Grid2X2,
   House,
+  History,
   Info,
   KeyRound,
   Layers3,
@@ -49,6 +53,8 @@ import {
 export const IconActivity = Activity;
 export const IconAlertCircle = CircleAlert;
 export const IconAlertTriangle = TriangleAlert;
+export const IconArchive = Archive;
+export const IconArchiveRestore = ArchiveRestore;
 export const IconArrowRight = ArrowRight;
 export const IconArrowUpRight = ArrowUpRight;
 export function IconBattery({ level: _level, ...props }) {
@@ -58,6 +64,7 @@ export const IconBlocks = Blocks;
 export const IconBuilding = Building2;
 export const IconCheck = Check;
 export const IconChevronDown = ChevronDown;
+export const IconChevronLeft = ChevronLeft;
 export const IconChevronRight = ChevronRight;
 export const IconClock = Clock3;
 export const IconCopy = Copy;
@@ -68,6 +75,7 @@ export const IconEye = Eye;
 export const IconEyeOff = EyeOff;
 export const IconGrid = Grid2X2;
 export const IconHome = LayoutDashboard;
+export const IconHistory = History;
 export const IconInfo = Info;
 export const IconKey = KeyRound;
 export const IconLock = LockKeyhole;

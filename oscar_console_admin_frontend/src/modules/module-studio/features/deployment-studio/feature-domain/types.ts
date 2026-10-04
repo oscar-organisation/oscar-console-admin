@@ -96,8 +96,16 @@ export interface OscarProject {
   /** Version brouillon cote serveur, cible des enregistrements automatiques. */
   draftVersionId?: string;
   sourceVersionId?: string;
+  /** Derniere version publiee. Seule une version figee peut etre versee au
+   *  catalogue de presets : un point de depart propose a tous doit avoir fait
+   *  ses preuves ailleurs que dans un brouillon. */
+  publishedVersionId?: string;
   /** Horodatage du dernier accord avec le serveur ; absent tant qu'il n'y en a pas eu. */
   syncedAt?: string;
+  /** Range hors du plan de travail. Un projet deja deploye ne peut pas etre
+   *  supprime, son historique dit ce qui a tourne : l'archivage est sa seule
+   *  sortie. */
+  archive?: boolean;
   /** Compteurs servis par la liste, quand la composition n'est pas encore chargee. */
   summary?: { composants: number; agents: number; robots: number };
 }
@@ -111,6 +119,10 @@ export interface RobotCible {
   slug?: string | null;
   statut: string;
   site_id?: string | null;
+  // Modele du chassis tel que l'operateur l'a decrit. Sert a choisir la bonne
+  // cible quand la flotte melange plusieurs materiels : le nom d'un robot ne
+  // dit pas toujours ce qu'il est.
+  modele?: string | null;
 }
 
 export interface DeploiementServeur {
@@ -122,8 +134,11 @@ export interface DeploiementServeur {
   version_numero?: number | null;
   bundle_nom?: string | null;
   message?: string | null;
+  report?: Record<string, unknown> | null;
   created_at?: string | null;
+  delivered_at?: string | null;
   applied_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ValidationIssue {

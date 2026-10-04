@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader.jsx";
 import RobotOperators from "@/components/RobotOperators.jsx";
 import IntegrationModal from "@/components/IntegrationModal.jsx";
 import { captureError } from "@/shared/kernel/observability";
+import { corpsRobot } from "../feature-domain/robotPayload.js";
 import {
   IconRobot,
   IconPlus,
@@ -27,11 +28,40 @@ const CHIP = {
   offline: "offline",
 };
 
+/** Rapproche deux orthographes du meme chassis : « ROSMASTER M3 Pro » et
+ *  « rosmaster-m3pro » designent la meme machine. */
+function memeChassis(saisi, declare) {
+  const reduire = (valeur) => (valeur || "").toLocaleLowerCase("fr").replace(/[^a-z0-9]/g, "");
+  return reduire(saisi) === reduire(declare);
+}
+
+/** Vrai quand la famille declaree par le robot apporte une information que
+ *  l'etiquette saisie ne donne pas : elle la contredit, ou personne n'a rien
+ *  saisi. Dans tous les autres cas, l'afficher revient a ecrire deux fois la
+ *  meme chose. */
+function ecartDeModele(robot) {
+  if (!robot.modele_constate) return false;
+  return !robot.modele || !memeChassis(robot.modele, robot.modele_constate);
+}
+
+/** Depuis combien de temps le robot ne s'est plus manifeste, en clair. */
+function ageDuContact(vuLe) {
+  if (!vuLe) return "jamais vu";
+  const secondes = Math.max(0, Math.round((Date.now() - new Date(vuLe).getTime()) / 1000));
+  if (secondes < 90) return "vu à l'instant";
+  const minutes = Math.round(secondes / 60);
+  if (minutes < 60) return `vu il y a ${minutes} min`;
+  const heures = Math.round(minutes / 60);
+  if (heures < 24) return `vu il y a ${heures} h`;
+  return `vu il y a ${Math.round(heures / 24)} j`;
+}
+
 export default function Robots() {
   const { can } = useAuth();
   const [robots, setRobots] = useState([]);
   const [orgs, setOrgs] = useState([]);
   const [sites, setSites] = useState([]);
+  const [modeles, setModeles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [stFilter, setStFilter] = useState("all");
@@ -53,11 +83,19 @@ export default function Robots() {
   function reload() {
     setLoading(true);
     setErr("");
-    Promise.all([api.get("/robots"), api.get("/organisations"), api.get("/sites")])
-      .then(([r, o, s]) => {
+    // Les familles connues sont un confort de saisie : si l'appel echoue, le
+    // champ reste libre et la creation n'est pas bloquee.
+    Promise.all([
+      api.get("/robots"),
+      api.get("/organisations"),
+      api.get("/sites"),
+      api.get("/robots/modeles").catch(() => []),
+    ])
+      .then(([r, o, s, m]) => {
         setRobots(Array.isArray(r) ? r : []);
         setOrgs(Array.isArray(o) ? o : []);
         setSites(Array.isArray(s) ? s : []);
+        setModeles(Array.isArray(m) ? m : []);
       })
       .catch((error) => {
         setRobots([]);
@@ -75,7 +113,8 @@ export default function Robots() {
   const filtered = robots.filter((r) => {
     const matchQ =
       !q ||
-      (r.nom + " " + (r.serial || "") + " " + (r.org_nom || "") + " " + (r.site_nom || ""))
+      (r.nom + " " + (r.serial || "") + " " + (r.modele || "") + " "
+        + (r.org_nom || "") + " " + (r.site_nom || ""))
         .toLowerCase()
         .includes(q.toLowerCase());
     const matchSt = stFilter === "all" || r.statut === stFilter;
@@ -90,6 +129,7 @@ export default function Robots() {
       org_id: orgs[0]?.id || "",
       site_id: "",
       serial: "",
+      modele: "",
       firmware: "1.0.0",
       statut: "online",
       batterie: 100,
@@ -103,9 +143,10 @@ export default function Robots() {
       mode: "edit",
       id: r.id,
       nom: r.nom,
-      org_id: r.organisation_id || r.org_id || "",
+      org_id: r.org_id || "",
       site_id: r.site_id || "",
       serial: r.serial || "",
+      modele: r.modele || "",
       firmware: r.firmware || "1.0.0",
       statut: r.statut || "online",
       batterie: r.batterie != null ? r.batterie : 100,
@@ -116,18 +157,7 @@ export default function Robots() {
   async function submitModal(e) {
     e.preventDefault();
     setErr("");
-    const payload = {
-      nom: modal.nom,
-      organisation_id: modal.org_id,
-      site_id: modal.site_id || null,
-      serial: modal.serial,
-      firmware: modal.firmware,
-      statut: modal.statut,
-      batterie: Number(modal.batterie),
-      capacites: modal.capacites
-        ? modal.capacites.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
-    };
+    const payload = corpsRobot(modal);
     try {
       if (modal.mode === "edit") {
         await api.patch(`/robots/${modal.id}`, payload);
@@ -272,6 +302,37 @@ export default function Robots() {
                     <tr key={r.id} data-testid="robot-row">
                       <td>
                         <strong data-testid="robot-name" style={{ color: "#fff" }}>{r.nom}</strong>
+                        {/* Une seule etiquette tant que les deux noms
+                            designent le meme chassis. La famille technique ne
+                            s'affiche que lorsqu'elle contredit la saisie : a
+                            ce moment-la, elle devient l'information, pas une
+                            redite. */}
+                        {(r.modele || r.modele_constate) && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                            {r.modele && (
+                              <span
+                                className="modele-chip"
+                                data-testid="robot-modele"
+                                title={r.modele_constate
+                                  ? `Famille déclarée par le robot : ${r.modele_constate}`
+                                  : undefined}
+                              >
+                                {r.modele}
+                              </span>
+                            )}
+                            {ecartDeModele(r) && (
+                              <span
+                                className="modele-chip modele-chip--ecart"
+                                data-testid="robot-famille"
+                                title={r.modele
+                                  ? "Le robot déclare une autre famille que celle saisie"
+                                  : "Famille déclarée par le robot, lue dans son profil embarqué"}
+                              >
+                                {r.modele_constate}
+                              </span>
+                            )}
+                          </div>
+                        )}
                         <div style={{ fontSize: 11, color: "var(--shell-dim)", fontFamily: "var(--font-mono)" }}>
                           {r.serial || "OSC-STD"}
                         </div>
@@ -292,6 +353,13 @@ export default function Robots() {
                         <span className={"status-chip " + (CHIP[r.statut] || "neutral")}>
                           {r.statut}
                         </span>
+                        {/* La pastille seule ne disait rien de son age : elle
+                            annoncait « online » pour un robot eteint depuis
+                            des jours. L'age du dernier contact rend le verdict
+                            verifiable. */}
+                        <div style={{ fontSize: 11, color: "var(--shell-dim)", marginTop: 3 }}>
+                          {ageDuContact(r.vu_le)}
+                        </div>
                       </td>
                       <td style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>{r.firmware || "1.0.0"}</td>
                       <td className="row-actions">
@@ -423,6 +491,27 @@ export default function Robots() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label className="auth-label">Modèle</label>
+                  <input
+                    className="field-shell"
+                    data-testid="robot-modele"
+                    list="modeles-connus"
+                    placeholder="ROSMASTER M3 Pro"
+                    value={modal.modele}
+                    onChange={(e) => setModal({ ...modal, modele: e.target.value })}
+                  />
+                  {/* Liste et non menu ferme : un chassis d'un nouveau
+                      constructeur doit pouvoir entrer sans attendre une mise a
+                      jour. Mais proposer les familles connues evite d'inventer
+                      une orthographe que le robot ne reconnaitra pas. */}
+                  <datalist id="modeles-connus">
+                    {modeles.map((m) => <option value={m} key={m} />)}
+                  </datalist>
+                  <small style={{ color: "var(--shell-dim)", fontSize: 11 }}>
+                    Comme vous le décrivez. La famille technique, elle, vient du robot.
+                  </small>
+                </div>
                 <div>
                   <label className="auth-label">Numéro de série</label>
                   <input

@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+
+from .presence import presence
 
 ORM = ConfigDict(from_attributes=True)
 
@@ -290,6 +292,10 @@ class RobotIn(BaseModel):
     site_id: str | None = None
     serial: str | None = None
     firmware: str | None = None
+    # Modele du chassis, tel que l'operateur le decrit. Texte libre, conserve
+    # sans transformation : personne ne connait tous les chassis existants, et
+    # deviner leur identifiant technique produirait des erreurs silencieuses.
+    modele: str | None = None
     statut: str = "offline"
     batterie: int | None = None
     capacites: list[str] = Field(default_factory=list)
@@ -303,10 +309,29 @@ class RobotAssignIn(BaseModel):
 class RobotOut(RobotIn):
     model_config = ORM
     id: str
+    # Dernier contact de l'agent embarque. Expose pour que la console puisse
+    # dire « vu il y a 12 minutes » plutot qu'une pastille sans age.
+    vu_le: datetime | None = None
     # Identifiant terrain, derive du nom : c'est celui que porte l'agent embarque.
     slug: str | None = None
     edge_channel: str = "stable"
     edge_version: str | None = None
+    # Famille technique declaree par le robot, lue dans son profil embarque.
+    # C'est elle qui vaut cle : le catalogue de presets s'y accroche, pas a
+    # l'etiquette humaine.
+    modele_constate: str | None = None
+
+    @model_validator(mode="after")
+    def _presence_constatee(self) -> "RobotOut":
+        """Remplace le statut declare par celui qu'on observe.
+
+        La correction se fait ici plutot que dans chaque ecran : la console 2D
+        et le cockpit XR lisent tous deux ce champ, et ils affichaient « online »
+        pour un robot hors tension. La mise en maintenance reste intacte, elle
+        n'est pas une observation mais une decision.
+        """
+        self.statut = presence(self.statut, self.vu_le)
+        return self
 
 
 class TokenIssueIn(BaseModel):
@@ -514,6 +539,10 @@ class BundleIn(BaseModel):
     nom: str = Field(min_length=2, max_length=160)
     description: str | None = None
     target: str = Field(default="ENVIRONNEMENT_EXECUTION_ROBOT", max_length=60)
+    # « active » ou « archived ». Un projet deja deploye ne peut pas etre
+    # supprime, son historique le protege ; l'archiver est la seule sortie, et
+    # le refus de suppression le disait deja sans que la route existe.
+    statut: str | None = None
 
 
 class BundleDraftIn(BaseModel):
@@ -575,8 +604,13 @@ class BundleValidationOut(BaseModel):
 
 class DeploymentIn(BaseModel):
     version_id: str
+    # Les portees se cumulent et leur union est dedupliquee. `site_id` reste
+    # accepte pour les clients precedents ; l'interface courante envoie la
+    # collection afin qu'une publication puisse couvrir plusieurs magasins.
     robot_ids: list[str] = Field(default_factory=list, max_length=200)
     fleet_id: str | None = None
+    site_id: str | None = None
+    site_ids: list[str] = Field(default_factory=list, max_length=100)
     message: str | None = None
 
 
@@ -630,6 +664,10 @@ class EdgeReleaseReportIn(BaseModel):
     statut: str = Field(pattern="^(installed|failed|rolled_back)$")
     message: str | None = None
     sha256: str | None = None
+    # Famille de chassis lue dans le profil embarque. Le robot est la seule
+    # source qui sache vraiment sur quel materiel il tourne ; la saisie de
+    # l'operateur n'est qu'une intention.
+    profil: str | None = None
 
 
 class CompositionPresetIn(BaseModel):
@@ -673,3 +711,40 @@ class CompositionPresetOut(BaseModel):
     notes: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+class PerceptionLeaseIn(BaseModel):
+    """Ce qu'un worker de perception annonce à chaque battement."""
+
+    # Nombre de robots que ce worker accepte de porter. C'est lui qui le sait :
+    # il connaît sa mémoire, ses cœurs et les modèles déjà chargés.
+    capacite: int = 4
+
+
+class PerceptionLeasesOut(BaseModel):
+    worker_id: str
+    robots: list[str] = Field(default_factory=list)
+    # Le serveur dicte la cadence plutôt que de la laisser à chaque worker :
+    # allonger le bail sans allonger le battement ferait expirer la flotte.
+    renouveler_dans: int
+
+
+class PerceptionCouvertureOut(BaseModel):
+    robot_id: str
+    nom: str
+    worker_id: str
+    depuis: datetime
+    expire_a: datetime
+
+
+class PerceptionDecouvertOut(BaseModel):
+    robot_id: str
+    nom: str
+
+
+class PerceptionCoverageOut(BaseModel):
+    couverts: list[PerceptionCouvertureOut] = Field(default_factory=list)
+    # La liste qui compte : un robot qui mérite la perception et n'a pas de
+    # bail vivant. C'est la question que personne n'a pu poser le 23 septembre.
+    decouverts: list[PerceptionDecouvertOut] = Field(default_factory=list)
+    workers: list[str] = Field(default_factory=list)
