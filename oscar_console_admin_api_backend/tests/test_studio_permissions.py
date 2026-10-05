@@ -1,6 +1,6 @@
 """Capacites du Studio de deploiement dans le catalogue RBAC.
 
-Le Studio compose des bundles (agents, canaux, cible materielle) puis les
+Le Studio compose des bundles (unites, canaux, cible materielle) puis les
 deploie sur du materiel reel. Publier et deployer sont donc separes de la
 simple composition : ces tests verrouillent ce decoupage.
 """

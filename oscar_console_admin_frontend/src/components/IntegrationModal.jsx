@@ -8,13 +8,13 @@ export default function IntegrationModal({ robot, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [customForm, setCustomForm] = useState({ ttl_hours: 24, identity_suffix: "agent" });
+  const [customForm, setCustomForm] = useState({ ttl_hours: 24, identity_suffix: "unite" });
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  // La cle d'agent n'est lisible qu'a l'instant de son emission : le serveur
+  // La cle de la machine n'est lisible qu'a l'instant de son emission : le serveur
   // n'en garde que l'empreinte. Elle vit donc dans l'etat de cette fenetre,
   // et nulle part ailleurs.
-  const [agentKey, setAgentKey] = useState(null);
+  const [machineKey, setMachineKey] = useState(null);
   const [issuingKey, setIssuingKey] = useState(false);
 
   useEffect(() => {
@@ -39,13 +39,13 @@ export default function IntegrationModal({ robot, onClose }) {
     }
   }
 
-  async function issueAgentKey() {
+  async function issueMachineKey() {
     setIssuingKey(true);
     setError("");
     try {
-      setAgentKey(await api.post(`/robots/${robot.id}/agent-key`));
+      setMachineKey(await api.post(`/robots/${robot.id}/machine-key`));
     } catch (cause) {
-      setError(captureError(cause, { feature: "robot-integration", action: "issue-agent-key" }));
+      setError(captureError(cause, { feature: "robot-integration", action: "issue-machine-key" }));
     } finally {
       setIssuingKey(false);
     }
@@ -90,9 +90,9 @@ export default function IntegrationModal({ robot, onClose }) {
 
               <div className="card-shell" style={{ background: "rgba(0,0,0,0.25)" }}>
                 <div className="card-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h4 style={{ margin: 0, fontSize: 13, color: "#fff" }}>Clé d'agent embarqué</h4>
-                  <button type="button" className="btn-shell small" onClick={issueAgentKey} disabled={issuingKey}>
-                    <IconKey size={14} /> {issuingKey ? "..." : agentKey ? "Réémettre" : "Émettre"}
+                  <h4 style={{ margin: 0, fontSize: 13, color: "#fff" }}>Clé du runtime embarqué</h4>
+                  <button type="button" className="btn-shell small" onClick={issueMachineKey} disabled={issuingKey}>
+                    <IconKey size={14} /> {issuingKey ? "..." : machineKey ? "Réémettre" : "Émettre"}
                   </button>
                 </div>
                 <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -100,23 +100,23 @@ export default function IntegrationModal({ robot, onClose }) {
                     Elle autorise ce robot - et lui seul - à récupérer les bundles qui lui sont
                     destinés. Réémettre révoque la précédente.
                   </p>
-                  {agentKey && (
+                  {machineKey && (
                     <>
                       <code
-                        data-testid="agent-key"
+                        data-testid="machine-key"
                         style={{ fontSize: 12, wordBreak: "break-all", padding: "8px 10px", borderRadius: 6, background: "rgba(0,0,0,0.35)" }}
                       >
-                        {agentKey.agent_key}
+                        {machineKey.machine_key}
                       </code>
                       <p style={{ margin: 0, color: "var(--shell-dim)", fontSize: 12 }}>
                         Affichée une seule fois : installez-la maintenant dans{" "}
-                        <code>{agentKey.installation?.fichier}</code> en mode{" "}
-                        <code>{agentKey.installation?.mode}</code>. La perdre coûte une réémission.
+                        <code>{machineKey.installation?.fichier}</code> en mode{" "}
+                        <code>{machineKey.installation?.mode}</code>. La perdre coûte une réémission.
                       </p>
                       <button
                         type="button"
                         className="btn-shell small"
-                        onClick={() => navigator.clipboard?.writeText(agentKey.installation?.commande || agentKey.agent_key)}
+                        onClick={() => navigator.clipboard?.writeText(machineKey.installation?.commande || machineKey.machine_key)}
                       >
                         <IconCopy size={14} /> Copier la commande d'installation
                       </button>
@@ -127,7 +127,7 @@ export default function IntegrationModal({ robot, onClose }) {
 
               <div className="card-shell" style={{ background: "rgba(0,0,0,0.25)" }}>
                 <div className="card-head">
-                  <h4 style={{ margin: 0, fontSize: 13, color: "#fff" }}>Émettre un nouveau jeton d'agent</h4>
+                  <h4 style={{ margin: 0, fontSize: 13, color: "#fff" }}>Émettre un jeton d'accès à la salle du robot</h4>
                 </div>
                 <form onSubmit={generateCustom} className="card-body" style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end" }}>
                   <div>

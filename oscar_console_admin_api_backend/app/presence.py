@@ -6,13 +6,13 @@ La colonne `robots.statut` était posée à la création du robot et plus jamais
 pouvait s'y fier pour savoir si une téléopération avait une chance d'aboutir.
 
 On garde la colonne pour ce qu'elle sait vraiment dire, la mise en maintenance,
-qui est une décision humaine. Le reste se déduit du dernier contact de l'agent
+qui est une décision humaine. Le reste se déduit du dernier contact du runtime
 embarqué, quelle que soit la route qu'il a empruntée.
 """
 
 from datetime import datetime, timedelta, timezone
 
-# L'agent interroge son bundle toutes les 45 secondes (oscar-edge-sync.timer).
+# Le runtime embarqué interroge son bundle toutes les 45 secondes (oscar-edge-sync.timer).
 # Trois minutes laissent passer quatre relèves manquées : de quoi absorber une
 # coupure réseau brève sans annoncer un robot vivant alors qu'il est éteint.
 SILENCE_TOLERE = timedelta(minutes=3)

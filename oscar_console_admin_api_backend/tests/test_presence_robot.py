@@ -25,7 +25,7 @@ def test_un_robot_silencieux_passe_hors_ligne():
 
 
 def test_quatre_releves_manquees_restent_tolerees():
-    """L'agent interroge son bundle toutes les 45 secondes. Une coupure réseau
+    """Le runtime embarqué interroge son bundle toutes les 45 secondes. Une coupure réseau
     brève ne doit pas faire clignoter la flotte."""
     assert presence("offline", MAINTENANT - timedelta(seconds=150), MAINTENANT) == "online"
 

@@ -129,7 +129,7 @@ docker compose ps                     # attendre « healthy » pour api et base-
 curl http://127.0.0.1:18202/health    # {"status":"ok", ... "database":"ok"}
 ```
 
-Au premier démarrage, l'API crée le schéma de la base (13 migrations),
+Au premier démarrage, l'API crée le schéma de la base (14 migrations),
 l'administrateur du `.env` (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) et, avec
 `SEED_DEMO=true`, des organisations, des robots et des comptes de
 démonstration.

@@ -30,11 +30,11 @@ const KIND_LABELS = {
 
 function ChannelRow({
   channel,
-  agentId,
+  unitId,
   onSelect,
 }: {
   channel: ChannelConfig;
-  agentId: string;
+  unitId: string;
   onSelect: () => void;
 }) {
   const receiving = channel.direction === 'RECEPTION';
@@ -51,7 +51,7 @@ function ChannelRow({
       {receiving && (
         <Handle
           className="channel-handle channel-handle--input"
-          id={`in:${agentId}:${channel.id}`}
+          id={`in:${unitId}:${channel.id}`}
           type="target"
           position={Position.Left}
         />
@@ -64,7 +64,7 @@ function ChannelRow({
       {!receiving && (
         <Handle
           className="channel-handle channel-handle--output"
-          id={`out:${agentId}:${channel.id}`}
+          id={`out:${unitId}:${channel.id}`}
           type="source"
           position={Position.Right}
         />
@@ -84,7 +84,7 @@ export default function ArchitectureNode({ id, data, selected }: NodeProps<Archi
 
   useEffect(() => {
     updateNodeInternals(id);
-  }, [data.agents, id, updateNodeInternals]);
+  }, [data.units, id, updateNodeInternals]);
 
   return (
     <article
@@ -119,71 +119,71 @@ export default function ArchitectureNode({ id, data, selected }: NodeProps<Archi
           <span>Les traits pointillés indiquent les composants publiés avec ce bundle.</span>
         </div>
       ) : (
-        <div className="agent-list">
-          {data.agents.map((agent) => (
+        <div className="unit-list">
+          {data.units.map((unit) => (
             <section
-              className="agent-card nodrag"
-              key={agent.id}
+              className="unit-card nodrag"
+              key={unit.id}
               onClick={(event) => {
                 event.stopPropagation();
-                data.onSelect?.({ type: 'agent', nodeId: id, agentId: agent.id });
+                data.onSelect?.({ type: 'unit', nodeId: id, unitId: unit.id });
               }}
             >
-              <div className="agent-card__header">
+              <div className="unit-card__header">
                 <button
                   className="icon-button icon-button--tiny nodrag"
                   onClick={(event) => {
                     event.stopPropagation();
-                    data.onToggleAgent?.(id, agent.id);
+                    data.onToggleUnit?.(id, unit.id);
                   }}
-                  title={agent.expanded ? 'Réduire la structure' : 'Afficher la structure'}
+                  title={unit.expanded ? 'Réduire la structure' : 'Afficher la structure'}
                   type="button"
                 >
-                  {agent.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  {unit.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
-                <span className="agent-card__icon"><Cpu size={15} /></span>
-                <span className="agent-card__title">
-                  <strong>{agent.name}</strong>
-                  <code>{agent.technicalCode}</code>
+                <span className="unit-card__icon"><Cpu size={15} /></span>
+                <span className="unit-card__title">
+                  <strong>{unit.name}</strong>
+                  <code>{unit.technicalCode}</code>
                 </span>
-                <span className="agent-card__media">
-                  {agent.canPublishAudio && <Mic size={13} aria-label="Peut émettre de l’audio" />}
-                  {agent.canPublishVideo && <Video size={13} aria-label="Peut émettre de la vidéo" />}
+                <span className="unit-card__media">
+                  {unit.canPublishAudio && <Mic size={13} aria-label="Peut émettre de l’audio" />}
+                  {unit.canPublishVideo && <Video size={13} aria-label="Peut émettre de la vidéo" />}
                 </span>
               </div>
 
-              {agent.expanded && (
-                <div className="agent-scaffold">
-                  <div><CircleDot size={12} /><span>{agent.processingName.replaceAll('_', ' ').toLowerCase()}</span></div>
-                  <div><Radio size={12} /><span>{agent.interfaceName.replaceAll('_', ' ').toLowerCase()}</span></div>
-                  <div><Database size={12} /><span>{agent.dataBandName.replaceAll('_', ' ').toLowerCase()}</span></div>
+              {unit.expanded && (
+                <div className="unit-scaffold">
+                  <div><CircleDot size={12} /><span>{unit.processingName.replaceAll('_', ' ').toLowerCase()}</span></div>
+                  <div><Radio size={12} /><span>{unit.interfaceName.replaceAll('_', ' ').toLowerCase()}</span></div>
+                  <div><Database size={12} /><span>{unit.dataBandName.replaceAll('_', ' ').toLowerCase()}</span></div>
                 </div>
               )}
 
               <div className="bus-grid">
                 <div className="bus-column bus-column--input">
                   <div className="bus-title">
-                    <span>Réception</span><small>{agent.inputs.length}</small>
+                    <span>Réception</span><small>{unit.inputs.length}</small>
                   </div>
-                  {agent.inputs.length ? agent.inputs.map((channel) => (
+                  {unit.inputs.length ? unit.inputs.map((channel) => (
                     <ChannelRow
                       key={channel.id}
                       channel={channel}
-                      agentId={agent.id}
-                      onSelect={() => data.onSelect?.({ type: 'channel', nodeId: id, agentId: agent.id, channelId: channel.id })}
+                      unitId={unit.id}
+                      onSelect={() => data.onSelect?.({ type: 'channel', nodeId: id, unitId: unit.id, channelId: channel.id })}
                     />
                   )) : <span className="empty-port">Aucune entrée</span>}
                 </div>
                 <div className="bus-column bus-column--output">
                   <div className="bus-title">
-                    <span>Émission</span><small>{agent.outputs.length}</small>
+                    <span>Émission</span><small>{unit.outputs.length}</small>
                   </div>
-                  {agent.outputs.length ? agent.outputs.map((channel) => (
+                  {unit.outputs.length ? unit.outputs.map((channel) => (
                     <ChannelRow
                       key={channel.id}
                       channel={channel}
-                      agentId={agent.id}
-                      onSelect={() => data.onSelect?.({ type: 'channel', nodeId: id, agentId: agent.id, channelId: channel.id })}
+                      unitId={unit.id}
+                      onSelect={() => data.onSelect?.({ type: 'channel', nodeId: id, unitId: unit.id, channelId: channel.id })}
                     />
                   )) : <span className="empty-port">Aucune sortie</span>}
                 </div>
@@ -191,22 +191,22 @@ export default function ArchitectureNode({ id, data, selected }: NodeProps<Archi
             </section>
           ))}
 
-          {data.agents.length === 0 && (
-            <div className="agent-empty">
+          {data.units.length === 0 && (
+            <div className="unit-empty">
               <Cpu size={20} />
-              <span>Déposez un module ici ou utilisez le bouton.</span>
+              <span>Déposez une unité ici ou utilisez le bouton.</span>
             </div>
           )}
 
           <button
-            className="add-agent-button nodrag"
+            className="add-unit-button nodrag"
             onClick={(event) => {
               event.stopPropagation();
-              data.onAddAgent?.(id);
+              data.onAddUnit?.(id);
             }}
             type="button"
           >
-            <Plus size={15} /> Ajouter un module
+            <Plus size={15} /> Ajouter une unité
           </button>
         </div>
       )}

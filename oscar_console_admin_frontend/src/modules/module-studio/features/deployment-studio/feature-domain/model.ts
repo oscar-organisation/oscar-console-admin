@@ -1,6 +1,5 @@
 import type { Connection } from '@xyflow/react';
 import type {
-  AgentConfig,
   ArchitectureEdge,
   ArchitectureKind,
   ArchitectureNode,
@@ -8,6 +7,7 @@ import type {
   DataFormat,
   OscarProject,
   ProjectTarget,
+  UnitConfig,
   ValidationIssue,
 } from './types';
 
@@ -39,21 +39,22 @@ export function createChannel(direction: 'RECEPTION' | 'EMISSION', index: number
     direction,
     channelType: receiving
       ? 'TYPE_ENTREE_ABONNEMENT_TEMPS_REEL'
-      : 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT',
+      : 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE',
     dataFormat: 'OBJET_JSON',
     description: '',
   };
 }
 
-export function createAgent(index: number, withChannels = false): AgentConfig {
-  const name = `Module ${index}`;
+export function createUnit(index: number, withChannels = false): UnitConfig {
   return {
-    id: makeId('agent'),
-    name,
-    technicalCode: technicalCode('INSTANCE_AGENT', name, String(index).padStart(2, '0')),
-    agentType: 'TYPE_AGENT_STANDARD',
-    processingName: 'TRAITEMENT_METIER_AGENT_PRINCIPAL',
-    interfaceName: 'INTERFACE_COMMUNICATION_AGENT_PRINCIPALE',
+    id: makeId('unit'),
+    name: `Unité ${index}`,
+    // Le préfixe dit déjà « unité » : « Unité 1 » reçoit INSTANCE_UNITE_1, sans
+    // répéter le mot.
+    technicalCode: `INSTANCE_UNITE_${index}`,
+    unitType: 'TYPE_UNITE_STANDARD',
+    processingName: 'TRAITEMENT_METIER_UNITE_PRINCIPAL',
+    interfaceName: 'INTERFACE_COMMUNICATION_UNITE_PRINCIPALE',
     dataBandName: 'BANDE_DONNEES_PRINCIPALE',
     receiveBusName: 'BUS_RECEPTION_PRINCIPAL',
     sendBusName: 'BUS_EMISSION_PRINCIPAL',
@@ -93,7 +94,7 @@ export function createArchitectureNode(
       description: '',
       target,
       status: 'BROUILLON',
-      agents: [],
+      units: [],
     },
   };
 }
@@ -107,10 +108,10 @@ function demoProject(): OscarProject {
   const media = createArchitectureNode('INSTANCE_SERVICE', 1, 'ENVIRONNEMENT_EXECUTION_ROBOT', { x: 420, y: 40 });
   media.data.name = 'Service média du robot';
   media.data.technicalCode = 'INSTANCE_SERVICE_MEDIA_ROBOT';
-  const camera = createAgent(1, false);
+  const camera = createUnit(1, false);
   camera.name = 'Caméra avant';
-  camera.technicalCode = 'INSTANCE_AGENT_CAMERA_AVANT';
-  camera.agentType = 'TYPE_AGENT_MEDIA_ROBOT';
+  camera.technicalCode = 'INSTANCE_UNITE_CAMERA_AVANT';
+  camera.unitType = 'TYPE_UNITE_MEDIA_ROBOT';
   camera.canPublishVideo = true;
   camera.inputs = [{
     ...createChannel('RECEPTION', 1),
@@ -125,15 +126,15 @@ function demoProject(): OscarProject {
     technicalCode: 'CANAL_EMISSION_ETAT_FLUX_VIDEO',
     dataFormat: 'OBJET_JSON',
   }];
-  media.data.agents = [camera];
+  media.data.units = [camera];
 
   const action = createArchitectureNode('INSTANCE_SERVICE', 2, 'ENVIRONNEMENT_EXECUTION_ROBOT', { x: 420, y: 470 });
   action.data.name = 'Service actions du robot';
   action.data.technicalCode = 'INSTANCE_SERVICE_ACTIONS_ROBOT';
-  const motion = createAgent(1, true);
+  const motion = createUnit(1, true);
   motion.name = 'Pilotage du déplacement';
-  motion.technicalCode = 'INSTANCE_AGENT_PILOTAGE_DEPLACEMENT';
-  motion.agentType = 'TYPE_AGENT_CONTROLE_ACTION_ROBOT';
+  motion.technicalCode = 'INSTANCE_UNITE_PILOTAGE_DEPLACEMENT';
+  motion.unitType = 'TYPE_UNITE_CONTROLE_ACTION_ROBOT';
   const motionInput: ChannelConfig = {
     ...createChannel('RECEPTION', 1),
     name: 'Commande de déplacement',
@@ -148,15 +149,15 @@ function demoProject(): OscarProject {
   };
   motion.inputs = [motionInput];
   motion.outputs = [motionOutput];
-  action.data.agents = [motion];
+  action.data.units = [motion];
 
   const remote = createArchitectureNode('INSTANCE_APPLICATION', 1, 'ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB', { x: 930, y: 245 });
   remote.data.name = 'Télécommande opérateur web';
   remote.data.technicalCode = 'INSTANCE_APPLICATION_TELECOMMANDE_WEB';
-  const operator = createAgent(1, true);
+  const operator = createUnit(1, true);
   operator.name = 'Commandes opérateur';
-  operator.technicalCode = 'INSTANCE_AGENT_COMMANDES_OPERATEUR';
-  operator.agentType = 'TYPE_AGENT_CONTROLEUR_DISTANT_WEB';
+  operator.technicalCode = 'INSTANCE_UNITE_COMMANDES_OPERATEUR';
+  operator.unitType = 'TYPE_UNITE_CONTROLEUR_DISTANT_WEB';
   const operatorInput: ChannelConfig = {
     ...createChannel('RECEPTION', 1),
     name: 'État du robot',
@@ -171,7 +172,7 @@ function demoProject(): OscarProject {
   };
   operator.inputs = [operatorInput];
   operator.outputs = [operatorOutput];
-  remote.data.agents = [operator];
+  remote.data.units = [operator];
 
   const hierarchyEdges: ArchitectureEdge[] = [media, action, remote].map((node) => ({
     id: `structure-${bundle.id}-${node.id}`,
@@ -243,7 +244,7 @@ export function createProject(
     const service = createArchitectureNode('INSTANCE_SERVICE', 1, target, { x: 480, y: 130 });
     service.data.name = 'Service principal du robot';
     service.data.technicalCode = 'INSTANCE_SERVICE_PRINCIPAL_ROBOT';
-    service.data.agents = [createAgent(1, true)];
+    service.data.units = [createUnit(1, true)];
     nodes.push(service);
     edges.push({
       id: `structure-${bundle.id}-${service.id}`,
@@ -276,10 +277,10 @@ export function findChannel(
   handleId: string | null,
 ): ChannelConfig | undefined {
   if (!nodeId || !handleId) return undefined;
-  const [, agentId, channelId] = handleId.split(':');
+  const [, unitId, channelId] = handleId.split(':');
   const node = nodes.find((item) => item.id === nodeId);
-  const agent = node?.data.agents.find((item) => item.id === agentId);
-  return [...(agent?.inputs ?? []), ...(agent?.outputs ?? [])].find((item) => item.id === channelId);
+  const unit = node?.data.units.find((item) => item.id === unitId);
+  return [...(unit?.inputs ?? []), ...(unit?.outputs ?? [])].find((item) => item.id === channelId);
 }
 
 export function connectionIsValid(connection: Connection): boolean {
@@ -303,20 +304,20 @@ export function validateProject(project: OscarProject): ValidationIssue[] {
   const connectedHandles = new Set(project.edges.flatMap((edge) => [edge.sourceHandle, edge.targetHandle].filter(Boolean)) as string[]);
   for (const node of project.nodes) {
     technicalCodes.set(node.data.technicalCode, (technicalCodes.get(node.data.technicalCode) ?? 0) + 1);
-    if (node.data.kind !== 'BUNDLE_DEPLOIEMENT' && node.data.agents.length === 0) {
+    if (node.data.kind !== 'BUNDLE_DEPLOIEMENT' && node.data.units.length === 0) {
       issues.push({
-        id: `agent-absent-${node.id}`,
+        id: `unite-absente-${node.id}`,
         level: 'ATTENTION',
-        title: `${node.data.name} ne contient aucun agent`,
-        detail: 'Ajoutez au moins un agent pour porter le traitement et la communication.',
+        title: `${node.data.name} ne contient aucune unité`,
+        detail: 'Ajoutez au moins une unité pour porter le traitement et la communication.',
         nodeId: node.id,
       });
     }
-    for (const agent of node.data.agents) {
-      technicalCodes.set(agent.technicalCode, (technicalCodes.get(agent.technicalCode) ?? 0) + 1);
-      for (const channel of [...agent.inputs, ...agent.outputs]) {
+    for (const unit of node.data.units) {
+      technicalCodes.set(unit.technicalCode, (technicalCodes.get(unit.technicalCode) ?? 0) + 1);
+      for (const channel of [...unit.inputs, ...unit.outputs]) {
         technicalCodes.set(channel.technicalCode, (technicalCodes.get(channel.technicalCode) ?? 0) + 1);
-        const handle = `${channel.direction === 'RECEPTION' ? 'in' : 'out'}:${agent.id}:${channel.id}`;
+        const handle = `${channel.direction === 'RECEPTION' ? 'in' : 'out'}:${unit.id}:${channel.id}`;
         if (!connectedHandles.has(handle) && channel.channelType.includes('TEMPS_REEL')) {
           issues.push({
             id: `canal-isole-${channel.id}`,

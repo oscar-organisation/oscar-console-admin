@@ -24,6 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..bundle_spec import convertir_composition
 from ..database import get_db
 from ..deps import require, write_audit
 from ..models import BundleVersion, CompositionPreset, DeploymentBundle, User
@@ -139,7 +140,9 @@ def promote_version(version_id: str, body: CompositionPresetIn, db: Session = De
         constructeur=body.constructeur,
         famille=body.famille,
         description=body.description or (bundle.description if bundle else None),
-        spec=dict(version.spec or {}),
+        # Une version enregistree a l'ancien format (avant les unites) est
+        # versee au catalogue au nouveau format, comme tout ce qu'on ecrit.
+        spec=convertir_composition(dict(version.spec or {})),
         ordre=body.ordre,
         notes=body.notes,
         created_by=user.id,

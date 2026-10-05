@@ -80,7 +80,7 @@ def list_robots(request: Request, org_id: str | None = None, site_id: str | None
 def _slug_robot(db: Session, nom: str) -> str:
     """Identifiant terrain d'un robot, derive de son nom.
 
-    L'agent embarque n'attend pas un UUID mais un identifiant lisible
+    Le runtime embarque n'attend pas un UUID mais un identifiant lisible
     (`^[a-z0-9][a-z0-9-]{2,62}$`) : c'est ce qu'il inscrit dans son enrolement
     et dans `/opt/oscar`. On le derive une fois, a la creation, et on le garde.
     """
@@ -166,7 +166,7 @@ def update_robot(robot_id: str, body: RobotIn, request: Request, db: Session = D
     data = body.model_dump(exclude_unset=True)
     if "serial" in data and not data["serial"]:
         data["serial"] = None
-    # Renommer un robot ne renomme pas son identifiant terrain : l'agent
+    # Renommer un robot ne renomme pas son identifiant terrain : le runtime
     # embarque l'a inscrit dans ses chemins et son enrolement, et un robot qui
     # change d'identite au milieu d'une flotte est un robot qu'on perd.
     data.pop("slug", None)
@@ -273,7 +273,7 @@ def issue_tokens(robot_id: str, body: TokenIssueIn, request: Request, db: Sessio
 @router.post("/robots/{robot_id}/edge-credentials")
 def issue_edge_credentials(robot_id: str, request: Request, db: Session = Depends(get_db),
                            user=Depends(require("api:robot.token.issue", "execute"))):
-    """Identifiants LiveKit de l'agent embarqué, dans la forme qu'il attend.
+    """Identifiants LiveKit du runtime embarqué, dans la forme qu'il attend.
 
     Le runtime embarqué tient deux rôles dans la même room : il publie la vidéo
     et il reçoit les commandes. LiveKit n'admet qu'un participant par identité -
@@ -455,14 +455,15 @@ def integration(robot_id: str, request: Request, db: Session = Depends(get_db),
     }
 
 
-@router.post("/robots/{robot_id}/agent-key")
-def issue_agent_key(robot_id: str, request: Request, db: Session = Depends(get_db),
-                    user=Depends(require("api:robot.agent_key", "execute"))):
-    """Émet la clé d'agent embarqué de ce robot, affichée une seule fois.
+@router.post("/robots/{robot_id}/machine-key")
+def issue_machine_key(robot_id: str, request: Request, db: Session = Depends(get_db),
+                      user=Depends(require("api:robot.machine_key", "execute"))):
+    """Émet la clé de la machine de ce robot, affichée une seule fois.
 
-    Le serveur ne conserve que l'empreinte : personne, pas même un
-    administrateur, ne peut relire la clé plus tard. La perdre coûte une
-    réémission, ce qui est le bon prix ; pouvoir la relire coûterait
+    C'est elle que le runtime embarqué présente dans l'en-tête
+    `x-oscar-machine-key`. Le serveur ne conserve que l'empreinte : personne,
+    pas même un administrateur, ne peut relire la clé plus tard. La perdre
+    coûte une réémission, ce qui est le bon prix ; pouvoir la relire coûterait
     l'étanchéité de toute la flotte.
 
     Réémettre remplace l'ancienne : un robot volé se révoque en émettant une
@@ -470,15 +471,19 @@ def issue_agent_key(robot_id: str, request: Request, db: Session = Depends(get_d
     """
     robot = _robot_du_perimetre(db, request, robot_id)
     cle = secrets.token_hex(24)
-    robot.agent_key_hash = hashlib.sha256(cle.encode("utf-8")).hexdigest()
-    robot.agent_key_issued_at = datetime.now(timezone.utc)
+    robot.machine_key_hash = hashlib.sha256(cle.encode("utf-8")).hexdigest()
+    robot.machine_key_issued_at = datetime.now(timezone.utc)
     db.commit()
-    write_audit(db, actor=user, action="ROBOT_AGENT_KEY_ISSUE", resource=robot.nom)
+    write_audit(db, actor=user, action="ROBOT_MACHINE_KEY_ISSUE", resource=robot.nom)
     return {
         "robot": {"id": robot.id, "nom": robot.nom, "slug": robot.slug},
-        "agent_key": cle,
-        "issued_at": robot.agent_key_issued_at,
+        "machine_key": cle,
+        "issued_at": robot.machine_key_issued_at,
         "installation": {
+            # Le fichier où le programme du robot lit sa clé. Son nom ne change
+            # pas avec le renommage : c'est le programme du robot qui le lit,
+            # et il n'est pas dans ce dépôt. Le changer ici ferait installer la
+            # clé là où le robot ne la cherche pas.
             "fichier": "/etc/oscar/credentials/agent.key",
             "mode": "0600",
             "commande": f"sudo install -m 600 /dev/stdin /etc/oscar/credentials/agent.key <<< '{cle}'",

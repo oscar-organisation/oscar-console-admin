@@ -1,10 +1,19 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
+from .bundle_spec import convertir_composition
 from .presence import presence
 
 ORM = ConfigDict(from_attributes=True)
+
+# Une composition du Studio, toujours au format « unité » : qu'elle entre dans
+# l'API ou qu'elle en sorte, une composition à l'ancien format (`agents`,
+# `agentType`, codes ..._AGENT_...) est convertie au passage (voir
+# convertir_composition dans bundle_spec.py). L'API n'écrit ainsi que le
+# nouveau format, et sait encore lire l'ancien.
+Composition = Annotated[dict, AfterValidator(convertir_composition)]
 
 
 # ---- Auth ------------------------------------------------------------------
@@ -309,10 +318,10 @@ class RobotAssignIn(BaseModel):
 class RobotOut(RobotIn):
     model_config = ORM
     id: str
-    # Dernier contact de l'agent embarque. Expose pour que la console puisse
+    # Dernier contact du runtime embarque. Expose pour que la console puisse
     # dire « vu il y a 12 minutes » plutot qu'une pastille sans age.
     vu_le: datetime | None = None
-    # Identifiant terrain, derive du nom : c'est celui que porte l'agent embarque.
+    # Identifiant terrain, derive du nom : c'est celui que porte le runtime embarque.
     slug: str | None = None
     edge_channel: str = "stable"
     edge_version: str | None = None
@@ -548,7 +557,7 @@ class BundleIn(BaseModel):
 class BundleDraftIn(BaseModel):
     """Composition en cours d'édition, telle que le Studio l'envoie."""
 
-    spec: dict = Field(default_factory=dict)
+    spec: Composition = Field(default_factory=dict)
     notes: str | None = None
     expected_revision: str | None = None
 
@@ -573,7 +582,7 @@ class BundleVersionOut(BaseModel):
 
 
 class BundleVersionDetailOut(BundleVersionOut):
-    spec: dict = Field(default_factory=dict)
+    spec: Composition = Field(default_factory=dict)
 
 
 class BundleOut(BaseModel):
@@ -593,7 +602,7 @@ class BundleOut(BaseModel):
     robot_count: int = 0
     # De quoi remplir une liste sans télécharger chaque composition.
     component_count: int = 0
-    agent_count: int = 0
+    unit_count: int = 0
 
 
 class BundleValidationOut(BaseModel):
@@ -678,7 +687,7 @@ class CompositionPresetIn(BaseModel):
     famille: str = Field(min_length=2, max_length=80)
     constructeur: str | None = None
     description: str | None = None
-    spec: dict = Field(default_factory=dict)
+    spec: Composition = Field(default_factory=dict)
     ordre: int = 100
     notes: str | None = None
 
@@ -690,7 +699,7 @@ class CompositionPresetPatch(BaseModel):
     famille: str | None = None
     constructeur: str | None = None
     description: str | None = None
-    spec: dict | None = None
+    spec: Composition | None = None
     statut: str | None = None
     ordre: int | None = None
     notes: str | None = None
@@ -704,7 +713,7 @@ class CompositionPresetOut(BaseModel):
     famille: str
     constructeur: str | None = None
     description: str | None = None
-    spec: dict = Field(default_factory=dict)
+    spec: Composition = Field(default_factory=dict)
     statut: str
     ordre: int
     revision: int

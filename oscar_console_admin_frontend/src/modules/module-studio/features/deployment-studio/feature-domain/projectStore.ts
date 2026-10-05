@@ -9,6 +9,7 @@ import {
   projetDepuisBundle,
   supprimerBundle,
 } from "../feature-data/studioApi";
+import { projetAuFormatActuel } from "./formatComposition";
 import type { OscarProject, ProjectTarget, SyncState } from "./types";
 
 /**
@@ -48,7 +49,9 @@ export function configurerPerimetre(userId: string | null, orgId: string | null)
   let projets: OscarProject[] = [];
   try {
     const stocke: unknown = JSON.parse(localStorage.getItem(perimetre) ?? "[]");
-    if (Array.isArray(stocke)) projets = stocke as OscarProject[];
+    // Un brouillon gardé avant le renommage « agent » -> « unité » est relu au
+    // nouveau format ; le prochain enregistrement l'écrit au nouveau format.
+    if (Array.isArray(stocke)) projets = (stocke as OscarProject[]).map(projetAuFormatActuel);
   } catch { /* Le cache historique sans propriétaire n'est jamais importé. */ }
   etat = { projets, sync: {}, chargement: false, horsLigne: false };
   for (const abonne of abonnes) abonne();
@@ -112,7 +115,7 @@ export async function rafraichir(): Promise<void> {
         edges: connu?.edges ?? [],
         summary: {
           composants: bundle.component_count,
-          agents: bundle.agent_count,
+          units: bundle.unit_count,
           robots: bundle.robot_count,
         },
       };
@@ -138,12 +141,13 @@ export async function chargerComposition(projetId: string): Promise<void> {
   try {
     const version = await lireVersion(versionId);
     if (contexte !== generation) return;
-    enregistrerLocalement({
+    // La version peut venir d'un serveur pas encore passé aux « unités ».
+    enregistrerLocalement(projetAuFormatActuel({
       ...projet,
       nodes: version.spec?.nodes ?? [],
       edges: version.spec?.edges ?? [],
       syncedAt: new Date().toISOString(),
-    });
+    }));
   } catch {
     if (contexte !== generation) return;
     publier({ horsLigne: true });

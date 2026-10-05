@@ -70,7 +70,7 @@ class TestCleTechnique:
         assert detail["modele_constate"] == "rosmaster-m3pro"
 
     def test_un_compte_rendu_sans_profil_n_efface_rien(self, client, contexte):
-        """Un agent d'une version antérieure ne doit pas perdre ce qu'on sait."""
+        """Un runtime embarqué d'une version antérieure ne doit pas perdre ce qu'on sait."""
         for corps in ({"version": "1.0.0", "statut": "installed", "profil": "rosmaster-m3pro"},
                       {"version": "1.0.1", "statut": "installed"}):
             client.post(
