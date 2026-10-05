@@ -260,3 +260,5 @@ l'intérieur gardent les **tirets bas**: ce sont des paquets. Les noms des
 applications, des images, des services et des volumes suivent le plan 20
 (décision 109): `console-admin-interface`, `console-admin-api`, services
 `interface`, `api` et `base-de-donnees`.
+
+<!-- Essai du 05/10/2026: une PR qui ne touche que ce fichier, fermée sans fusion. -->
