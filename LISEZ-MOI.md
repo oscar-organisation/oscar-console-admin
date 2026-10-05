@@ -12,8 +12,9 @@ dans le Studio.
 ## Les deux applications
 
 La console est faite de deux applications, une par dossier. Chacune se
-construit, se teste et se met en ligne de son côté: l'interface ne se remet pas
-en ligne quand seule l'API change, et l'inverse.
+construit, se teste et se met en ligne de son côté, par son propre workflow de
+GitHub: l'interface ne se remet pas en ligne quand seule l'API change, et
+l'inverse.
 
 | | L'interface | L'API |
 |---|---|---|
@@ -23,6 +24,7 @@ en ligne quand seule l'API change, et l'inverse.
 | Test | `https://test-console.oscar-bot.com` | `https://test-api-console.oscar-bot.com` |
 | Sur le poste | `http://127.0.0.1:18200` | `http://127.0.0.1:18202` (base sur `18203`) |
 | Santé | `/index.html` | `/health` (200 si l'API et sa base répondent, 503 sinon) |
+| Workflow de GitHub | `console-admin-interface.yml`, « Interface de la console » | `console-admin-api.yml`, « API de la console » |
 | Application du déploiement commun | `console-admin-interface` | `console-admin-api` |
 | Image dans Harbor | `oscar/console-admin-interface` | `oscar/console-admin-api` |
 | Applications Coolify (projet `console-admin`) | `console-admin-interface-test`, `-production` | `console-admin-api-test`, `-production` |
@@ -46,6 +48,50 @@ commit `09004be` du 04/10/2026, dossiers `Admin-Console-Front-end/` et
 cockpit XR est construit depuis le dépôt `oscar_front_casque_vr_ar`, révision
 `ee02b6e`. Le document de l'intégration de l'IA et de la vision, qui était à la
 racine du dépôt des développeurs, est dans la documentation de l'API.
+
+## Les vérifications automatiques de GitHub
+
+Trois workflows, dans `.github/workflows/` (un workflow est un fichier qui dit
+à GitHub quoi vérifier, et quand): un pour ce qui vaut dans tout le dépôt, et
+un par application (décision 124). Chacun ne se lance que pour ce qui le
+concerne.
+
+| Workflow | Ce qu'il vérifie | Ce qui le lance |
+|---|---|---|
+| `verifications-communes.yml`, « Vérifications communes » | aucune ligne d'attribution dans les commits, aucun secret, chaque fichier `.env` a son modèle, la typographie, les fichiers des workflows eux-mêmes | toute PR vers `test` ou `main`, et tout envoi sur ces branches, quoi qu'ils modifient |
+| `console-admin-api.yml`, « API de la console » | les compositions et leur modèle `.env.exemple`, la documentation, les tests (`tester.sh`), puis la mise en ligne de l'API | une PR ou un envoi qui modifie `oscar_console_admin_api_backend/` ou son propre fichier de workflow |
+| `console-admin-interface.yml`, « Interface de la console » | la même chose pour l'interface, plus ses deux règles de sécurité nginx, le cockpit XR et l'image construite (`controler-l-image.sh`), puis sa mise en ligne | une PR ou un envoi qui modifie `oscar_console_admin_frontend/` ou son propre fichier de workflow |
+
+Une modification qui ne touche aucune des deux applications (les autres
+dossiers, le `LISEZ-MOI.md` de la racine) ne lance que les vérifications
+communes. Une modification des deux applications lance leurs deux workflows en
+même temps: chacun réussit ou échoue de son côté, et ne met en ligne que son
+application. Dans une PR, chaque workflow écrit son propre résumé, un
+commentaire qui porte son nom.
+
+Le workflow d'une application se relance aussi à la main, sans rien modifier:
+page « Actions » du dépôt sur GitHub, choisir le workflow, « Run workflow »,
+branche `test` ou `main`. Cela sert par exemple après une mise en ligne en
+échec qu'aucun envoi suivant ne touche.
+
+### L'API reste compatible avec l'interface déjà en ligne
+
+L'API et l'interface ne s'attendent pas: quand les deux changent, elles sont
+mises en ligne en même temps, sans ordre entre elles (décision 125). D'où une
+règle pour tout changement de l'API: **une modification de l'API doit
+continuer à marcher avec l'interface déjà en ligne: on ajoute d'abord, on
+retire plus tard, une fois l'interface passée.** Par exemple, pour renommer un
+champ, l'API sert d'abord l'ancien et le nouveau; l'interface passe au
+nouveau; une modification suivante de l'API retire l'ancien.
+
+### Détacher un jour une application dans son propre dépôt
+
+Chaque application est prête à partir: son workflow n'écrit le nom de son
+dossier qu'en tête, et ses tests, ses réglages et sa documentation vivent dans
+son dossier. Les étapes, les mêmes pour toutes les applications OSCAR, sont
+dans le guide commun, page
+[« Un workflow par sous-projet »](https://github.com/oscar-organisation/oscar-general-gouvernance-project/blob/main/docs/05-un-workflow-par-sous-projet.md),
+section « Détacher un jour un sous-projet dans son propre dépôt ».
 
 ## Comment on travaille
 
@@ -122,7 +168,8 @@ oscar_console_admin_frontend/tester-la-connexion-sur-le-poste.sh  # la connexion
 ```
 
 Les deux premiers sont ceux que lancent les vérifications automatiques de
-GitHub: s'ils réussissent sur le poste, ils réussissent sur GitHub.
+GitHub, chacun dans le workflow de son application: s'ils réussissent sur le
+poste, ils réussissent sur GitHub.
 
 ### 4. Proposer sa modification: une PR vers `test`
 
@@ -133,25 +180,31 @@ git push -u origin travail/<sujet>
 ```
 
 Puis ouvrir une PR de `travail/<sujet>` vers `test` sur GitHub. Les
-vérifications automatiques de GitHub la contrôlent: vérifications rapides
-(lignes d'attribution, secrets, typographie, compositions, documentation),
-puis les tests des deux applications. Une PR ne met jamais rien en ligne.
+vérifications automatiques de GitHub la contrôlent: les vérifications communes
+toujours, et le workflow de chaque application dont la PR modifie le dossier
+(voir « Les vérifications automatiques de GitHub » plus haut). Une PR ne met
+jamais rien en ligne.
 
 ### 5. La voir en test
 
-À la fusion de la PR dans `test`, le déploiement automatique commun construit
-l'image de chaque application **dont le dossier a changé**, une seule fois, la
-range dans Harbor, puis la met en ligne en test et vérifie sa santé réelle. On
-regarde le résultat sur `https://test-console.oscar-bot.com`. Une modification
-de la seule documentation (`*.md`, `docs/`, `mkdocs.yml`, `catalog-info.yaml`)
-ne reconstruit et ne remet rien en ligne.
+À la fusion de la PR dans `test`, le workflow de chaque application **dont le
+dossier a changé** construit son image, une seule fois, la range dans Harbor,
+puis la met en ligne en test et vérifie sa santé réelle. Si les deux
+applications ont changé, les deux mises en ligne se font en même temps, sans
+ordre entre elles. On regarde le résultat sur
+`https://test-console.oscar-bot.com`. Une modification de la seule
+documentation d'une application (`*.md`, `docs/`, `mkdocs.yml`,
+`catalog-info.yaml`) lance son workflow, qui vérifie la documentation, mais ne
+reconstruit et ne remet rien en ligne: la mise en ligne dit « déjà en ligne ».
 
 ### 6. La mettre en production: une PR de `test` vers `main`
 
-Une PR de `test` vers `main`, à la fin d'une mission. Les vérifications
-s'assurent en quelques secondes que l'image a bien été testée; à la fusion,
-**la même image** est mise en ligne en production, sans rien reconstruire. On
-regarde le résultat sur `https://console.oscar-bot.com`, et la santé sur
+Une PR de `test` vers `main`, à la fin d'une mission. Elle lance les
+vérifications communes et le workflow de chaque application qui a changé
+depuis la dernière mise en production; chacun s'assure en quelques secondes
+que son image a bien été testée. À la fusion, **la même image** est mise en
+ligne en production, sans rien reconstruire. On regarde le résultat sur
+`https://console.oscar-bot.com`, et la santé sur
 `https://api-console.oscar-bot.com/health`.
 
 ### 7. Revenir en arrière
@@ -168,7 +221,9 @@ regarde le résultat sur `https://console.oscar-bot.com`, et la santé sur
 
 ## Les autres dossiers
 
-Ils ne se mettent pas en ligne et n'ont pas changé à la reprise du code.
+Ils ne se mettent pas en ligne et n'ont pas changé à la reprise du code. Ils
+n'ont pas de workflow propre, faute de tests: seules les vérifications
+communes les relisent.
 
 ```
 oscar-console-admin
