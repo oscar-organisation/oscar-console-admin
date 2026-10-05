@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from . import (
     ai, audit, auth, iam, organisations, perception, presets, releases, roles, robots,
-    sites, studio, users,
+    sites, studio, studio_brouillons, users,
 )
 
 api_router = APIRouter()
@@ -15,6 +15,7 @@ api_router.include_router(iam.router)
 api_router.include_router(robots.router)
 api_router.include_router(ai.router)
 api_router.include_router(studio.router)
+api_router.include_router(studio_brouillons.router)
 api_router.include_router(presets.router)
 api_router.include_router(perception.router)
 api_router.include_router(releases.router)

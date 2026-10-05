@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_APPAREIL_MOBILE",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone appareil mobile",
+  "description": "Un téléphone ou une tablette : ses applications suivent la personne dans ses déplacements.",
+  "exemple": "La tablette du responsable de rayon.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 50,
+  "dans_la_palette": true
+}

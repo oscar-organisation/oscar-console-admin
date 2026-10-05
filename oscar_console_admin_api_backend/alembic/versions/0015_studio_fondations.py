@@ -1,4 +1,4 @@
-"""Les fondations du Studio de L1 : le projet robotique créé d'office.
+"""Les fondations du Studio de L1 : le projet robotique créé d'office, et le catalogue.
 
 Ce que fait la montée :
 
@@ -9,13 +9,16 @@ Ce que fait la montée :
    reçoivent de l'application (app/studio_modele/projets.py).
 3. Elle ajoute à `deployment_bundles` la colonne `projet_id`, la remplit avec
    le projet d'office de l'organisation du bundle, puis la rend obligatoire.
+4. Elle crée la table `types_catalogue`, vide : le catalogue vient des
+   fichiers de la console, recopiés au démarrage (app/studio_modele/catalogue.py),
+   comme les droits.
 
 Ce qui ne bouge pas : aucune composition n'est réécrite. `bundle_versions`,
 `bundle_deployments` et `composition_presets` restent tels quels, au caractère
 près : un robot qui lit une ancienne version la lit toujours. Aucune table de
 sauvegarde n'est donc nécessaire.
 
-La descente retire la colonne puis la table, et rend la base d'avant.
+La descente retire les tables et la colonne, et rend la base d'avant.
 
 Sur SQLite (tests et poste), changer une colonne demande de reconstruire la
 table : c'est ce que fait le mode « batch » d'Alembic. PostgreSQL fait les
@@ -98,8 +101,26 @@ def upgrade() -> None:
         bundles.create_foreign_key(CLE_DU_PROJET, "projets_robotiques", ["projet_id"], ["id"],
                                    ondelete="RESTRICT")
 
+    op.create_table(
+        "types_catalogue",
+        sa.Column("id", sa.String(32), primary_key=True),
+        sa.Column("code", sa.String(120), nullable=False),
+        sa.Column("version", sa.String(20), nullable=False),
+        sa.Column("sorte", sa.String(60), nullable=False),
+        sa.Column("famille", sa.String(60), nullable=False),
+        sa.Column("nom", sa.String(160), nullable=False),
+        sa.Column("description", sa.Text()),
+        sa.Column("definition", sa.JSON(), nullable=False),
+        sa.Column("empreinte", sa.String(64), nullable=False),
+        sa.Column("statut", sa.String(20), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.UniqueConstraint("code", "version", name="uq_type_catalogue_code_version"),
+    )
+
 
 def downgrade() -> None:
+    op.drop_table("types_catalogue")
     with op.batch_alter_table("deployment_bundles") as bundles:
         bundles.drop_constraint(CLE_DU_PROJET, type_="foreignkey")
         bundles.drop_index(INDEX_DU_PROJET)

@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone robot",
+  "description": "L'ordinateur embarqué d'un robot : ses services tournent près des capteurs et des moteurs.",
+  "exemple": "Le M3 Pro, avec son service actions et son service média.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_SERVICE_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 10,
+  "dans_la_palette": true
+}

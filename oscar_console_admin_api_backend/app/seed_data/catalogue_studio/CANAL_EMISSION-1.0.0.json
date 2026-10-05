@@ -1,0 +1,16 @@
+{
+  "code": "CANAL_EMISSION",
+  "version": "1.0.0",
+  "sorte": "CANAL_EMISSION",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Canal d'émission",
+  "description": "Une sortie de l'unité : ce qu'elle émet, et sous quel format. Il se dessine à droite de l'unité.",
+  "exemple": "La vitesse mesurée de la base, envoyée à l'opérateur.",
+  "parents_autorises": [
+    "BUS_EMISSION"
+  ],
+  "recoit": [],
+  "contenu_cree": [],
+  "ordre": 80,
+  "dans_la_palette": true
+}

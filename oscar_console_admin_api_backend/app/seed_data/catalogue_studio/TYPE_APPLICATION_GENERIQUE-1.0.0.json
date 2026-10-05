@@ -1,0 +1,20 @@
+{
+  "code": "TYPE_APPLICATION_GENERIQUE",
+  "version": "1.0.0",
+  "sorte": "INSTANCE_APPLICATION_CONFIGUREE",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Application",
+  "description": "Un programme avec un écran, pour une personne, dans une zone application web, ordinateur, mobile ou casque. Elle héberge des unités. Déposée, elle arrive avec sa première unité.",
+  "exemple": "L'application de téléopération de l'opérateur.",
+  "parents_autorises": [
+    "ZONE_ENVIRONNEMENT_EXECUTION"
+  ],
+  "recoit": [
+    "INSTANCE_UNITE_CONFIGUREE"
+  ],
+  "contenu_cree": [
+    "INSTANCE_UNITE_CONFIGUREE"
+  ],
+  "ordre": 20,
+  "dans_la_palette": true
+}

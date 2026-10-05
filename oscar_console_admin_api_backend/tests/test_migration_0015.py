@@ -25,6 +25,8 @@ TABLES_D_AVANT = ("organisations", "users", "robots", "deployment_bundles", "bun
                   "bundle_deployments", "composition_presets")
 # Ce qu'elle ne doit jamais toucher, même pendant la montée.
 TABLES_INTOUCHABLES = ("bundle_versions", "bundle_deployments", "composition_presets")
+# Ce qu'elle ajoute.
+TABLES_NOUVELLES = {"projets_robotiques", "types_catalogue"}
 
 
 def remplir_comme_aujourd_hui(moteur) -> None:
@@ -81,6 +83,10 @@ def test_la_montee_cree_un_projet_par_organisation_et_y_range_les_bundles(base):
 
     alembic(url, "upgrade", "head")
 
+    assert TABLES_NOUVELLES <= set(sa.inspect(moteur).get_table_names())
+    # Le catalogue vient des fichiers de la console, au démarrage : la
+    # migration crée sa table et n'y met rien.
+    assert lire(moteur, "SELECT count(*) FROM types_catalogue")[0][0] == 0
     assert projets_par_organisation(moteur) == {
         "org-centre": ("PROJET_ROBOTIQUE_PRINCIPAL", "active", True),
         "org-durand": ("PROJET_ROBOTIQUE_PRINCIPAL", "active", True),

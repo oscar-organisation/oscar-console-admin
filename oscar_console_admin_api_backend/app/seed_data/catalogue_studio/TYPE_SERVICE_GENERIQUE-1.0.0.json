@@ -1,0 +1,20 @@
+{
+  "code": "TYPE_SERVICE_GENERIQUE",
+  "version": "1.0.0",
+  "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Service",
+  "description": "Un programme sans écran, dans une zone robot ou serveur, qui héberge des unités. Déposé, il arrive avec sa première unité.",
+  "exemple": "Le service actions du robot, qui commande la base.",
+  "parents_autorises": [
+    "ZONE_ENVIRONNEMENT_EXECUTION"
+  ],
+  "recoit": [
+    "INSTANCE_UNITE_CONFIGUREE"
+  ],
+  "contenu_cree": [
+    "INSTANCE_UNITE_CONFIGUREE"
+  ],
+  "ordre": 10,
+  "dans_la_palette": true
+}

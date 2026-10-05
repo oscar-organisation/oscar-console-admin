@@ -1,0 +1,16 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone Externe",
+  "description": "Les serveurs qui ne sont pas sur vos machines : une API, une messagerie, un stockage d'un tiers. Elle ne reçoit que des connexions vers eux, ni service ni application.",
+  "exemple": "L'API de prévisions météo qu'interroge un service du robot.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [],
+  "contenu_cree": [],
+  "ordre": 80,
+  "dans_la_palette": false
+}

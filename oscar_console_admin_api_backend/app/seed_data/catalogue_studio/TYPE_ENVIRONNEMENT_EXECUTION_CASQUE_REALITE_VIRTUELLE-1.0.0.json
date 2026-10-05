@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_CASQUE_REALITE_VIRTUELLE",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone casque de réalité virtuelle",
+  "description": "Un casque de réalité virtuelle ou mixte : ses applications placent la personne dans la scène du robot.",
+  "exemple": "Le cockpit de pilotage immersif.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 60,
+  "dans_la_palette": true
+}

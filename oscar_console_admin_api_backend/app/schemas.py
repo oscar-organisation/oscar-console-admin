@@ -614,6 +614,34 @@ class BundleOut(BaseModel):
     agent_count: int = 0
 
 
+class FamilleCatalogueOut(BaseModel):
+    code: str
+    nom: str
+    ordre: int
+
+
+class TypeCatalogueOut(BaseModel):
+    """Un type du catalogue du Studio, tel que son fichier le décrit."""
+
+    code: str
+    version: str
+    sorte: str
+    famille: str
+    nom: str
+    description: str
+    exemple: str
+    parents_autorises: list[str]
+    recoit: list[str]
+    contenu_cree: list[str]
+    ordre: int
+    dans_la_palette: bool
+
+
+class CatalogueOut(BaseModel):
+    familles: list[FamilleCatalogueOut]
+    types: list[TypeCatalogueOut]
+
+
 class BundleValidationOut(BaseModel):
     valide: bool
     erreurs: list[str] = Field(default_factory=list)

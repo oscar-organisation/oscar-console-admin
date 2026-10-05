@@ -648,6 +648,32 @@ class ProjetRobotique(Base, TimestampMixin):
     cree_d_office: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class TypeCatalogue(Base, TimestampMixin):
+    """Un type du catalogue du Studio, dans une version : une zone robot, le
+    service générique, l'unité standard...
+
+    La source est un fichier versionné de la console
+    (app/seed_data/catalogue_studio/), recopié ici au démarrage par
+    app/studio_modele/catalogue.py. Un brouillon cite un type par son code et
+    sa version, sans le recopier ; c'est pourquoi une version enregistrée ne
+    change plus : `empreinte` permet de le vérifier à chaque démarrage.
+    """
+
+    __tablename__ = "types_catalogue"
+    __table_args__ = (UniqueConstraint("code", "version", name="uq_type_catalogue_code_version"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    code: Mapped[str] = mapped_column(String(120), nullable=False)
+    version: Mapped[str] = mapped_column(String(20), nullable=False)
+    sorte: Mapped[str] = mapped_column(String(60), nullable=False)
+    famille: Mapped[str] = mapped_column(String(60), nullable=False)
+    nom: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    # Le fichier entier, tel qu'il était au démarrage qui l'a recopié.
+    definition: Mapped[dict] = mapped_column(JSON, default=dict)
+    empreinte: Mapped[str] = mapped_column(String(64), nullable=False)
+    statut: Mapped[str] = mapped_column(String(20), default="publie")  # publie|retire
+
+
 class DeploymentBundle(Base, TimestampMixin):
     """Unité déployable composée dans le Studio.
 

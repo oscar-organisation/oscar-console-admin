@@ -25,6 +25,7 @@ from .models import (
 )
 from .rbac import FEATURE_CATALOG
 from .security import hash_password
+from .studio_modele.catalogue import synchroniser_catalogue
 from .studio_modele.projets import projet_d_office
 
 _DEFAULT_DATA_DIR = Path(__file__).parent / "seed_data"
@@ -197,6 +198,10 @@ def seed_demo(db: Session) -> None:
 
 def run_seed(db: Session) -> None:
     sync_features(db)
+    # Le catalogue du Studio fait partie de la console, comme les droits : il
+    # se recopie à chaque démarrage, démonstration ou non. Un fichier qui
+    # change un type déjà publié arrête le démarrage (voir catalogue.py).
+    synchroniser_catalogue(db)
     ensure_admin(db)
     seed_demo(db)
     sync_system_role_permissions(db)

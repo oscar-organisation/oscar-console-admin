@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone serveur",
+  "description": "Un serveur de traitement, chez vous ou loué : ses services font les calculs lourds, loin du robot.",
+  "exemple": "Le serveur qui analyse la vidéo du robot, facultatif pour le piloter.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_SERVICE_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 20,
+  "dans_la_palette": true
+}

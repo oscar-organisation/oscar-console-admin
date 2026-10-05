@@ -1,0 +1,19 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_SIMULATEUR",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone simulateur",
+  "description": "Un simulateur qui tient la place du robot, pour essayer sans risque. Il reçoit des services et des applications, selon le scénario.",
+  "exemple": "Le robot simulé qui rejoue une tournée de nuit.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_SERVICE_CONFIGUREE",
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 70,
+  "dans_la_palette": true
+}
