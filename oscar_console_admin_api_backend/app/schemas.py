@@ -1,10 +1,20 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
+from .bundle_spec import composition_servie
 from .presence import presence
 
 ORM = ConfigDict(from_attributes=True)
+
+# Une composition du Studio telle que l'API la sert (voir composition_servie
+# dans bundle_spec.py) : le format « unité », plus les clés que lit l'interface
+# d'avant le renommage (décision 125). Une composition reçue, elle, reste
+# brute dans le schéma : la route la remet au seul nouveau format avec
+# convertir_composition, en lui donnant la composition enregistrée, qui dit
+# laquelle des deux listes le client a modifiée.
+CompositionServie = Annotated[dict, AfterValidator(composition_servie)]
 
 
 # ---- Auth ------------------------------------------------------------------
@@ -309,10 +319,10 @@ class RobotAssignIn(BaseModel):
 class RobotOut(RobotIn):
     model_config = ORM
     id: str
-    # Dernier contact de l'agent embarque. Expose pour que la console puisse
+    # Dernier contact du runtime embarque. Expose pour que la console puisse
     # dire « vu il y a 12 minutes » plutot qu'une pastille sans age.
     vu_le: datetime | None = None
-    # Identifiant terrain, derive du nom : c'est celui que porte l'agent embarque.
+    # Identifiant terrain, derive du nom : c'est celui que porte le runtime embarque.
     slug: str | None = None
     edge_channel: str = "stable"
     edge_version: str | None = None
@@ -573,7 +583,7 @@ class BundleVersionOut(BaseModel):
 
 
 class BundleVersionDetailOut(BundleVersionOut):
-    spec: dict = Field(default_factory=dict)
+    spec: CompositionServie = Field(default_factory=dict)
 
 
 class BundleOut(BaseModel):
@@ -593,6 +603,11 @@ class BundleOut(BaseModel):
     robot_count: int = 0
     # De quoi remplir une liste sans télécharger chaque composition.
     component_count: int = 0
+    unit_count: int = 0
+    # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+    # retirer par une prochaine modification de l'API, une fois l'interface
+    # passée. Même valeur que unit_count, sous le nom que lit l'interface
+    # encore en ligne.
     agent_count: int = 0
 
 
@@ -704,7 +719,7 @@ class CompositionPresetOut(BaseModel):
     famille: str
     constructeur: str | None = None
     description: str | None = None
-    spec: dict = Field(default_factory=dict)
+    spec: CompositionServie = Field(default_factory=dict)
     statut: str
     ordre: int
     revision: int

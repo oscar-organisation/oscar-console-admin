@@ -24,6 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..bundle_spec import convertir_composition
 from ..database import get_db
 from ..deps import require, write_audit
 from ..models import BundleVersion, CompositionPreset, DeploymentBundle, User
@@ -100,7 +101,8 @@ def create_preset(body: CompositionPresetIn, db: Session = Depends(get_db),
 
     preset = CompositionPreset(
         slug=body.slug, nom=body.nom, constructeur=body.constructeur,
-        famille=body.famille, description=body.description, spec=body.spec,
+        famille=body.famille, description=body.description,
+        spec=convertir_composition(body.spec),  # en base, le seul nouveau format
         ordre=body.ordre, notes=body.notes, created_by=user.id,
     )
     db.add(preset)
@@ -139,7 +141,9 @@ def promote_version(version_id: str, body: CompositionPresetIn, db: Session = De
         constructeur=body.constructeur,
         famille=body.famille,
         description=body.description or (bundle.description if bundle else None),
-        spec=dict(version.spec or {}),
+        # Une version enregistree a l'ancien format (avant les unites) est
+        # versee au catalogue au nouveau format, comme tout ce qu'on ecrit.
+        spec=convertir_composition(dict(version.spec or {})),
         ordre=body.ordre,
         notes=body.notes,
         created_by=user.id,
@@ -160,6 +164,10 @@ def update_preset(reference: str, body: CompositionPresetPatch, db: Session = De
     _catalogue_ecrivable(user)
     preset = _preset(db, reference)
     champs = body.model_dump(exclude_unset=True)
+    if champs.get("spec") is not None:
+        # En base, le seul nouveau format ; le préset enregistré est celui que
+        # le client a reçu (voir convertir_composition, décision 125).
+        champs["spec"] = convertir_composition(champs["spec"], reference=preset.spec)
     if "statut" in champs and champs["statut"] not in STATUTS:
         raise HTTPException(400, f"Statut inconnu : {champs['statut']}")
     touche_le_fond = any(c in champs for c in ("spec", "famille"))

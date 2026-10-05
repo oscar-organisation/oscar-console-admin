@@ -6,8 +6,9 @@ Trois idées structurent ce module.
    version : elle ne se modifie plus, on en crée une suivante.
 2. Un déploiement est un fait daté, pas un champ du robot. Une nouvelle demande
    ne réécrit pas la précédente, elle la remplace (`superseded`).
-3. Le robot tire, le serveur ne pousse pas. L'agent embarqué appelle
-   `/runtime/...` avec sa clé, récupère le manifeste à appliquer et rend compte.
+3. Le robot tire, le serveur ne pousse pas. Le runtime embarqué appelle
+   `/runtime/...` avec la clé de sa machine, récupère le manifeste à appliquer
+   et rend compte.
    Aucun port n'a besoin d'être ouvert sur le robot, ce qui vaut aussi derrière
    le partage de connexion d'un téléphone.
 """
@@ -26,6 +27,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..bundle_spec import (
     RUNTIME_FORMAT,
     boites_ia,
+    convertir_composition,
     empreinte,
     manifeste_runtime,
     valider_specification,
@@ -188,6 +190,7 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
     courante = _brouillon(bundle) or publiee
     manifeste = manifeste_runtime(courante.spec) if courante else {"composants": []}
     composants = manifeste.get("composants", [])
+    unites = sum(len(composant.get("unites", [])) for composant in composants)
     return {
         "id": bundle.id, "org_id": bundle.org_id, "nom": bundle.nom, "slug": bundle.slug,
         "description": bundle.description, "target": bundle.target, "statut": bundle.statut,
@@ -197,7 +200,11 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
         "version_count": len(bundle.versions),
         "robot_count": robots,
         "component_count": len(composants),
-        "agent_count": sum(len(composant.get("agents", [])) for composant in composants),
+        "unit_count": unites,
+        # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+        # retirer par une prochaine modification de l'API, une fois l'interface
+        # passée.
+        "agent_count": unites,
     }
 
 
@@ -316,15 +323,19 @@ def save_draft(request: Request, bundle_id: str, body: BundleDraftIn, db: Sessio
     ):
         raise HTTPException(409, "Brouillon modifié sur un autre poste : rechargez ou conservez une copie locale")
     try:
-        checksum = empreinte(manifeste_runtime(body.spec))
-        valider_specification(body.spec)
+        # En base, le seul nouveau format. La composition enregistrée est celle
+        # que le client a reçue : elle dit, pendant la transition (décision
+        # 125), laquelle des deux listes `units` / `agents` il a modifiée.
+        spec = convertir_composition(body.spec, reference=actuelle.spec if actuelle else None)
+        checksum = empreinte(manifeste_runtime(spec))
+        valider_specification(spec)
     except (TypeError, ValueError, AttributeError):
-        raise HTTPException(422, "Structure de composition invalide (nodes, agents, canaux ou edges)")
+        raise HTTPException(422, "Structure de composition invalide (nodes, unités, canaux ou edges)")
     if version is None:
         dernier = max((v.numero for v in bundle.versions), default=0)
         version = BundleVersion(bundle_id=bundle.id, numero=dernier + 1, statut="draft")
         db.add(version)
-    version.spec = body.spec
+    version.spec = spec
     version.notes = body.notes
     version.checksum = checksum
     db.commit()
@@ -525,19 +536,31 @@ def cancel_deployment(request: Request, deployment_id: str, db: Session = Depend
 
 
 # --------------------------------------------------------------------------- #
-#  Runtime : l'agent embarqué tire sa configuration
+#  Runtime : le runtime embarqué tire sa configuration
 # --------------------------------------------------------------------------- #
-def _cle_presentee(x_oscar_agent_key: str | None = Header(default=None)) -> str:
-    """Clé portée par l'agent embarqué, exigée avant toute résolution de robot."""
-    if not x_oscar_agent_key:
-        raise HTTPException(401, "Clé agent embarqué absente")
-    return x_oscar_agent_key
+def _cle_presentee(
+    x_oscar_machine_key: str | None = Header(default=None),
+    x_oscar_agent_key: str | None = Header(default=None),
+) -> str:
+    """Clé de la machine portée par le runtime embarqué, exigée avant toute
+    résolution de robot.
+
+    L'en-tête s'appelle `x-oscar-machine-key`. L'ancien nom,
+    `x-oscar-agent-key`, reste accepté : les robots déjà installés l'envoient,
+    et c'est par ces mêmes routes qu'ils téléchargent le paquet embarqué qui
+    saura envoyer le nouveau. Le refuser les couperait de leur mise à jour.
+    À retirer quand plus aucun robot du parc n'envoie l'ancien en-tête.
+    """
+    cle = x_oscar_machine_key or x_oscar_agent_key
+    if not cle:
+        raise HTTPException(401, "Clé du runtime embarqué absente")
+    return cle
 
 
 def _robot_par_reference(db: Session, reference: str) -> Robot:
     """Résout un robot par son UUID ou par son slug.
 
-    L'agent embarqué ne connaît que le slug inscrit dans son enrôlement ; la
+    Le runtime embarqué ne connaît que le slug inscrit dans son enrôlement ; la
     console manipule l'UUID. Accepter les deux ici évite de propager cette
     dualité dans le reste du système.
     """
@@ -550,7 +573,7 @@ def _robot_par_reference(db: Session, reference: str) -> Robot:
 
 
 def _noter_contact(db: Session, robot: Robot) -> None:
-    """Retient l'instant ou l'agent embarque s'est manifeste.
+    """Retient l'instant ou le runtime embarque s'est manifeste.
 
     Toutes les routes du robot passent par l'authentification, donc marquer ici
     suffit a couvrir la releve du bundle, celle de la release et les deux
@@ -581,17 +604,17 @@ def _robot_authentifie(db: Session, reference: str, cle: str) -> Robot:
     pour lui.
     """
     robot = _robot_par_reference(db, reference)
-    if robot.agent_key_hash:
+    if robot.machine_key_hash:
         empreinte = hashlib.sha256(cle.encode("utf-8")).hexdigest()
-        if not hmac.compare_digest(empreinte, robot.agent_key_hash):
-            raise HTTPException(401, "Clé agent embarqué invalide pour ce robot")
+        if not hmac.compare_digest(empreinte, robot.machine_key_hash):
+            raise HTTPException(401, "Clé du runtime embarqué invalide pour ce robot")
         _noter_contact(db, robot)
         return robot
-    flotte = settings.edge_agent_api_key
+    flotte = settings.cle_de_flotte_du_runtime
     if not flotte:
-        raise HTTPException(503, "Aucune clé d'agent émise pour ce robot")
+        raise HTTPException(503, "Aucune clé du runtime émise pour ce robot")
     if not hmac.compare_digest(cle, flotte):
-        raise HTTPException(401, "Clé agent embarqué invalide")
+        raise HTTPException(401, "Clé du runtime embarqué invalide")
     _noter_contact(db, robot)
     return robot
 
@@ -634,7 +657,7 @@ def runtime_bundle(reference: str, db: Session = Depends(get_db),
 @router.post("/runtime/robots/{reference}/bundle/report")
 def runtime_report(reference: str, body: DeploymentReportIn, db: Session = Depends(get_db),
                    cle: str = Depends(_cle_presentee)):
-    """Compte rendu de l'agent : appliqué, ou échoué avec sa raison."""
+    """Compte rendu du runtime embarqué : appliqué, ou échoué avec sa raison."""
     robot = _robot_authentifie(db, reference, cle)
     deployment = db.get(BundleDeployment, body.deployment_id)
     if not deployment or deployment.robot_id != robot.id:
@@ -697,7 +720,7 @@ def runtime_release(reference: str, version: str = "", db: Session = Depends(get
             "sha256": release.sha256,
             "taille": release.taille,
             "notes": release.notes,
-            "empreinte_signee": _empreinte_signee(release.sha256, robot.agent_key_hash or ""),
+            "empreinte_signee": _empreinte_signee(release.sha256, robot.machine_key_hash or ""),
         },
     }
 

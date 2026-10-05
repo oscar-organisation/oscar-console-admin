@@ -2,22 +2,232 @@
 
 Le Studio produit un document d'édition (positions des blocs, panneaux
 dépliés, sélection en cours). Le robot, lui, n'a que faire d'un plan : il lui
-faut la liste des services, de leurs agents et de leurs canaux. Ce module fait
+faut la liste des services, de leurs unités et de leurs canaux. Ce module fait
 la traduction, et c'est sur cette traduction - pas sur le document - que
 l'empreinte est calculée. Déplacer un bloc ne change donc pas la version qui
 tourne, alors que renommer un canal, si.
 
-Le format servi au robot est identifié par `RUNTIME_FORMAT` : l'agent embarqué
-refuse ce qu'il ne sait pas lire plutôt que de deviner.
+Le format servi au robot est identifié par `RUNTIME_FORMAT` : le runtime
+embarqué refuse ce qu'il ne sait pas lire plutôt que de deviner.
 """
 
 import hashlib
 import json
+import re
 from typing import Any
 
-RUNTIME_FORMAT = "oscar.bundle.runtime.v1"
+# v2 (05/10/2026) : le rôle hébergé par un service s'appelle « unité » et non
+# plus « agent ». Dans le manifeste, la liste d'un composant s'appelle donc
+# `unites` (v1 : `agents`), et ses codes disent UNITE là où ils disaient AGENT.
+# Un robot qui ne lit que la v1 refuse la v2 au lieu de la mal comprendre.
+RUNTIME_FORMAT = "oscar.bundle.runtime.v2"
 
 KIND_BUNDLE = "BUNDLE_DEPLOIEMENT"
+
+
+# --------------------------------------------------------------------------- #
+#  Lecture des compositions écrites avant le renommage « agent » -> « unité »
+# --------------------------------------------------------------------------- #
+# Depuis le 05/10/2026, « agent » est réservé à l'intelligence artificielle.
+# Les compositions enregistrées en base sont réécrites par la migration 0014,
+# mais une composition à l'ancien format peut encore arriver : brouillon gardé
+# dans un navigateur, script, préset copié d'une ancienne console. On sait donc
+# toujours la lire, et on n'écrit que le nouveau format.
+#
+# Pendant la transition, l'API sert aussi les clés de l'ancien format, pour
+# l'interface encore en ligne (décision 125, voir composition_servie) : ce qui
+# revient de l'une ou l'autre interface est remis au seul nouveau format.
+
+# Une suite de mots en majuscules et chiffres séparés par « _ » : la forme de
+# tous les codes du Studio (TYPE_UNITE_STANDARD, CANAL_EMISSION_01...).
+_FORME_D_UN_CODE = re.compile(r"[A-Z0-9]+(?:_[A-Z0-9]+)*")
+_MOTS_DES_CODES = {"AGENT": "UNITE", "AGENTS": "UNITES"}
+# Ni les identifiants (les poignées des liaisons s'y réfèrent) ni les textes
+# saisis par l'utilisateur ne sont des codes : on n'y touche pas.
+_CHAMPS_QUI_NE_SONT_PAS_DES_CODES = frozenset({"id", "name", "description"})
+
+
+def _renommer_cle(objet: dict, ancienne: str, nouvelle: str) -> dict:
+    """Copie de l'objet où `ancienne` s'appelle `nouvelle`, à la même place.
+
+    Si les deux clés sont là, la nouvelle est gardée et l'ancienne retirée :
+    le serveur n'écrit jamais l'ancien format (même règle que l'interface).
+    """
+    if ancienne not in objet:
+        return objet
+    if nouvelle in objet:
+        return {cle: valeur for cle, valeur in objet.items() if cle != ancienne}
+    return {(nouvelle if cle == ancienne else cle): valeur for cle, valeur in objet.items()}
+
+
+def _convertir_codes(valeur: Any) -> Any:
+    """Remplace le mot AGENT par UNITE (AGENTS par UNITES) dans chaque code.
+
+    Mot par mot, jamais au milieu d'un mot : TYPE_AGENT_STANDARD devient
+    TYPE_UNITE_STANDARD, mais un mot comme AGENTIQUE ne bouge pas.
+    """
+    if isinstance(valeur, str):
+        if not _FORME_D_UN_CODE.fullmatch(valeur):
+            return valeur
+        return "_".join(_MOTS_DES_CODES.get(mot, mot) for mot in valeur.split("_"))
+    if isinstance(valeur, list):
+        return [_convertir_codes(element) for element in valeur]
+    if isinstance(valeur, dict):
+        return {
+            cle: element if cle in _CHAMPS_QUI_NE_SONT_PAS_DES_CODES else _convertir_codes(element)
+            for cle, element in valeur.items()
+        }
+    return valeur
+
+
+def _unites_sans_copie(unites: list) -> list:
+    """Les unités d'une liste `units`, sans la copie `agentType` que l'API
+    sert à l'interface d'avant le renommage (décision 125, voir
+    composition_servie). Une unité qui n'a que `agentType` le voit renommé."""
+    return [_renommer_cle(unite, "agentType", "unitType") if isinstance(unite, dict) else unite
+            for unite in unites]
+
+
+def _depuis_la_liste_agents(agents: list) -> list:
+    """Les unités d'une liste `agents`, celle de l'ancienne interface.
+
+    Dans cette liste, c'est `agentType` qui fait foi : un `unitType` à côté
+    est la copie servie par l'API, que l'ancienne interface ne met pas à jour.
+    Les codes ne sont pas touchés ici (voir _bloc_au_nouveau_format).
+    """
+    unites = []
+    for agent in agents:
+        if isinstance(agent, dict) and "agentType" in agent:
+            agent = _renommer_cle({cle: valeur for cle, valeur in agent.items() if cle != "unitType"},
+                                  "agentType", "unitType")
+        unites.append(agent)
+    return unites
+
+
+def _bloc_au_nouveau_format(donnees: dict, unites_servies: list | None) -> tuple[dict, bool]:
+    """Le contenu d'un bloc au nouveau format, et s'il était à l'ancien.
+
+    Trois formes possibles :
+
+    - `agents` seul : le bloc vient de l'ancienne interface (ou d'avant la
+      migration). La liste devient `units`, et chaque code du bloc perd le mot
+      AGENT pour UNITE.
+    - `agents` et `units` : la forme double que l'API sert pendant la
+      transition (décision 125), renvoyée par une des deux interfaces. Chacune
+      ne modifie que sa liste et rend l'autre telle qu'elle l'a reçue. Si
+      `units` est restée exactement celle que l'API avait servie et que
+      `agents` a changé, c'est l'ancienne interface qui a travaillé : sa liste
+      fait foi. Dans tous les autres cas, `units` fait foi. `agents` est retirée.
+    - `units` seul : le nouveau format ; seule la copie `agentType` est retirée.
+    """
+    if "agents" in donnees and "units" not in donnees:
+        donnees = _renommer_cle(donnees, "agents", "units")
+        if isinstance(donnees["units"], list):
+            donnees = {**donnees, "units": _depuis_la_liste_agents(donnees["units"])}
+        return _convertir_codes(donnees), True
+
+    if "agents" in donnees:
+        unites, agents = donnees["units"], donnees["agents"]
+        if (isinstance(unites, list) and isinstance(agents, list) and unites_servies is not None
+                and _unites_sans_copie(unites) == unites_servies
+                and _depuis_la_liste_agents(agents) != unites_servies):
+            unites = _convertir_codes(_depuis_la_liste_agents(agents))
+        donnees = {cle: (unites if cle == "units" else valeur)
+                   for cle, valeur in donnees.items() if cle != "agents"}
+
+    unites = donnees.get("units")
+    if isinstance(unites, list) and any(isinstance(u, dict) and "agentType" in u for u in unites):
+        donnees = {**donnees, "units": _unites_sans_copie(unites)}
+    return donnees, False
+
+
+def _avec_donnees_converties(element: Any, convertir) -> Any:
+    """Bloc ou liaison dont seul le contenu (`data`) est converti."""
+    if not isinstance(element, dict) or not isinstance(element.get("data"), dict):
+        return element
+    return {**element, "data": convertir(element["data"])}
+
+
+def _unites_servies_par_bloc(reference: Any) -> dict:
+    """Pour chaque bloc de la composition enregistrée, la liste d'unités que
+    l'API a servie (sans les copies de compatibilité)."""
+    reference = convertir_composition(reference)
+    if not isinstance(reference, dict):
+        return {}
+    servies = {}
+    for noeud in _noeuds(reference):
+        unites = _donnees(noeud).get("units")
+        if isinstance(unites, list):
+            servies[noeud.get("id")] = unites
+    return servies
+
+
+def convertir_composition(spec: Any, reference: Any = None) -> Any:
+    """La composition au seul format « unité », sans modifier celle reçue.
+
+    C'est la seule fonction de conversion du serveur : tout ce que l'API
+    enregistre ou calcule passe par elle. Bloc par bloc (voir
+    _bloc_au_nouveau_format) :
+
+    - `data.agents` devient `data.units`, `agentType` devient `unitType`, et
+      dans un bloc à l'ancien format chaque code perd le mot AGENT pour UNITE :
+      INSTANCE_AGENT_CAMERA devient INSTANCE_UNITE_CAMERA,
+      TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT devient ..._CANAL_UNITE ;
+    - un bloc qui porte les deux listes n'en garde qu'une. `reference` est la
+      composition enregistrée, celle que l'API a servie au client : elle dit
+      laquelle des deux listes le client a modifiée.
+
+    Ne changent jamais : les identifiants (`id`, donc les poignées
+    `in:<unité>:<canal>` des liaisons), les noms et descriptions saisis, et ce
+    qui n'a pas la forme attendue (pas un objet, liste absente). Une
+    composition déjà au seul nouveau format ressort telle quelle : le mot
+    AGENT y garde son sens d'intelligence artificielle.
+    """
+    if not isinstance(spec, dict) or not isinstance(spec.get("nodes"), list):
+        return spec
+    servies = _unites_servies_par_bloc(reference) if reference is not None else {}
+    noeuds, ancienne, changee = [], False, False
+    for noeud in spec["nodes"]:
+        if isinstance(noeud, dict) and isinstance(noeud.get("data"), dict):
+            donnees, etait_ancien = _bloc_au_nouveau_format(noeud["data"], servies.get(noeud.get("id")))
+            ancienne = ancienne or etait_ancien
+            if donnees is not noeud["data"]:
+                noeud, changee = {**noeud, "data": donnees}, True
+        noeuds.append(noeud)
+    if not changee:
+        return spec
+    resultat = {**spec, "nodes": noeuds}
+    if ancienne and isinstance(spec.get("edges"), list):
+        resultat["edges"] = [_avec_donnees_converties(lien, _convertir_codes) for lien in spec["edges"]]
+    return resultat
+
+
+def composition_servie(spec: Any) -> Any:
+    """La composition telle que l'API la sert : le nouveau format, plus les
+    clés que lit l'interface d'avant le renommage.
+
+    Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+    retirer par une prochaine modification de l'API, une fois l'interface
+    passée. L'API et l'interface sont mises en ligne en même temps, sans ordre :
+    l'interface encore en ligne lit `node.data.agents` (et plante sans elle) et
+    `agentType`. Chaque bloc qui a `units` porte donc aussi `agents`, la même
+    liste, et chaque unité porte aussi `agentType`, la valeur de `unitType`.
+    Les codes restent au nouveau format. Ce qui revient est remis au seul
+    nouveau format par convertir_composition.
+    """
+    spec = convertir_composition(spec)
+    if not isinstance(spec, dict) or not isinstance(spec.get("nodes"), list):
+        return spec
+    noeuds = []
+    for noeud in spec["nodes"]:
+        donnees = noeud.get("data") if isinstance(noeud, dict) else None
+        if isinstance(donnees, dict) and isinstance(donnees.get("units"), list):
+            unites = [{**unite, "agentType": unite["unitType"]}
+                      if isinstance(unite, dict) and "unitType" in unite else unite
+                      for unite in donnees["units"]]
+            noeud = {**noeud, "data": {**donnees, "units": unites, "agents": unites}}
+        noeuds.append(noeud)
+    return {**spec, "nodes": noeuds}
 
 
 def _noeuds(spec: dict) -> list[dict]:
@@ -35,31 +245,31 @@ def _donnees(noeud: dict) -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def _agents(noeud: dict) -> list[dict]:
-    agents = _donnees(noeud).get("agents")
-    return [a for a in agents if isinstance(a, dict)] if isinstance(agents, list) else []
+def _unites(noeud: dict) -> list[dict]:
+    unites = _donnees(noeud).get("units")
+    return [u for u in unites if isinstance(u, dict)] if isinstance(unites, list) else []
 
 
-def _canaux(agent: dict, champ: str) -> list[dict]:
-    canaux = agent.get(champ)
+def _canaux(unite: dict, champ: str) -> list[dict]:
+    canaux = unite.get(champ)
     return [c for c in canaux if isinstance(c, dict)] if isinstance(canaux, list) else []
 
 
 def _canal_par_poignee(spec: dict, noeud_id: Any, poignee: Any) -> dict | None:
-    """Retrouve un canal depuis une poignée `in:<agent>:<canal>` / `out:...`."""
+    """Retrouve un canal depuis une poignée `in:<unité>:<canal>` / `out:...`."""
     if not isinstance(poignee, str) or not isinstance(noeud_id, str):
         return None
     morceaux = poignee.split(":")
     if len(morceaux) != 3:
         return None
-    _, agent_id, canal_id = morceaux
+    _, unite_id, canal_id = morceaux
     for noeud in _noeuds(spec):
         if noeud.get("id") != noeud_id:
             continue
-        for agent in _agents(noeud):
-            if agent.get("id") != agent_id:
+        for unite in _unites(noeud):
+            if unite.get("id") != unite_id:
                 continue
-            for canal in _canaux(agent, "inputs") + _canaux(agent, "outputs"):
+            for canal in _canaux(unite, "inputs") + _canaux(unite, "outputs"):
                 if canal.get("id") == canal_id:
                     return canal
     return None
@@ -76,6 +286,7 @@ def valider_specification(spec: dict) -> tuple[list[str], list[str]]:
     erreurs: list[str] = []
     avertissements: list[str] = []
 
+    spec = convertir_composition(spec)
     if not isinstance(spec, dict):
         return ["La composition doit être un objet."], []
 
@@ -97,22 +308,22 @@ def valider_specification(spec: dict) -> tuple[list[str], list[str]]:
             erreurs.append(f"Un bloc « {donnees.get('name') or noeud.get('id')} » n'a pas d'identifiant technique.")
         else:
             codes[code] = codes.get(code, 0) + 1
-        agents = _agents(noeud)
-        # Un composant qui ne fait que reveiller le chassis n'a pas d'agent, et
+        unites = _unites(noeud)
+        # Un composant qui ne fait que reveiller le chassis n'a pas d'unite, et
         # c'est normal : le signaler en permanence apprendrait a ignorer les
         # avertissements.
-        if donnees.get("kind") != KIND_BUNDLE and not agents and not donnees.get("bringupKey"):
-            avertissements.append(f"{donnees.get('name') or code} ne contient aucun agent.")
-        for agent in agents:
-            code_agent = agent.get("technicalCode")
-            if not code_agent:
-                erreurs.append(f"Un agent de « {donnees.get('name') or code} » n'a pas d'identifiant technique.")
+        if donnees.get("kind") != KIND_BUNDLE and not unites and not donnees.get("bringupKey"):
+            avertissements.append(f"{donnees.get('name') or code} ne contient aucune unité.")
+        for unite in unites:
+            code_unite = unite.get("technicalCode")
+            if not code_unite:
+                erreurs.append(f"Une unité de « {donnees.get('name') or code} » n'a pas d'identifiant technique.")
             else:
-                codes[code_agent] = codes.get(code_agent, 0) + 1
-            for canal in _canaux(agent, "inputs") + _canaux(agent, "outputs"):
+                codes[code_unite] = codes.get(code_unite, 0) + 1
+            for canal in _canaux(unite, "inputs") + _canaux(unite, "outputs"):
                 code_canal = canal.get("technicalCode")
                 if not code_canal:
-                    erreurs.append(f"Un canal de « {agent.get('name') or code_agent} » n'a pas d'identifiant technique.")
+                    erreurs.append(f"Un canal de « {unite.get('name') or code_unite} » n'a pas d'identifiant technique.")
                 else:
                     codes[code_canal] = codes.get(code_canal, 0) + 1
 
@@ -154,6 +365,7 @@ def boites_ia(spec: dict) -> list[str]:
 
 def manifeste_runtime(spec: dict) -> dict:
     """Projette la composition en manifeste exécutable, trié et sans mise en page."""
+    spec = convertir_composition(spec)
     noeuds = _noeuds(spec)
     bundle = next((n for n in noeuds if _donnees(n).get("kind") == KIND_BUNDLE), None)
     donnees_bundle = _donnees(bundle) if bundle else {}
@@ -163,26 +375,26 @@ def manifeste_runtime(spec: dict) -> dict:
         donnees = _donnees(noeud)
         if donnees.get("kind") == KIND_BUNDLE:
             continue
-        agents = []
-        for agent in _agents(noeud):
-            agents.append({
-                "code": agent.get("technicalCode"),
-                "nom": agent.get("name"),
-                "type": agent.get("agentType"),
-                "traitement": agent.get("processingName"),
-                "interface": agent.get("interfaceName"),
-                "bande_donnees": agent.get("dataBandName"),
-                "bus_reception": agent.get("receiveBusName"),
-                "bus_emission": agent.get("sendBusName"),
-                "publie_audio": bool(agent.get("canPublishAudio")),
-                "publie_video": bool(agent.get("canPublishVideo")),
+        unites = []
+        for unite in _unites(noeud):
+            unites.append({
+                "code": unite.get("technicalCode"),
+                "nom": unite.get("name"),
+                "type": unite.get("unitType"),
+                "traitement": unite.get("processingName"),
+                "interface": unite.get("interfaceName"),
+                "bande_donnees": unite.get("dataBandName"),
+                "bus_reception": unite.get("receiveBusName"),
+                "bus_emission": unite.get("sendBusName"),
+                "publie_audio": bool(unite.get("canPublishAudio")),
+                "publie_video": bool(unite.get("canPublishVideo")),
                 "entrees": sorted(
                     ({
                         "code": canal.get("technicalCode"),
                         "nom": canal.get("name"),
                         "type": canal.get("channelType"),
                         "format": canal.get("dataFormat"),
-                    } for canal in _canaux(agent, "inputs")),
+                    } for canal in _canaux(unite, "inputs")),
                     key=lambda canal: canal["code"] or "",
                 ),
                 "sorties": sorted(
@@ -191,7 +403,7 @@ def manifeste_runtime(spec: dict) -> dict:
                         "nom": canal.get("name"),
                         "type": canal.get("channelType"),
                         "format": canal.get("dataFormat"),
-                    } for canal in _canaux(agent, "outputs")),
+                    } for canal in _canaux(unite, "outputs")),
                     key=lambda canal: canal["code"] or "",
                 ),
             })
@@ -200,7 +412,7 @@ def manifeste_runtime(spec: dict) -> dict:
             "nom": donnees.get("name"),
             "kind": donnees.get("kind"),
             "cible": donnees.get("target"),
-            "agents": sorted(agents, key=lambda agent: agent["code"] or ""),
+            "unites": sorted(unites, key=lambda unite: unite["code"] or ""),
         }
         if donnees.get("aiBoxId"):
             composant["box_ia"] = donnees["aiBoxId"]

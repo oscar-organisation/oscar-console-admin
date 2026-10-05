@@ -9,7 +9,7 @@ import uuid
 
 import pytest
 
-CLE_AGENT = {"X-Oscar-Agent-Key": "test-edge-agent-key"}
+CLE_DE_FLOTTE = {"X-Oscar-Machine-Key": "test-cle-de-flotte-du-runtime"}
 
 
 def uniq(prefixe: str) -> str:
@@ -17,24 +17,24 @@ def uniq(prefixe: str) -> str:
 
 
 def spec(code_canal_sortie: str = "CANAL_EMISSION_ETAT") -> dict:
-    """Composition minimale valide : un bundle, un service, un agent, deux canaux."""
+    """Composition minimale valide : un bundle, un service, une unité, deux canaux."""
     return {
         "nodes": [
             {"id": "b1", "position": {"x": 0, "y": 0}, "data": {
                 "kind": "BUNDLE_DEPLOIEMENT", "name": "Bundle test",
                 "technicalCode": "BUNDLE_DEPLOIEMENT_TEST",
-                "target": "ENVIRONNEMENT_EXECUTION_ROBOT", "agents": [],
+                "target": "ENVIRONNEMENT_EXECUTION_ROBOT", "units": [],
             }},
             {"id": "s1", "position": {"x": 400, "y": 0}, "data": {
                 "kind": "INSTANCE_SERVICE", "name": "Service test",
                 "technicalCode": "INSTANCE_SERVICE_TEST",
                 "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
-                "agents": [{
-                    "id": "a1", "name": "Agent test",
-                    "technicalCode": "INSTANCE_AGENT_TEST",
-                    "agentType": "TYPE_AGENT_STANDARD",
-                    "processingName": "TRAITEMENT_METIER_AGENT_PRINCIPAL",
-                    "interfaceName": "INTERFACE_COMMUNICATION_AGENT_PRINCIPALE",
+                "units": [{
+                    "id": "a1", "name": "Unité test",
+                    "technicalCode": "INSTANCE_UNITE_TEST",
+                    "unitType": "TYPE_UNITE_STANDARD",
+                    "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+                    "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
                     "dataBandName": "BANDE_DONNEES_PRINCIPALE",
                     "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
                     "sendBusName": "BUS_EMISSION_PRINCIPAL",
@@ -48,7 +48,7 @@ def spec(code_canal_sortie: str = "CANAL_EMISSION_ETAT") -> dict:
                     "outputs": [{
                         "id": "tx1", "name": "État", "direction": "EMISSION",
                         "technicalCode": code_canal_sortie,
-                        "channelType": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT",
+                        "channelType": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
                         "dataFormat": "OBJET_JSON",
                     }],
                 }],
@@ -83,7 +83,7 @@ def _publier(client, contexte, composition=None):
 
 
 def test_un_robot_recoit_un_identifiant_terrain(client, contexte):
-    """L'agent embarqué ne connaît pas les UUID : il lui faut un slug."""
+    """Le runtime embarqué ne connaît pas les UUID : il lui faut un slug."""
     robot = contexte["robot"]
     assert robot["slug"]
     assert robot["slug"] == robot["slug"].lower()
@@ -175,11 +175,11 @@ def test_le_robot_tire_son_manifeste_puis_rend_compte(client, contexte):
     client.post("/api/studio/deployments", headers=contexte["entetes"],
                 json={"version_id": version["id"], "robot_ids": [robot["id"]]})
 
-    # L'agent s'adresse au robot par son slug, jamais par son UUID.
-    r = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle", headers=CLE_AGENT)
+    # Le runtime embarqué s'adresse au robot par son slug, jamais par son UUID.
+    r = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle", headers=CLE_DE_FLOTTE)
     assert r.status_code == 200, r.text
     charge = r.json()
-    assert charge["format"] == "oscar.bundle.runtime.v1"
+    assert charge["format"] == "oscar.bundle.runtime.v2"
     assert charge["deployment"]["statut"] == "delivered"
     assert charge["deployment"]["checksum"] == version["checksum"]
     codes = [composant["code"] for composant in charge["manifest"]["composants"]]
@@ -188,7 +188,7 @@ def test_le_robot_tire_son_manifeste_puis_rend_compte(client, contexte):
     assert "position" not in str(charge["manifest"])
 
     rapport = client.post(
-        f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_AGENT,
+        f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_DE_FLOTTE,
         json={"deployment_id": charge["deployment"]["id"], "statut": "active",
               "checksum": charge["deployment"]["checksum"], "report": {"conteneurs": 1}},
     )
@@ -206,10 +206,10 @@ def test_un_compte_rendu_dempreinte_inattendue_est_un_echec(client, contexte):
     client.post("/api/studio/deployments", headers=contexte["entetes"],
                 json={"version_id": version["id"], "robot_ids": [robot["id"]]})
     charge = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                        headers=CLE_AGENT).json()
+                        headers=CLE_DE_FLOTTE).json()
 
     r = client.post(
-        f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_AGENT,
+        f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_DE_FLOTTE,
         json={"deployment_id": charge["deployment"]["id"], "statut": "active",
               "checksum": "0" * 64},
     )
@@ -219,11 +219,11 @@ def test_un_compte_rendu_dempreinte_inattendue_est_un_echec(client, contexte):
     assert ligne["statut"] == "failed"
 
 
-def test_lagent_sans_cle_nobtient_rien(client, contexte):
+def test_la_machine_sans_cle_nobtient_rien(client, contexte):
     robot = contexte["robot"]
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle").status_code == 401
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers={"X-Oscar-Agent-Key": "mauvaise-cle"}).status_code == 401
+                      headers={"X-Oscar-Machine-Key": "mauvaise-cle"}).status_code == 401
 
 
 def test_un_bundle_dune_autre_organisation_reste_invisible(client, admin_headers, contexte):
@@ -263,13 +263,13 @@ def test_configuration_preparee_nest_pas_execution_active(client, contexte):
     robot = contexte["robot"]
     deployment = client.post("/api/studio/deployments", headers=contexte["entetes"],
         json={"version_id": version["id"], "robot_ids": [robot["id"]]}).json()[0]
-    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_AGENT,
+    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_DE_FLOTTE,
         json={"deployment_id": deployment["id"], "statut": "prepared", "checksum": version["checksum"]})
     assert r.status_code == 200, r.text
     actuel = client.get(f"/api/studio/deployments?robot_id={robot['id']}", headers=contexte["entetes"]).json()[0]
     assert actuel["statut"] == "prepared"
     assert actuel["applied_at"] is None
-    desired = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle", headers=CLE_AGENT).json()
+    desired = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle", headers=CLE_DE_FLOTTE).json()
     assert desired["deployment"]["id"] == deployment["id"]
 
 
@@ -279,7 +279,7 @@ def test_un_rapport_ne_ressuscite_pas_un_deploiement_remplace(client, contexte):
     body = {"version_id": version["id"], "robot_ids": [robot["id"]]}
     ancien = client.post("/api/studio/deployments", headers=contexte["entetes"], json=body).json()[0]
     client.post("/api/studio/deployments", headers=contexte["entetes"], json=body)
-    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_AGENT,
+    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_DE_FLOTTE,
         json={"deployment_id": ancien["id"], "statut": "active", "checksum": version["checksum"]})
     assert r.status_code == 409
 
@@ -289,7 +289,7 @@ def test_un_rapport_sans_empreinte_est_refuse(client, contexte):
     robot = contexte["robot"]
     deployment = client.post("/api/studio/deployments", headers=contexte["entetes"],
         json={"version_id": version["id"], "robot_ids": [robot["id"]]}).json()[0]
-    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_AGENT,
+    r = client.post(f"/api/studio/runtime/robots/{robot['slug']}/bundle/report", headers=CLE_DE_FLOTTE,
         json={"deployment_id": deployment["id"], "statut": "active"})
     assert r.status_code == 409
 
@@ -318,12 +318,12 @@ def test_structure_malformee_refusee_sans_erreur_serveur(client, contexte):
 
 
 # --------------------------------------------------------------------------- #
-#  Clés d'agent propres à chaque robot
+#  Clés de machine propres à chaque robot
 # --------------------------------------------------------------------------- #
 def _emettre_cle(client, entetes, robot_id):
-    r = client.post(f"/api/robots/{robot_id}/agent-key", headers=entetes)
+    r = client.post(f"/api/robots/{robot_id}/machine-key", headers=entetes)
     assert r.status_code == 200, r.text
-    return r.json()["agent_key"]
+    return r.json()["machine_key"]
 
 
 def test_la_cle_dun_robot_ne_vaut_que_pour_lui(client, admin_headers, contexte):
@@ -335,11 +335,11 @@ def test_la_cle_dun_robot_ne_vaut_que_pour_lui(client, admin_headers, contexte):
     _emettre_cle(client, contexte["entetes"], cible["id"])
 
     r = client.get(f"/api/studio/runtime/robots/{cible['slug']}/bundle",
-                   headers={"X-Oscar-Agent-Key": cle_voisin})
+                   headers={"X-Oscar-Machine-Key": cle_voisin})
     assert r.status_code == 401
 
     r = client.get(f"/api/studio/runtime/robots/{voisin['slug']}/bundle",
-                   headers={"X-Oscar-Agent-Key": cle_voisin})
+                   headers={"X-Oscar-Machine-Key": cle_voisin})
     assert r.status_code == 200
 
 
@@ -347,13 +347,13 @@ def test_une_cle_emise_rend_la_cle_de_flotte_inoperante(client, contexte):
     """La transition s'arrête pour un robot dès qu'il a la sienne."""
     robot = contexte["robot"]
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers=CLE_AGENT).status_code == 200  # cle de flotte, encore acceptee
+                      headers=CLE_DE_FLOTTE).status_code == 200  # cle de flotte, encore acceptee
 
     cle = _emettre_cle(client, contexte["entetes"], robot["id"])
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers=CLE_AGENT).status_code == 401
+                      headers=CLE_DE_FLOTTE).status_code == 401
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers={"X-Oscar-Agent-Key": cle}).status_code == 200
+                      headers={"X-Oscar-Machine-Key": cle}).status_code == 200
 
 
 def test_reemettre_revoque_la_cle_precedente(client, contexte):
@@ -362,9 +362,9 @@ def test_reemettre_revoque_la_cle_precedente(client, contexte):
     nouvelle = _emettre_cle(client, contexte["entetes"], robot["id"])
     assert ancienne != nouvelle
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers={"X-Oscar-Agent-Key": ancienne}).status_code == 401
+                      headers={"X-Oscar-Machine-Key": ancienne}).status_code == 401
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers={"X-Oscar-Agent-Key": nouvelle}).status_code == 200
+                      headers={"X-Oscar-Machine-Key": nouvelle}).status_code == 200
 
 
 def test_sans_cle_aucune_resolution_de_robot(client, contexte):
@@ -382,14 +382,14 @@ def test_la_cle_nest_jamais_relisible(client, contexte):
     detail = client.get(f"/api/robots/{robot['id']}", headers=contexte["entetes"])
     assert detail.status_code == 200
     assert cle not in detail.text
-    assert "agent_key" not in detail.json()
+    assert "machine_key" not in detail.json()
 
 
 def test_un_robot_dune_autre_organisation_ne_recoit_pas_de_cle(client, admin_headers, contexte):
     voisine = client.post("/api/organisations", headers=admin_headers,
                           json={"nom": uniq("Voisine"), "slug": uniq("voisine")}).json()
     entetes_voisins = {**admin_headers, "X-Organization-ID": voisine["id"]}
-    r = client.post(f"/api/robots/{contexte['robot']['id']}/agent-key", headers=entetes_voisins)
+    r = client.post(f"/api/robots/{contexte['robot']['id']}/machine-key", headers=entetes_voisins)
     assert r.status_code == 404
 
 
@@ -406,7 +406,7 @@ def test_lenrolement_livre_les_deux_identites_du_runtime(client, contexte):
     identites = {chemin: contenu["livekit"]["identity"] for chemin, contenu in fichiers.items()}
     assert len(set(identites.values())) == 2
     salles = {contenu["livekit"]["roomName"] for contenu in fichiers.values()}
-    assert len(salles) == 1  # meme room, sinon les deux agents ne se rejoignent pas
+    assert len(salles) == 1  # meme room, sinon les deux participants ne se rejoignent pas
     for contenu in fichiers.values():
         for cle in ("serverUrl", "roomName", "identity", "token"):
             assert contenu["livekit"][cle]
@@ -428,7 +428,7 @@ def test_un_composant_peut_declarer_une_mise_en_route(client, contexte):
         "data": {"kind": "INSTANCE_SERVICE", "name": "Pilotage bas niveau",
                  "technicalCode": "INSTANCE_SERVICE_PILOTAGE_BAS_NIVEAU",
                  "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
-                 "bringupKey": "base", "bringupOrder": 10, "agents": []},
+                 "bringupKey": "base", "bringupOrder": 10, "units": []},
     })
     bundle_id = contexte["bundle"]["id"]
     client.put(f"/api/studio/bundles/{bundle_id}/draft", headers=contexte["entetes"],
@@ -443,7 +443,7 @@ def test_un_composant_peut_declarer_une_mise_en_route(client, contexte):
     assert besoins == {"INSTANCE_SERVICE_PILOTAGE_BAS_NIVEAU": ("base", 10)}
 
 
-def test_le_contact_de_l_agent_alimente_la_presence(client, contexte):
+def test_le_contact_du_runtime_alimente_la_presence(client, contexte):
     """La pastille affichait « online » pour un robot hors tension.
 
     Elle lisait une colonne posée à la création et jamais réécrite. Le robot
@@ -460,7 +460,7 @@ def test_le_contact_de_l_agent_alimente_la_presence(client, contexte):
     assert fiche["vu_le"] is None
 
     assert client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                      headers=CLE_AGENT).status_code == 200
+                      headers=CLE_DE_FLOTTE).status_code == 200
 
     fiche = client.get(f"/api/robots/{robot['id']}", headers=contexte["entetes"]).json()
     assert fiche["statut"] == "online"
@@ -475,7 +475,7 @@ def test_une_cle_refusee_ne_fait_pas_paraitre_le_robot_en_ligne(client, contexte
                         json={"nom": uniq("OSCAR"), "org_id": contexte["org"]["id"]}).json()
 
     refus = client.get(f"/api/studio/runtime/robots/{robot['slug']}/bundle",
-                       headers={"X-Agent-Key": "mauvaise-cle"})
+                       headers={"X-Oscar-Machine-Key": "mauvaise-cle"})
     assert refus.status_code == 401
 
     fiche = client.get(f"/api/robots/{robot['id']}", headers=contexte["entetes"]).json()

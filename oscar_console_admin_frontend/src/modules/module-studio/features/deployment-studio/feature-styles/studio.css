@@ -343,10 +343,10 @@
 .studio-scope .project-tree__caption { margin: 0 7px 10px; color: #8b96a7; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
 .studio-scope .tree-node { margin-bottom: 6px; }
 .studio-scope .tree-node button { border: 0; cursor: pointer; }
-.studio-scope .tree-node > button, .studio-scope .tree-agent > button { display: flex; align-items: center; gap: 5px; width: 100%; padding: 7px 6px; text-align: left; border-radius: 7px; background: transparent; font-size: 10px; }
+.studio-scope .tree-node > button, .studio-scope .tree-unit > button { display: flex; align-items: center; gap: 5px; width: 100%; padding: 7px 6px; text-align: left; border-radius: 7px; background: transparent; font-size: 10px; }
 .studio-scope .tree-node button:hover, .studio-scope .tree-node button.is-selected { color: var(--blue); background: #eef3ff; }
 .studio-scope .tree-node button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.studio-scope .tree-agent { margin-left: 17px; }
+.studio-scope .tree-unit { margin-left: 17px; }
 .studio-scope .tree-generated { display: flex; margin: 0 0 4px 13px; padding-left: 10px; flex-direction: column; border-left: 1px solid #dfe5ef; }
 .studio-scope .tree-generated > span { display: flex; align-items: center; gap: 3px; padding: 3px 0; color: #7d899a; font-size: 8.5px; }
 .studio-scope .tree-generated .tree-bus { color: #58667d; font-weight: 600; }
@@ -384,18 +384,18 @@
 .studio-scope .structure-handle { width: 11px !important; height: 11px !important; border: 2px solid white !important; background: #a1acbd !important; }
 .studio-scope .structure-handle--input { left: -6px !important; }
 .studio-scope .structure-handle--output { right: -6px !important; background: var(--violet) !important; }
-.studio-scope .agent-list { padding: 9px; }
-.studio-scope .agent-card { overflow: visible; margin-bottom: 8px; border: 1px solid #dfe5ee; border-radius: 10px; background: #fbfcfe; cursor: pointer; }
-.studio-scope .agent-card:hover { border-color: #c6d1e5; }
-.studio-scope .agent-card__header { display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 6px 8px; }
-.studio-scope .agent-card__icon { display: grid; place-items: center; width: 25px; height: 25px; color: #b36c12; border-radius: 7px; background: #fff0d2; }
-.studio-scope .agent-card__title { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-.studio-scope .agent-card__title strong { overflow: hidden; font-size: 9.5px; text-overflow: ellipsis; white-space: nowrap; }
-.studio-scope .agent-card__title code { overflow: hidden; margin-top: 2px; color: #929cad; font: 500 6.8px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
-.studio-scope .agent-card__media { display: flex; gap: 4px; color: #6c7a90; }
-.studio-scope .agent-scaffold { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 8px 7px; }
-.studio-scope .agent-scaffold > div { display: flex; align-items: center; gap: 3px; min-width: 0; padding: 4px 5px; color: #788497; border-radius: 5px; background: #eef2f7; }
-.studio-scope .agent-scaffold span { overflow: hidden; font-size: 6.4px; text-overflow: ellipsis; white-space: nowrap; }
+.studio-scope .unit-list { padding: 9px; }
+.studio-scope .unit-card { overflow: visible; margin-bottom: 8px; border: 1px solid #dfe5ee; border-radius: 10px; background: #fbfcfe; cursor: pointer; }
+.studio-scope .unit-card:hover { border-color: #c6d1e5; }
+.studio-scope .unit-card__header { display: flex; align-items: center; gap: 6px; min-height: 38px; padding: 6px 8px; }
+.studio-scope .unit-card__icon { display: grid; place-items: center; width: 25px; height: 25px; color: #b36c12; border-radius: 7px; background: #fff0d2; }
+.studio-scope .unit-card__title { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.studio-scope .unit-card__title strong { overflow: hidden; font-size: 9.5px; text-overflow: ellipsis; white-space: nowrap; }
+.studio-scope .unit-card__title code { overflow: hidden; margin-top: 2px; color: #929cad; font: 500 6.8px/1.2 ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.studio-scope .unit-card__media { display: flex; gap: 4px; color: #6c7a90; }
+.studio-scope .unit-scaffold { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 0 8px 7px; }
+.studio-scope .unit-scaffold > div { display: flex; align-items: center; gap: 3px; min-width: 0; padding: 4px 5px; color: #788497; border-radius: 5px; background: #eef2f7; }
+.studio-scope .unit-scaffold span { overflow: hidden; font-size: 6.4px; text-overflow: ellipsis; white-space: nowrap; }
 .studio-scope .bus-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #e5e9f0; }
 .studio-scope .bus-column { min-width: 0; padding: 7px 8px 8px; }
 .studio-scope .bus-column:first-child { border-right: 1px solid #e5e9f0; }
@@ -413,9 +413,9 @@
 .studio-scope .channel-handle--input { left: -13px !important; background: var(--green) !important; }
 .studio-scope .channel-handle--output { right: -13px !important; background: var(--rose) !important; }
 .studio-scope .empty-port { display: block; padding: 7px 2px; color: #a1aaba; font-size: 7px; font-style: italic; }
-.studio-scope .agent-empty { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 64px; margin-bottom: 7px; color: #8b96a8; border: 1px dashed #cad3e0; border-radius: 9px; background: #fafbfd; font-size: 8.5px; }
-.studio-scope .add-agent-button { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 30px; color: var(--blue); border: 1px dashed #aebfeb; border-radius: 8px; background: #f5f7ff; font-size: 8.5px; font-weight: 700; cursor: pointer; }
-.studio-scope .add-agent-button:hover { border-style: solid; background: #edf2ff; }
+.studio-scope .unit-empty { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 64px; margin-bottom: 7px; color: #8b96a8; border: 1px dashed #cad3e0; border-radius: 9px; background: #fafbfd; font-size: 8.5px; }
+.studio-scope .add-unit-button { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 30px; color: var(--blue); border: 1px dashed #aebfeb; border-radius: 8px; background: #f5f7ff; font-size: 8.5px; font-weight: 700; cursor: pointer; }
+.studio-scope .add-unit-button:hover { border-style: solid; background: #edf2ff; }
 /* Inspecteur */
 .studio-scope .inspector { position: relative; z-index: 5; min-height: 0; overflow: auto; border-left: 1px solid #dce2ec; background: white; }
 .studio-scope .inspector__header { position: sticky; z-index: 2; top: 0; display: flex; align-items: center; justify-content: space-between; height: 57px; padding: 0 13px 0 15px; border-bottom: 1px solid #e5e9f0; background: white; }
@@ -643,9 +643,9 @@
 .studio-scope .architecture-node__meta code,
 .studio-scope .architecture-node__meta span,
 .studio-scope .architecture-node__description,
-.studio-scope .agent-card__title code,
-.studio-scope .agent-card__media,
-.studio-scope .agent-scaffold > div,
+.studio-scope .unit-card__title code,
+.studio-scope .unit-card__media,
+.studio-scope .unit-scaffold > div,
 .studio-scope .bus-title,
 .studio-scope .channel-copy small,
 .studio-scope .empty-port,
@@ -694,7 +694,7 @@
 .studio-scope .project-dialog,
 .studio-scope .publish-dialog,
 .studio-scope .architecture-node,
-.studio-scope .agent-card,
+.studio-scope .unit-card,
 .studio-scope .channel-row {
   color: var(--shell-text);
   border-color: var(--shell-line);
@@ -703,7 +703,7 @@
 }
 .studio-scope .project-card:hover,
 .studio-scope .palette-card:hover,
-.studio-scope .agent-card:hover,
+.studio-scope .unit-card:hover,
 .studio-scope .channel-row:hover {
   border-color: var(--shell-line-strong);
   box-shadow: var(--shadow-md);
@@ -957,8 +957,8 @@
 .studio-scope .architecture-node__meta code,
 .studio-scope .architecture-node__meta span,
 .studio-scope .architecture-node__description,
-.studio-scope .agent-card__title code,
-.studio-scope .agent-card__media,
+.studio-scope .unit-card__title code,
+.studio-scope .unit-card__media,
 .studio-scope .bus-title,
 .studio-scope .channel-copy small,
 .studio-scope .empty-port {
@@ -968,12 +968,12 @@
   border-color: var(--shell-line-strong);
   background: rgba(255,255,255,.035);
 }
-.studio-scope .agent-card {
+.studio-scope .unit-card {
   border-color: var(--shell-line-strong);
   background: rgba(255,255,255,.028);
 }
-.studio-scope .agent-card__icon { color: var(--shell-amber); background: var(--shell-amber-soft); }
-.studio-scope .agent-scaffold > div {
+.studio-scope .unit-card__icon { color: var(--shell-amber); background: var(--shell-amber-soft); }
+.studio-scope .unit-scaffold > div {
   color: var(--studio-microcopy);
   background: rgba(255,255,255,.06);
 }
@@ -984,9 +984,9 @@
 .studio-scope .bus-grid,
 .studio-scope .bus-column:first-child { border-color: var(--shell-line-strong); }
 .studio-scope .channel-row { background: var(--shell-surface); }
-.studio-scope .agent-empty { color: var(--studio-microcopy-quiet); border-color: var(--shell-line-strong); background: rgba(255,255,255,.025); }
-.studio-scope .add-agent-button { color: var(--shell-blue-strong); border-color: var(--shell-blue-border); background: var(--shell-blue-soft); }
-.studio-scope .add-agent-button:hover { background: rgba(216,88,16,.18); }
+.studio-scope .unit-empty { color: var(--studio-microcopy-quiet); border-color: var(--shell-line-strong); background: rgba(255,255,255,.025); }
+.studio-scope .add-unit-button { color: var(--shell-blue-strong); border-color: var(--shell-blue-border); background: var(--shell-blue-soft); }
+.studio-scope .add-unit-button:hover { background: rgba(216,88,16,.18); }
 
 .studio-scope .inspector__footer { border-color: var(--shell-line); background: rgba(16,21,27,.95); }
 .studio-scope .inspector-empty__icon { color: var(--shell-muted); background: rgba(255,255,255,.035); }

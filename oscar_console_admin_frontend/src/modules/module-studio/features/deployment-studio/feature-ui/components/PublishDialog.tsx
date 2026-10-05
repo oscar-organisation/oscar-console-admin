@@ -57,7 +57,7 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
   const [versementOuvert, setVersementOuvert] = useState(false);
   const [verse, setVerse] = useState<string | null>(null);
   const [famillesConnues, setFamillesConnues] = useState<string[]>([]);
-  const modulesPoses = project.nodes.reduce((somme, noeud) => somme + noeud.data.agents.length, 0);
+  const unitesPosees = project.nodes.reduce((somme, noeud) => somme + noeud.data.units.length, 0);
 
   useEffect(() => {
     if (!maintientLeCatalogue) return;
@@ -91,7 +91,7 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
 
   // Les états sont ceux du protocole réel : la demande est d'abord en attente,
   // puis livrée au robot, puis confirmée par son runtime. Aucun pourcentage
-  // artificiel n'est inventé entre deux comptes rendus de l'agent embarqué.
+  // artificiel n'est inventé entre deux comptes rendus du runtime embarqué.
   useEffect(() => {
     const bundleId = project.bundleId;
     if (etape !== 'TERMINE' || !bundleId || !suiviActif || !identifiantsDeploiements) return;
@@ -230,7 +230,7 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
             <span>
               <small>Composants</small>
               <strong>
-                {project.nodes.length} bloc{project.nodes.length > 1 ? 's' : ''} · {modulesPoses} module{modulesPoses > 1 ? 's' : ''}
+                {project.nodes.length} bloc{project.nodes.length > 1 ? 's' : ''} · {unitesPosees} unité{unitesPosees > 1 ? 's' : ''}
               </strong>
             </span>
           </div>

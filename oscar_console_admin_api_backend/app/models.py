@@ -331,21 +331,23 @@ class Robot(Base, TimestampMixin):
     org_id: Mapped[str | None] = mapped_column(ForeignKey("organisations.id", ondelete="SET NULL"))
     site_id: Mapped[str | None] = mapped_column(ForeignKey("sites.id", ondelete="SET NULL"))
     nom: Mapped[str] = mapped_column(String(80), nullable=False)  # OSCAR-01
-    # Identifiant lisible du robot cote terrain : c'est lui que l'agent embarque
-    # porte dans son enrolement et dans ses chemins d'installation, la ou l'UUID
-    # reste la cle interne. Deux identites pour deux usages, jamais melangees.
+    # Identifiant lisible du robot cote terrain : c'est lui que le runtime
+    # embarque porte dans son enrolement et dans ses chemins d'installation, la
+    # ou l'UUID reste la cle interne. Deux identites pour deux usages, jamais
+    # melangees.
     slug: Mapped[str | None] = mapped_column(String(64), unique=True)
-    # Cle d'agent propre a ce robot : on garde l'empreinte, jamais la cle. Une
-    # cle partagee par la flotte laisse un robot compromis parler au nom des
-    # autres ; ici, chaque robot ne peut plus qu'etre lui-meme.
+    # Cle de la machine, propre a ce robot (machine_key_hash plus bas) : on
+    # garde l'empreinte, jamais la cle. Une cle partagee par la flotte laisse
+    # un robot compromis parler au nom des autres ; ici, chaque robot ne peut
+    # plus qu'etre lui-meme.
     # Canal de mise a jour du paquet embarque : un robot temoin passe en
     # « beta » avant que la flotte ne suive.
     edge_channel: Mapped[str] = mapped_column(String(20), default="stable")
     # Derniere version du paquet embarque annoncee par le robot lui-meme : la
     # console n'affiche donc pas ce qu'elle a demande, mais ce qui tourne.
     edge_version: Mapped[str | None] = mapped_column(String(40))
-    agent_key_hash: Mapped[str | None] = mapped_column(String(64))
-    agent_key_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    machine_key_hash: Mapped[str | None] = mapped_column(String(64))
+    machine_key_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     serial: Mapped[str | None] = mapped_column(String(120), unique=True)
     firmware: Mapped[str | None] = mapped_column(String(40))
     # Ce que l'operateur a saisi, tel quel : « ROSMASTER M3 Pro », « Unitree
@@ -359,7 +361,7 @@ class Robot(Base, TimestampMixin):
     # deviner depuis une etiquette humaine produirait « rosmaster-m3-pro » la
     # ou le constructeur ecrit « rosmaster-m3pro ».
     modele_constate: Mapped[str | None] = mapped_column(String(80))
-    # Dernier contact de l'agent embarque, toutes routes confondues. C'est la
+    # Dernier contact du runtime embarque, toutes routes confondues. C'est la
     # seule mesure de presence dont la console dispose : `statut` n'a jamais ete
     # reecrit apres la creation du robot, et annoncait « online » un robot
     # eteint depuis des jours. Voir app/presence.py.

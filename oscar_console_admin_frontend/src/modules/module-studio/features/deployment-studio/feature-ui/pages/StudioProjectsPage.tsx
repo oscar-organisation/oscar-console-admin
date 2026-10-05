@@ -50,7 +50,7 @@ type Template = "DEMONSTRATION" | "ROBOT_MINIMAL" | "VIDE";
 type Depart = { sorte: "preset"; slug: string } | { sorte: "forme"; valeur: Template };
 
 const TEMPLATES: { value: Template; label: string; hint: string; icon: typeof Bot }[] = [
-  { value: "ROBOT_MINIMAL", label: "Robot minimal", hint: "Bundle, service, module et premiers canaux.", icon: Bot },
+  { value: "ROBOT_MINIMAL", label: "Robot minimal", hint: "Bundle, service, unité et premiers canaux.", icon: Bot },
   { value: "DEMONSTRATION", label: "Démonstration complète", hint: "Robot, média et télécommande déjà câblés.", icon: Sparkles },
   { value: "VIDE", label: "Plan vide", hint: "Uniquement un bundle de déploiement.", icon: Layers3 },
 ];
@@ -67,7 +67,7 @@ export default function StudioProjectsPage() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Nouveau projet robot");
-  const [description, setDescription] = useState("Configuration des services et modules OSCAR.");
+  const [description, setDescription] = useState("Configuration des services et unités OSCAR.");
   const [target, setTarget] = useState<ProjectTarget>("ENVIRONNEMENT_EXECUTION_ROBOT");
   const [depart, setDepart] = useState<Depart>({ sorte: "forme", valeur: "ROBOT_MINIMAL" });
   const [presets, setPresets] = useState<PresetServeur[]>([]);
@@ -190,9 +190,9 @@ export default function StudioProjectsPage() {
                 // La liste sert des compteurs : on evite de telecharger chaque
                 // composition pour afficher une vignette.
                 const blocs = project.nodes.length || project.summary?.composants || 0;
-                const agents = project.nodes.length
-                  ? project.nodes.reduce((sum, node) => sum + node.data.agents.length, 0)
-                  : project.summary?.agents || 0;
+                const unites = project.nodes.length
+                  ? project.nodes.reduce((sum, node) => sum + node.data.units.length, 0)
+                  : project.summary?.units || 0;
                 const local = etatSync(project) === "LOCAL";
                 return (
                   <article className={`project-card${project.archive ? " is-archived" : ""}`} key={project.id}>
@@ -221,7 +221,7 @@ export default function StudioProjectsPage() {
                         </div>
                         <p>{project.description}</p>
                         <div className="project-card__meta">
-                          <span><Blocks size={14} /> {blocs} bloc{blocs > 1 ? "s" : ""} · {agents} module{agents > 1 ? "s" : ""}</span>
+                          <span><Blocks size={14} /> {blocs} bloc{blocs > 1 ? "s" : ""} · {unites} unité{unites > 1 ? "s" : ""}</span>
                           <span><CalendarClock size={14} /> {formatDate(project.updatedAt)}</span>
                         </div>
                         <small>

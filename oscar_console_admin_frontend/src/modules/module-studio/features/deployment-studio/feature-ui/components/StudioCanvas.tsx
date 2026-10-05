@@ -41,15 +41,14 @@ import PublishDialog from './PublishDialog';
 import ValidationPanel from './ValidationPanel';
 import {
   connectionIsValid,
-  createAgent,
   createArchitectureNode,
   createChannel,
+  createUnit,
   findChannel,
   makeId,
   validateProject,
 } from '../../feature-domain/model';
 import type {
-  AgentConfig,
   ArchitectureEdge,
   ArchitectureKind,
   ArchitectureNode as ArchitectureNodeType,
@@ -57,6 +56,7 @@ import type {
   OscarProject,
   Selection,
   SyncState,
+  UnitConfig,
 } from '../../feature-domain/types';
 
 const nodeTypes = { architecture: ArchitectureNode };
@@ -120,57 +120,57 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
     update({ nodes: project.nodes.map((node) => node.id === nodeId ? { ...node, data: { ...node.data, ...changes } } : node) });
   }, [project.nodes, update]);
 
-  const updateAgent = useCallback((nodeId: string, agentId: string, changes: Partial<AgentConfig>) => {
+  const updateUnit = useCallback((nodeId: string, unitId: string, changes: Partial<UnitConfig>) => {
     update({
       nodes: project.nodes.map((node) => node.id === nodeId ? {
         ...node,
-        data: { ...node.data, agents: node.data.agents.map((agent) => agent.id === agentId ? { ...agent, ...changes } : agent) },
+        data: { ...node.data, units: node.data.units.map((unit) => unit.id === unitId ? { ...unit, ...changes } : unit) },
       } : node),
     });
   }, [project.nodes, update]);
 
-  const updateChannel = useCallback((nodeId: string, agentId: string, channelId: string, changes: Partial<ChannelConfig>) => {
+  const updateChannel = useCallback((nodeId: string, unitId: string, channelId: string, changes: Partial<ChannelConfig>) => {
     update({
       nodes: project.nodes.map((node) => node.id === nodeId ? {
         ...node,
         data: {
           ...node.data,
-          agents: node.data.agents.map((agent) => agent.id === agentId ? {
-            ...agent,
-            inputs: agent.inputs.map((channel) => channel.id === channelId ? { ...channel, ...changes } : channel),
-            outputs: agent.outputs.map((channel) => channel.id === channelId ? { ...channel, ...changes } : channel),
-          } : agent),
+          units: node.data.units.map((unit) => unit.id === unitId ? {
+            ...unit,
+            inputs: unit.inputs.map((channel) => channel.id === channelId ? { ...channel, ...changes } : channel),
+            outputs: unit.outputs.map((channel) => channel.id === channelId ? { ...channel, ...changes } : channel),
+          } : unit),
         },
       } : node),
     });
   }, [project.nodes, update]);
 
-  const addAgent = useCallback((nodeId: string) => {
+  const addUnit = useCallback((nodeId: string) => {
     const node = project.nodes.find((item) => item.id === nodeId);
     if (!node || node.data.kind === 'BUNDLE_DEPLOIEMENT') return;
-    const agent = createAgent(node.data.agents.length + 1);
-    updateNode(nodeId, { agents: [...node.data.agents, agent] });
-    setSelection({ type: 'agent', nodeId, agentId: agent.id });
-    flash('Agent ajouté avec sa structure de communication complète.');
+    const unit = createUnit(node.data.units.length + 1);
+    updateNode(nodeId, { units: [...node.data.units, unit] });
+    setSelection({ type: 'unit', nodeId, unitId: unit.id });
+    flash('Unité ajoutée avec sa structure de communication complète.');
   }, [flash, project.nodes, updateNode]);
 
-  const addChannel = useCallback((nodeId: string, agentId: string, direction: 'RECEPTION' | 'EMISSION') => {
+  const addChannel = useCallback((nodeId: string, unitId: string, direction: 'RECEPTION' | 'EMISSION') => {
     const node = project.nodes.find((item) => item.id === nodeId);
-    const agent = node?.data.agents.find((item) => item.id === agentId);
-    if (!agent) return;
-    const list = direction === 'RECEPTION' ? agent.inputs : agent.outputs;
+    const unit = node?.data.units.find((item) => item.id === unitId);
+    if (!unit) return;
+    const list = direction === 'RECEPTION' ? unit.inputs : unit.outputs;
     const channel = createChannel(direction, list.length + 1);
-    updateAgent(nodeId, agentId, direction === 'RECEPTION'
-      ? { inputs: [...agent.inputs, channel], expanded: true }
-      : { outputs: [...agent.outputs, channel], expanded: true });
-    setSelection({ type: 'channel', nodeId, agentId, channelId: channel.id });
+    updateUnit(nodeId, unitId, direction === 'RECEPTION'
+      ? { inputs: [...unit.inputs, channel], expanded: true }
+      : { outputs: [...unit.outputs, channel], expanded: true });
+    setSelection({ type: 'channel', nodeId, unitId, channelId: channel.id });
     flash(direction === 'RECEPTION' ? 'Canal ajouté au bus de réception.' : 'Canal ajouté au bus d’émission.');
-  }, [flash, project.nodes, updateAgent]);
+  }, [flash, project.nodes, updateUnit]);
 
-  const toggleAgent = useCallback((nodeId: string, agentId: string) => {
-    const agent = project.nodes.find((node) => node.id === nodeId)?.data.agents.find((item) => item.id === agentId);
-    if (agent) updateAgent(nodeId, agentId, { expanded: !agent.expanded });
-  }, [project.nodes, updateAgent]);
+  const toggleUnit = useCallback((nodeId: string, unitId: string) => {
+    const unit = project.nodes.find((node) => node.id === nodeId)?.data.units.find((item) => item.id === unitId);
+    if (unit) updateUnit(nodeId, unitId, { expanded: !unit.expanded });
+  }, [project.nodes, updateUnit]);
 
   const interactiveNodes = useMemo(() => project.nodes.map((node) => ({
     ...node,
@@ -178,36 +178,36 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
     data: {
       ...node.data,
       onSelect: setSelection,
-      onAddAgent: addAgent,
-      onToggleAgent: toggleAgent,
+      onAddUnit: addUnit,
+      onToggleUnit: toggleUnit,
     },
-  })), [addAgent, project.nodes, selection?.nodeId, toggleAgent]);
+  })), [addUnit, project.nodes, selection?.nodeId, toggleUnit]);
 
   const issues = useMemo(() => validateProject(project), [project]);
   const errors = issues.filter((issue) => issue.level === 'ERREUR').length;
   const warnings = issues.filter((issue) => issue.level === 'ATTENTION').length;
 
   const addComponent = useCallback((type: string, position?: { x: number; y: number }, droppedNodeId?: string) => {
-    if (type === 'INSTANCE_AGENT') {
+    if (type === 'INSTANCE_UNITE') {
       const selectedNodeId = droppedNodeId ?? selection?.nodeId;
       const target = project.nodes.find((node) => node.id === selectedNodeId && node.data.kind !== 'BUNDLE_DEPLOIEMENT')
         ?? project.nodes.find((node) => node.data.kind !== 'BUNDLE_DEPLOIEMENT');
       if (!target) {
-        flash('Ajoutez d’abord un service ou une application pour y placer l’agent.');
+        flash('Ajoutez d’abord un service ou une application pour y placer l’unité.');
         return;
       }
-      addAgent(target.id);
+      addUnit(target.id);
       return;
     }
     if (type === 'CANAL_RECEPTION' || type === 'CANAL_EMISSION') {
       const chosenNode = project.nodes.find((node) => node.id === (droppedNodeId ?? selection?.nodeId));
-      const chosenAgentId = selection?.type === 'agent' || selection?.type === 'channel' ? selection.agentId : undefined;
-      const agent = chosenNode?.data.agents.find((item) => item.id === chosenAgentId) ?? chosenNode?.data.agents[0];
-      if (!chosenNode || !agent) {
-        flash('Sélectionnez d’abord un agent, puis ajoutez son canal.');
+      const chosenUnitId = selection?.type === 'unit' || selection?.type === 'channel' ? selection.unitId : undefined;
+      const unit = chosenNode?.data.units.find((item) => item.id === chosenUnitId) ?? chosenNode?.data.units[0];
+      if (!chosenNode || !unit) {
+        flash('Sélectionnez d’abord une unité, puis ajoutez son canal.');
         return;
       }
-      addChannel(chosenNode.id, agent.id, type === 'CANAL_RECEPTION' ? 'RECEPTION' : 'EMISSION');
+      addChannel(chosenNode.id, unit.id, type === 'CANAL_RECEPTION' ? 'RECEPTION' : 'EMISSION');
       return;
     }
     if (!['BUNDLE_DEPLOIEMENT', 'INSTANCE_SERVICE', 'INSTANCE_APPLICATION'].includes(type)) return;
@@ -232,7 +232,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
     update({ nodes: [...project.nodes, node], edges });
     setSelection({ type: 'node', nodeId: node.id });
     flash(`${kind === 'BUNDLE_DEPLOIEMENT' ? 'Bundle' : kind === 'INSTANCE_SERVICE' ? 'Service' : 'Application'} ajouté au plan.`);
-  }, [addAgent, addChannel, flash, project.edges, project.nodes, project.target, selection, update]);
+  }, [addUnit, addChannel, flash, project.edges, project.nodes, project.target, selection, update]);
 
   const findDropTarget = useCallback((position: { x: number; y: number }) => {
     return [...project.nodes].reverse().find((node) => {
@@ -288,16 +288,16 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
         nodes: project.nodes.filter((node) => node.id !== selection.nodeId),
         edges: project.edges.filter((edge) => edge.source !== selection.nodeId && edge.target !== selection.nodeId),
       });
-    } else if (selection.type === 'agent') {
+    } else if (selection.type === 'unit') {
       update({
-        nodes: project.nodes.map((node) => node.id === selection.nodeId ? { ...node, data: { ...node.data, agents: node.data.agents.filter((agent) => agent.id !== selection.agentId) } } : node),
-        edges: project.edges.filter((edge) => !edge.sourceHandle?.includes(`:${selection.agentId}:`) && !edge.targetHandle?.includes(`:${selection.agentId}:`)),
+        nodes: project.nodes.map((node) => node.id === selection.nodeId ? { ...node, data: { ...node.data, units: node.data.units.filter((unit) => unit.id !== selection.unitId) } } : node),
+        edges: project.edges.filter((edge) => !edge.sourceHandle?.includes(`:${selection.unitId}:`) && !edge.targetHandle?.includes(`:${selection.unitId}:`)),
       });
     } else {
       update({
         nodes: project.nodes.map((node) => node.id === selection.nodeId ? {
           ...node,
-          data: { ...node.data, agents: node.data.agents.map((agent) => agent.id === selection.agentId ? { ...agent, inputs: agent.inputs.filter((channel) => channel.id !== selection.channelId), outputs: agent.outputs.filter((channel) => channel.id !== selection.channelId) } : agent) },
+          data: { ...node.data, units: node.data.units.map((unit) => unit.id === selection.unitId ? { ...unit, inputs: unit.inputs.filter((channel) => channel.id !== selection.channelId), outputs: unit.outputs.filter((channel) => channel.id !== selection.channelId) } : unit) },
         } : node),
         edges: project.edges.filter((edge) => !edge.sourceHandle?.endsWith(`:${selection.channelId}`) && !edge.targetHandle?.endsWith(`:${selection.channelId}`)),
       });
@@ -320,7 +320,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
     flash(`Version ${numero} publiée.`);
   };
 
-  const modulesPoses = project.nodes.reduce((somme, noeud) => somme + noeud.data.agents.length, 0);
+  const unitesPosees = project.nodes.reduce((somme, noeud) => somme + noeud.data.units.length, 0);
 
   return (
     <main className="studio-shell">
@@ -431,7 +431,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
               <button className="icon-button" onClick={() => { setShowGuide(false); localStorage.setItem('oscar.studio.guide.dismissed', 'true'); }} type="button"><X size={15} /></button>
               <span className="guide-card__eyebrow"><Sparkles size={14} /> Démarrage rapide</span>
               <strong>Composez de gauche à droite</strong>
-              <ol><li><b>Ajoutez</b> un service ou une application.</li><li><b>Placez</b> un ou plusieurs agents.</li><li><b>Ajoutez</b> leurs canaux d’entrée et de sortie.</li><li><b>Reliez</b> les points colorés entre eux.</li></ol>
+              <ol><li><b>Ajoutez</b> un service ou une application.</li><li><b>Placez</b> une ou plusieurs unités.</li><li><b>Ajoutez</b> leurs canaux d’entrée et de sortie.</li><li><b>Reliez</b> les points colorés entre eux.</li></ol>
               <button onClick={() => setShowGuide(false)} type="button">J’ai compris</button>
             </aside>
           )}
@@ -444,7 +444,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
           selection={selection}
           onClose={() => setSelection(null)}
           onUpdateNode={updateNode}
-          onUpdateAgent={updateAgent}
+          onUpdateUnit={updateUnit}
           onUpdateChannel={updateChannel}
           onAddChannel={addChannel}
           onDelete={deleteSelection}
@@ -454,7 +454,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
       <footer className="studio-statusbar">
         <span><i className="status-dot status-dot--online" /> {ETAT_SYNC[syncEtat].long}</span>
         <span>{project.nodes.length} composant{project.nodes.length > 1 ? 's' : ''}</span>
-        <span>{modulesPoses} module{modulesPoses > 1 ? 's' : ''}</span>
+        <span>{unitesPosees} unité{unitesPosees > 1 ? 's' : ''}</span>
         <span>{project.edges.filter((edge) => edge.data?.edgeKind === 'DONNEES').length} liaisons de données</span>
         <span className="statusbar-spacer" />
         <span><Save size={13} /> Brouillon conservé dans ce navigateur</span>

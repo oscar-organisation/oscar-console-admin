@@ -13,7 +13,7 @@ import uuid
 
 import pytest
 
-CLE_AGENT = {"X-Oscar-Agent-Key": "test-edge-agent-key"}
+CLE_DE_FLOTTE = {"X-Oscar-Machine-Key": "test-cle-de-flotte-du-runtime"}
 
 
 def uniq(prefixe: str) -> str:
@@ -37,8 +37,8 @@ def contexte(client, admin_headers):
     entetes = {**admin_headers, "X-Organization-ID": org["id"]}
     robot = client.post("/api/robots", headers=entetes,
                         json={"nom": uniq("OSCAR"), "org_id": org["id"]}).json()
-    cle = client.post(f"/api/robots/{robot['id']}/agent-key", headers=entetes).json()["agent_key"]
-    return {"org": org, "entetes": entetes, "robot": robot, "cle": {"X-Oscar-Agent-Key": cle}}
+    cle = client.post(f"/api/robots/{robot['id']}/machine-key", headers=entetes).json()["machine_key"]
+    return {"org": org, "entetes": entetes, "robot": robot, "cle": {"X-Oscar-Machine-Key": cle}}
 
 
 # Les versions sont uniques en base pour toute la session : chaque import en
@@ -85,7 +85,7 @@ def test_lempreinte_est_signee_par_la_cle_du_robot(client, contexte):
     vue = client.get(f"/api/studio/runtime/robots/{contexte['robot']['slug']}/release",
                      headers=contexte["cle"]).json()
 
-    empreinte_cle = hashlib.sha256(contexte["cle"]["X-Oscar-Agent-Key"].encode()).hexdigest()
+    empreinte_cle = hashlib.sha256(contexte["cle"]["X-Oscar-Machine-Key"].encode()).hexdigest()
     attendu = hmac.new(empreinte_cle.encode(), depot["sha256"].encode(), hashlib.sha256).hexdigest()
     assert hmac.compare_digest(vue["release"]["empreinte_signee"], attendu)
 
@@ -169,10 +169,10 @@ def test_la_cle_dun_autre_robot_nobtient_pas_larchive(client, admin_headers, con
     client.post(f"/api/edge-releases/{depot['id']}/publish", headers=contexte["entetes"])
     voisin = client.post("/api/robots", headers=contexte["entetes"],
                          json={"nom": uniq("VOISIN"), "org_id": contexte["org"]["id"]}).json()
-    cle_voisin = client.post(f"/api/robots/{voisin['id']}/agent-key",
-                             headers=contexte["entetes"]).json()["agent_key"]
+    cle_voisin = client.post(f"/api/robots/{voisin['id']}/machine-key",
+                             headers=contexte["entetes"]).json()["machine_key"]
     r = client.get(f"/api/studio/runtime/robots/{contexte['robot']['slug']}/release/archive",
-                   headers={"X-Oscar-Agent-Key": cle_voisin})
+                   headers={"X-Oscar-Machine-Key": cle_voisin})
     assert r.status_code == 401
 
 

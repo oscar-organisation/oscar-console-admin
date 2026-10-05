@@ -141,8 +141,14 @@ services:
       SMTP_FROM_NAME: "${SMTP_FROM_NAME:-OSCAR Control Plane}"
 
       # Les clés des machines qui appellent l'API: le service de perception et
-      # l'agent embarqué des robots. Vides: ces appels sont refusés (503).
+      # le runtime embarqué des robots (sa clé de flotte). Vides: ces appels
+      # sont refusés (503).
       PERCEPTION_WORKER_API_KEY: "${PERCEPTION_WORKER_API_KEY:-}"
+      EDGE_RUNTIME_API_KEY: "${EDGE_RUNTIME_API_KEY:-}"
+      # L'ancien nom de la même clé, du temps de « l'agent embarqué ». L'API le
+      # lit quand EDGE_RUNTIME_API_KEY est vide: une application Coolify qui
+      # porte encore l'ancien nom garde sa clé. À retirer quand plus aucun
+      # déploiement ne le pose (voir app/config.py).
       EDGE_AGENT_API_KEY: "${EDGE_AGENT_API_KEY:-}"
 
       # Le mode de connexion: legacy, la connexion propre à la console. Keycloak

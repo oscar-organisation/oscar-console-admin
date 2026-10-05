@@ -77,10 +77,21 @@ class Settings(BaseSettings):
     model_max_upload_mb: int = 512
     perception_worker_api_key: str = ""
 
-    # Agent embarqué (installation et application des bundles sur le robot).
-    # Clé distincte de celle du worker de perception : les deux composants ne
-    # vivent pas au même endroit et ne doivent pas tomber ensemble si l'un des
-    # deux secrets fuit.
+    # Runtime embarqué (le programme du robot qui installe et applique les
+    # bundles) : la clé de flotte, acceptée d'un robot qui n'a pas encore reçu
+    # la clé de sa machine. Clé distincte de celle du worker de perception :
+    # les deux composants ne vivent pas au même endroit et ne doivent pas
+    # tomber ensemble si l'un des deux secrets fuit.
+    # Le code la lit par `cle_de_flotte_du_runtime`, plus bas.
+    edge_runtime_api_key: str = ""
+    # Ancien nom du même réglage (EDGE_AGENT_API_KEY), du temps où le programme
+    # du robot s'appelait « agent embarqué ». Une console déjà déployée peut
+    # encore le porter dans ses réglages : il sert quand le nouveau est vide.
+    # Pourquoi pas un AliasChoices de pydantic : compose.yaml transmet toujours
+    # les deux variables, vides par défaut, et AliasChoices retient la première
+    # présente, même vide ; la clé posée sous l'ancien nom serait perdue.
+    # À retirer (ici, dans compose.yaml et dans .env.exemple) quand plus aucun
+    # déploiement ne pose EDGE_AGENT_API_KEY.
     edge_agent_api_key: str = ""
 
     # Paquets embarques distribues aux robots.
@@ -128,6 +139,12 @@ class Settings(BaseSettings):
         if self.oidc_jwks_url:
             return self.oidc_jwks_url
         return f"{self.oidc_issuer.rstrip('/')}/protocol/openid-connect/certs"
+
+    @property
+    def cle_de_flotte_du_runtime(self) -> str:
+        """La clé de flotte du runtime embarqué, sous son nouveau nom ou, à
+        défaut, sous l'ancien (EDGE_AGENT_API_KEY, voir plus haut)."""
+        return self.edge_runtime_api_key or self.edge_agent_api_key
 
 
 @lru_cache

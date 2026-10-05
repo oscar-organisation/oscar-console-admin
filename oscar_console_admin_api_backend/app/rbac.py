@@ -42,9 +42,9 @@ FEATURE_CATALOG: list[tuple[str, str, str, str, list[str]]] = [
     ("api:robot.write", "Gérer les robots", "api", "robots", CRUD),
     ("api:robot.assign", "Associer un robot (org/site/opérateur)", "api", "robots", EXEC),
     ("api:robot.token.issue", "Émettre des jetons LiveKit", "api", "robots", EXEC),
-    # Emettre une cle d'agent donne a un robot le droit de tirer ses bundles :
+    # Emettre la cle de la machine donne a un robot le droit de tirer ses bundles :
     # c'est une capacite de deploiement, pas de supervision.
-    ("api:robot.agent_key", "Émettre la clé d'agent embarqué d'un robot", "api", "robots", EXEC),
+    ("api:robot.machine_key", "Émettre la clé du runtime embarqué d'un robot", "api", "robots", EXEC),
     ("ui:robots.page", "Page Robots", "ui", "robots", VIEW),
     ("ui:robots.tokens", "Onglet Jetons LiveKit", "ui", "robots", VIEW),
     ("api:robot.integration", "Voir les détails d'intégration SDK d'un robot", "api", "robots", VIEW),
@@ -65,7 +65,7 @@ FEATURE_CATALOG: list[tuple[str, str, str, str, list[str]]] = [
     ("ui:sandbox.page", "Page Sandbox IA", "ui", "sandbox", VIEW),
     ("ui:sandbox.upload_button", "Bouton Importer un modèle", "ui", "sandbox", VIEW),
     # --- Studio de déploiement ---
-    # Un bundle est la composition versionnée (agents, canaux, cible matérielle)
+    # Un bundle est la composition versionnée (unités, canaux, cible matérielle)
     # qui sera installée sur un robot ou une flotte. Lire, composer, publier et
     # déployer sont cinq capacités distinctes : publier fige une version,
     # déployer la pousse sur du matériel réel.

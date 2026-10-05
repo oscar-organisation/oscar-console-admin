@@ -664,7 +664,7 @@ export default function Robots() {
                       Téléopération : {hlabel(diag.data.health.commande)}
                     </span>
                     <span className={"status-chip " + hchip(diag.data.health.sdk)}>
-                      Agent SDK : {hlabel(diag.data.health.sdk)}
+                      Services du robot : {hlabel(diag.data.health.sdk)}
                     </span>
                   </div>
 
@@ -677,7 +677,7 @@ export default function Robots() {
                   </div>
 
                   <h4 style={{ margin: "4px 0 0", fontSize: 13, color: "#fff" }}>
-                    Clients et Agents connectés ({diag.data.clients_count})
+                    Participants connectés ({diag.data.clients_count})
                   </h4>
 
                   {diag.data.clients_count === 0 && (

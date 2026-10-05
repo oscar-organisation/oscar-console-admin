@@ -16,7 +16,7 @@ export type InputChannelType =
   | 'TYPE_ENTREE_ABONNEMENT_ROS_2';
 
 export type OutputChannelType =
-  | 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT'
+  | 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE'
   | 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_PLUSIEURS_CANAUX'
   | 'TYPE_SORTIE_RAPPEL_APPLICATION'
   | 'TYPE_SORTIE_SERVICE_LOCAL'
@@ -35,11 +35,12 @@ export interface ChannelConfig {
   description: string;
 }
 
-export interface AgentConfig {
+/** Une unite : role nomme et configurable, heberge par un service ou une application. */
+export interface UnitConfig {
   id: string;
   name: string;
   technicalCode: string;
-  agentType: string;
+  unitType: string;
   processingName: string;
   interfaceName: string;
   dataBandName: string;
@@ -64,12 +65,12 @@ export interface ArchitectureNodeData extends Record<string, unknown> {
   /** Besoin de mise en route du chassis (« base », « camera »...). La commande
    *  correspondante vit dans le profil du robot, pas ici. */
   bringupKey?: string | undefined;
-  /** Rang de demarrage : la base avant la camera, la camera avant les agents. */
+  /** Rang de demarrage : la base avant la camera, la camera avant les unites. */
   bringupOrder?: number | undefined;
-  agents: AgentConfig[];
+  units: UnitConfig[];
   onSelect?: (selection: Selection) => void;
-  onAddAgent?: (nodeId: string) => void;
-  onToggleAgent?: (nodeId: string, agentId: string) => void;
+  onAddUnit?: (nodeId: string) => void;
+  onToggleUnit?: (nodeId: string, unitId: string) => void;
 }
 
 export type ArchitectureNode = Node<ArchitectureNodeData, 'architecture'>;
@@ -77,8 +78,8 @@ export type ArchitectureEdge = Edge;
 
 export type Selection =
   | { type: 'node'; nodeId: string }
-  | { type: 'agent'; nodeId: string; agentId: string }
-  | { type: 'channel'; nodeId: string; agentId: string; channelId: string }
+  | { type: 'unit'; nodeId: string; unitId: string }
+  | { type: 'channel'; nodeId: string; unitId: string; channelId: string }
   | null;
 
 export interface OscarProject {
@@ -107,7 +108,7 @@ export interface OscarProject {
    *  sortie. */
   archive?: boolean;
   /** Compteurs servis par la liste, quand la composition n'est pas encore chargee. */
-  summary?: { composants: number; agents: number; robots: number };
+  summary?: { composants: number; units: number; robots: number };
 }
 
 /** Etat de l'accord entre le brouillon local et sa copie serveur. */

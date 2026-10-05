@@ -73,7 +73,7 @@ export default function ComponentLibrary({ nodes, selection, onAdd, onSelect }: 
           </div>
           <div className="library-note">
             <strong>Ajout intelligent</strong>
-            <p>Un module crée automatiquement son traitement métier, son interface de communication, sa bande de données et ses deux bus.</p>
+            <p>Une unité crée automatiquement son traitement métier, son interface de communication, sa bande de données et ses deux bus.</p>
           </div>
         </>
       ) : (
@@ -88,22 +88,22 @@ export default function ComponentLibrary({ nodes, selection, onAdd, onSelect }: 
                   <Layers3 size={14} />
                   <span>{node.data.name}</span>
                 </button>
-                {node.data.agents.map((agent) => (
-                  <div className="tree-agent" key={agent.id}>
-                    <button className={selectedNode && selection?.type === 'agent' && selection.agentId === agent.id ? 'is-selected' : ''} onClick={() => onSelect({ type: 'agent', nodeId: node.id, agentId: agent.id })} type="button">
-                      <ChevronDown size={13} /><Cpu size={14} /><span>{agent.name}</span>
+                {node.data.units.map((unit) => (
+                  <div className="tree-unit" key={unit.id}>
+                    <button className={selectedNode && selection?.type === 'unit' && selection.unitId === unit.id ? 'is-selected' : ''} onClick={() => onSelect({ type: 'unit', nodeId: node.id, unitId: unit.id })} type="button">
+                      <ChevronDown size={13} /><Cpu size={14} /><span>{unit.name}</span>
                     </button>
                     <div className="tree-generated">
                       <span><ChevronRight size={11} /> Traitement métier</span>
                       <span><ChevronRight size={11} /> Interface de communication</span>
                       <span><ChevronRight size={11} /> Bande de données</span>
-                      <span className="tree-bus"><ChevronRight size={11} /> Bus de réception · {agent.inputs.length} canal(aux)</span>
-                      {agent.inputs.map((channel) => (
-                        <button className="tree-channel" key={channel.id} onClick={() => onSelect({ type: 'channel', nodeId: node.id, agentId: agent.id, channelId: channel.id })} type="button">↳ {channel.name}</button>
+                      <span className="tree-bus"><ChevronRight size={11} /> Bus de réception · {unit.inputs.length} canal(aux)</span>
+                      {unit.inputs.map((channel) => (
+                        <button className="tree-channel" key={channel.id} onClick={() => onSelect({ type: 'channel', nodeId: node.id, unitId: unit.id, channelId: channel.id })} type="button">↳ {channel.name}</button>
                       ))}
-                      <span className="tree-bus"><ChevronRight size={11} /> Bus d’émission · {agent.outputs.length} canal(aux)</span>
-                      {agent.outputs.map((channel) => (
-                        <button className="tree-channel" key={channel.id} onClick={() => onSelect({ type: 'channel', nodeId: node.id, agentId: agent.id, channelId: channel.id })} type="button">↳ {channel.name}</button>
+                      <span className="tree-bus"><ChevronRight size={11} /> Bus d’émission · {unit.outputs.length} canal(aux)</span>
+                      {unit.outputs.map((channel) => (
+                        <button className="tree-channel" key={channel.id} onClick={() => onSelect({ type: 'channel', nodeId: node.id, unitId: unit.id, channelId: channel.id })} type="button">↳ {channel.name}</button>
                       ))}
                     </div>
                   </div>

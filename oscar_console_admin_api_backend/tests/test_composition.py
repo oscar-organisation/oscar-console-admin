@@ -24,6 +24,9 @@ SECRETS = {
     "ADMIN_PASSWORD",
     "SMTP_PASSWORD",
     "PERCEPTION_WORKER_API_KEY",
+    "EDGE_RUNTIME_API_KEY",
+    # L'ancien nom de la clé de flotte du runtime embarqué, encore lu le temps
+    # que les déploiements passent au nouveau (voir app/config.py).
     "EDGE_AGENT_API_KEY",
 }
 

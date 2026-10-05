@@ -1,4 +1,5 @@
 import { api } from "@/shared/kernel/api";
+import { projetAuFormatActuel } from "../feature-domain/formatComposition";
 import type {
   ArchitectureEdge,
   ArchitectureNode,
@@ -42,10 +43,11 @@ export interface BundleServeur {
   version_count: number;
   robot_count: number;
   component_count: number;
-  agent_count: number;
+  unit_count: number;
 }
 
 interface VersionDetail extends VersionServeur {
+  // Peut encore arriver à l'ancien format (`agents`) : projetAuFormatActuel le relit.
   spec: { nodes?: ArchitectureNode[]; edges?: ArchitectureEdge[] };
 }
 
@@ -71,6 +73,7 @@ export interface PresetServeur {
   famille: string;
   constructeur?: string | null;
   description?: string | null;
+  // Peut encore arriver à l'ancien format (`agents`) : projetAuFormatActuel le relit.
   spec: { nodes?: ArchitectureNode[]; edges?: ArchitectureEdge[] };
   statut: string;
   ordre: number;
@@ -267,7 +270,7 @@ export function projetDepuisPreset(
   description: string,
   target: ProjectTarget,
 ): OscarProject {
-  return {
+  return projetAuFormatActuel({
     id: `projet-${Date.now().toString(36)}`,
     name: nom,
     description: description || preset.description || "",
@@ -277,12 +280,12 @@ export function projetDepuisPreset(
     updatedAt: new Date().toISOString(),
     nodes: preset.spec?.nodes ?? [],
     edges: preset.spec?.edges ?? [],
-  };
+  });
 }
 
 export function projetDepuisBundle(bundle: BundleServeur, detail: VersionDetail | null): OscarProject {
   const version = bundle.draft_version ?? bundle.published_version ?? null;
-  return {
+  return projetAuFormatActuel({
     id: bundle.id,
     bundleId: bundle.id,
     // `exactOptionalPropertyTypes` : une propriete optionnelle est absente ou
@@ -300,5 +303,5 @@ export function projetDepuisBundle(bundle: BundleServeur, detail: VersionDetail 
     nodes: detail?.spec?.nodes ?? [],
     edges: detail?.spec?.edges ?? [],
     syncedAt: new Date().toISOString(),
-  };
+  });
 }
