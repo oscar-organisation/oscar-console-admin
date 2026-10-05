@@ -1,0 +1,173 @@
+# Les vérifications communes du dépôt oscar-console-admin: ce qui vaut pour
+# tout le dépôt, quelle que soit la partie modifiée.
+#
+#   verifications_rapides   aucune ligne d'attribution dans les commits, aucun
+#                           motif de secret, chaque fichier d'environnement
+#                           versionné a son modèle, la typographie, les
+#                           fichiers des workflows eux-mêmes (actionlint), les
+#                           ordinateurs de GitHub fixés sur une version (A38)
+#   resume                  un résumé de l'exécution, et son commentaire dans
+#                           la PR, titré du nom de ce workflow
+#
+# Quand il se lance: à chaque PR vers test ou main et à chaque envoi sur ces
+# branches, sans filtre de chemins. Ces règles valent partout, même pour une
+# modification qui ne touche aucune application (le LISEZ-MOI.md de la racine,
+# les autres dossiers). Il ne met rien en ligne et ne dure que quelques
+# secondes.
+#
+# Pourquoi à part: chaque application a son propre workflow, lancé seulement
+# quand son dossier change (décision 124), console-admin-api.yml pour l'API et
+# console-admin-interface.yml pour l'interface; les deux ne s'attendent pas
+# l'un l'autre (décision 125). Ce qui n'appartient à aucune des deux vit ici,
+# une seule fois.
+#
+# Si une application part un jour dans son propre dépôt, ce fichier y est
+# recopié tel quel, sauf l'exception du cockpit XR (COCKPIT_XR plus bas), qui
+# suit l'interface. Le guide commun du dépôt oscar-general-gouvernance-project
+# donne les étapes (page « Un workflow par sous-projet »).
+name: Vérifications communes
+
+on:
+  push:
+    branches: [test, main]
+  pull_request:
+    branches: [test, main]
+
+# Par défaut, une exécution ne fait que lire. La tâche du résumé demande en plus
+# d'écrire son commentaire dans la PR; rien d'autre.
+permissions:
+  contents: read
+
+env:
+  # Le cockpit XR de l'interface, exclu du contrôle de la typographie (voir
+  # cette étape). C'est le seul chemin d'une application écrit dans ce fichier.
+  COCKPIT_XR: oscar_console_admin_frontend/public/xr
+
+jobs:
+
+  verifications_rapides:
+    name: Vérifications rapides
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # L'historique complet: le contrôle des messages de commit doit
+          # pouvoir dire quels commits l'exécution apporte.
+          fetch-depth: 0
+
+      - name: Aucune ligne d'attribution dans les commits
+        # La règle A18, écrite une fois, avec ses tests, dans une action du
+        # dépôt oscar-infrastructure.
+        uses: oscar-organisation/oscar-infrastructure/.github/actions/controler-les-commits@main
+
+      - name: Chercher des motifs de secrets
+        run: |
+          set -u
+          # Les jetons de GitHub, les clés privées, les jetons de Coolify, et
+          # les jetons signés (JWT: trois morceaux en base 64 séparés par des
+          # points, les deux premiers commençant par eyJ), comme celui qu'une
+          # ancienne construction du cockpit XR avait embarqué. Seul le nom du
+          # fichier s'affiche, jamais la valeur.
+          motifs='github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|[0-9]+\|[A-Za-z0-9]{40,}|eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}'
+          trouves=$(grep -rlE "$motifs" . --exclude-dir=.git --exclude-dir=node_modules --exclude=package-lock.json || true)
+          if [ -n "$trouves" ] ; then
+            printf '%s\n' "$trouves" | while read -r f ; do
+              echo "::error file=$f::Un secret semble présent dans ce fichier."
+            done
+            exit 1
+          fi
+          echo "Aucun motif de secret trouvé."
+
+      - name: Chaque fichier d'environnement a son modèle
+        # Un fichier .env versionné doit avoir son modèle .env.exemple à côté,
+        # qui dit à quoi sert chaque réglage. Aucun .env n'est versionné
+        # aujourd'hui: seuls les modèles le sont.
+        run: |
+          set -u
+          manque=0
+          for f in $(git ls-files | grep -E '(^|/)\.env$') ; do
+            d=$(dirname "$f")
+            if [ ! -f "$d/.env.exemple" ] ; then
+              echo "::error::$f n'a pas de modèle à côté ($d/.env.exemple)."
+              manque=1
+            fi
+          done
+          [ "$manque" = "0" ] || exit 1
+          echo "Chaque fichier d'environnement a son modèle."
+
+      - name: Typographie, pas de caractère interdit
+        # Les motifs sont écrits en hexadécimal pour que ce fichier ne contienne
+        # pas lui-même les caractères qu'il interdit: le tiret long et les
+        # points de suspension en un seul caractère.
+        #
+        # Le contrôle couvre tout ce que git suit, le code des deux applications
+        # compris (décision 121), et le demi-cadratin aussi. Seul le cockpit XR
+        # en est exclu: c'est une construction générée depuis le dépôt
+        # oscar_front_casque_vr_ar, qui ne se corrige jamais à la main (leçon
+        # 3.6) mais dans ce dépôt-là, puis par une nouvelle construction.
+        run: |
+          set -u
+          if git ls-files -z -- '*.md' '*.py' '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.html' '*.sh' \
+               '*.conf' '*.yml' '*.yaml' '*.json' '*.exemple' '*Dockerfile' '*.ini' '*.txt' \
+               ':!:*package-lock.json' ":!:$COCKPIT_XR" \
+               | xargs -0 -r grep -nP '\x{2014}|\x{2013}|\x{2026}' ; then
+            echo "::error::Caractère interdit trouvé. Utiliser le tiret simple et trois points."
+            exit 1
+          fi
+          echo "Typographie conforme."
+
+      - name: Les fichiers des vérifications automatiques sont valides
+        # actionlint relit chaque workflow du dépôt, les trois: syntaxe,
+        # expressions, entrées des workflows appelés. Un workflow cassé ne se
+        # voit sinon qu'à l'exécution suivante, qui ne démarre pas.
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
+
+      - name: Les ordinateurs de GitHub qui font les vérifications sont fixés sur une version
+        # Décision A38: les vérifications automatiques donnent le même résultat
+        # d'une semaine à l'autre. Un nom qui bouge, comme ubuntu-latest (Ubuntu 26
+        # à partir du 19/10/2026), changerait le système sans que rien ne change
+        # chez nous. Toutes les tâches tournent donc sur une version nommée, la
+        # même partout: on en change dans une PR à part, pour toutes les tâches à
+        # la fois, une fois les vérifications automatiques réussies.
+        # La version n'est écrite qu'aux lignes runs-on, pas ici. Le script est le
+        # même, mot pour mot, que dans oscar-infrastructure, oscar-test et le portail.
+        # Il lit les lignes runs-on de tous les workflows du dépôt, pas seulement
+        # de celui-ci.
+        run: |
+          set -u
+          # Les machines nommées aux lignes runs-on, une par ligne, puis sur une seule ligne.
+          machines=$(sed -nE 's/^[[:space:]]+runs-on:[[:space:]]*//p' .github/workflows/*.yml | sort -u)
+          liste=$(printf '%s\n' "$machines" | paste -sd ' ' -)
+          if [ -z "$machines" ] ; then
+            echo "::error::Aucune ligne runs-on lue dans .github/workflows: le contrôle ne voit rien."
+            exit 1
+          fi
+          if printf '%s\n' "$machines" | grep -q -- '-latest' ; then
+            echo "::error::Une tâche tourne sur une machine qui change seule ($liste). La nommer, par exemple ubuntu-24.04 (décision A38)."
+            exit 1
+          fi
+          if [ "$(printf '%s\n' "$machines" | wc -l)" -ne 1 ] ; then
+            echo "::error::Les tâches ne tournent pas toutes sur la même machine ($liste). En changer pour toutes à la fois (décision A38)."
+            exit 1
+          fi
+          echo "Toutes les tâches tournent sur $liste."
+
+  resume:
+    name: Résumé
+    # Toujours, même quand une vérification échoue: le résumé dit alors laquelle.
+    if: always()
+    needs: [verifications_rapides]
+    runs-on: ubuntu-24.04
+    # Lire le début de l'exécution (sa durée), écrire le commentaire de la PR.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Écrire le résumé, et le commentaire de la PR
+        uses: oscar-organisation/oscar-infrastructure/.github/actions/deploiement-par-image-harbor@main
+        with:
+          etape: resumer
+          taches: ${{ toJSON(needs) }}
+          numero_de_la_pr: ${{ github.event.pull_request.number }}
+          jeton_github: ${{ github.token }}

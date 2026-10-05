@@ -1,0 +1,213 @@
+# L'API de la console (oscar_console_admin_api_backend/): ses vérifications,
+# ses tests et sa mise en ligne.
+#
+#   verifications_rapides   chaque variable des compositions est expliquée
+#                           dans .env.exemple, les compositions sont valides
+#                           et Coolify n'y voit aucun port publié, la
+#                           documentation se construit en mode strict
+#   tests                   toute la suite pytest, en conteneur, par le
+#                           tester.sh du dossier: la même commande que sur le
+#                           poste
+#   deploiement             le déploiement automatique commun par image de
+#                           Harbor (deploiement-par-image-harbor.yml): à
+#                           l'envoi sur test, l'image est construite une seule
+#                           fois si son contenu a changé, rangée dans Harbor,
+#                           mise en ligne en test; à l'envoi sur main, LA MÊME
+#                           en production; pour une PR de test vers main, la
+#                           vérification que l'image testée existe
+#   resume                  un résumé de l'exécution, et son commentaire dans
+#                           la PR, titré du nom de ce workflow
+#
+# Quand il se lance: une PR vers test ou main, ou un envoi sur ces branches, qui
+# modifie le dossier de l'API ou ce fichier; et à la main, par « Run workflow »
+# sur la page Actions de GitHub, par exemple pour relancer une mise en ligne en
+# échec qu'aucun envoi suivant ne touche (sur test, cela vaut un envoi sur
+# test; sur main, un envoi sur main). Une correction de la seule documentation
+# le lance aussi, parce qu'il la vérifie; le déploiement dit alors « déjà en
+# ligne », et rien n'est reconstruit (l'empreinte du contenu ignore les .md).
+#
+# Pourquoi un workflow à part (décisions 124 et 125): une modification de
+# l'interface seule ne relance ni les tests ni la mise en ligne de l'API, et
+# l'API se met en ligne sans attendre l'interface. Quand les deux changent,
+# leurs deux workflows partent en même temps, sans ordre entre eux: une
+# modification de l'API doit donc continuer à marcher avec l'interface déjà en
+# ligne (règle écrite dans le LISEZ-MOI.md de la racine). Ce qui vaut pour tout
+# le dépôt (attribution, secrets, typographie, workflows) est dans
+# verifications-communes.yml.
+#
+# Chaque tâche attend la précédente: une tâche en échec arrête tout, et rien
+# n'est mis en ligne. Une PR ne met jamais rien en ligne.
+#
+# Détacher un jour l'API dans son propre dépôt: son dossier en devient la
+# racine, DOSSIER et l'entrée dossier du déploiement deviennent « . », et le
+# filtre de chemins disparaît. Les étapes complètes sont dans le guide commun
+# du dépôt oscar-general-gouvernance-project, page « Un workflow par
+# sous-projet ».
+name: API de la console
+
+# Le dossier de l'API est écrit en trois endroits de ce fichier: dans ce filtre
+# de chemins, dans DOSSIER (env, plus bas, lu par toutes les étapes) et dans
+# l'entrée dossier du déploiement. GitHub n'accepte de variable ni dans un
+# filtre de chemins ni dans les entrées d'un workflow appelé: ces deux endroits
+# répètent le nom. L'API ne dépend d'aucun autre fichier du dépôt: son code, ses
+# tests, ses compositions et sa documentation vivent dans son dossier, et les
+# fichiers communs d'oscar-infrastructure sont pris sur leur branche main.
+on:
+  push:
+    branches: [test, main]
+    paths:
+      - 'oscar_console_admin_api_backend/**'
+      - '.github/workflows/console-admin-api.yml'
+  pull_request:
+    branches: [test, main]
+    paths:
+      - 'oscar_console_admin_api_backend/**'
+      - '.github/workflows/console-admin-api.yml'
+  workflow_dispatch:
+
+# Par défaut, une exécution ne fait que lire. La tâche de déploiement demande en
+# plus le droit de déclarer ses déploiements; celle du résumé, d'écrire son
+# commentaire dans la PR; rien d'autre.
+permissions:
+  contents: read
+
+env:
+  # Le dossier de l'API. Elle y vit tout entière: code, tests, composition,
+  # réglages, documentation (décision 62).
+  DOSSIER: oscar_console_admin_api_backend
+
+jobs:
+
+  verifications_rapides:
+    name: Vérifications rapides
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Chaque variable des compositions est expliquée dans .env.exemple
+        # Dans les deux sens: une variable lue par compose.yaml ou
+        # compose.override.yaml sans explication, ou une explication d'une
+        # variable que plus rien ne lit, arrêtent les vérifications.
+        run: |
+          set -u
+          ecart=0
+          lues=$(grep -ohE '\$\{[A-Z_]+' "$DOSSIER/compose.yaml" "$DOSSIER/compose.override.yaml" | sed 's/^\${//' | sort -u)
+          expliquees=$(sed -nE 's/^([A-Z_]+)=.*/\1/p' "$DOSSIER/.env.exemple" | sort -u)
+          sans_explication=$(comm -23 <(printf '%s\n' "$lues") <(printf '%s\n' "$expliquees"))
+          jamais_lues=$(comm -13 <(printf '%s\n' "$lues") <(printf '%s\n' "$expliquees"))
+          for v in $sans_explication ; do
+            echo "::error file=$DOSSIER/.env.exemple::$v est lue par la composition de $DOSSIER, mais n'est pas expliquée dans .env.exemple."
+            ecart=1
+          done
+          for v in $jamais_lues ; do
+            echo "::error file=$DOSSIER/.env.exemple::$v est expliquée dans .env.exemple, mais aucune composition de $DOSSIER ne la lit."
+            ecart=1
+          done
+          [ "$ecart" = "0" ] || exit 1
+          echo "Les variables des compositions et du modèle correspondent."
+
+      - name: Les compositions sont valides, dans leurs trois lectures
+        working-directory: ${{ env.DOSSIER }}
+        run: |
+          set -eu
+          # Telle que Coolify la lit (-f, sans le complément local ni fichier
+          # d'environnement, leçon 6.7), telle qu'on la lance en local (avec le
+          # complément), et avec les réglages du poste (.env.exemple).
+          docker compose --env-file /dev/null -f compose.yaml config --quiet
+          docker compose config --quiet
+          docker compose --env-file .env.exemple config --quiet
+          # Coolify ne doit voir aucun port publié (leçon 5.4).
+          if docker compose --env-file /dev/null -f compose.yaml config | grep -q 'published:' ; then
+            echo "::error file=$DOSSIER/compose.yaml::$DOSSIER/compose.yaml publie un port: il va dans compose.override.yaml."
+            exit 1
+          fi
+          echo "$DOSSIER: composition valide."
+
+      - name: La documentation de l'API se construit, sans aucun avertissement
+        # Comme TechDocs la construit pour le portail, en mode strict: un lien
+        # cassé, une ancre absente, une page oubliée dans le menu arrêtent les
+        # vérifications. Même image figée que le guide commun et Harbor.
+        working-directory: ${{ env.DOSSIER }}
+        run: docker compose -f docs/outils/compose.yaml run --rm construire
+
+  tests:
+    name: Tests du code
+    needs: verifications_rapides
+    # La PR de test vers main et l'envoi sur main ne refont rien (plan 17, décision 90):
+    # le contenu de main est celui que test a vérifié, et le déploiement commun retrouve
+    # l'image testée, avec un refus net si elle manque. Une relance à la main sur main
+    # vaut un envoi sur main: elle ne refait rien non plus. Les tests tournent pour
+    # toute autre PR, à l'envoi sur test et à une relance à la main sur test.
+    if: >-
+      !((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main')
+      && !(github.event_name == 'pull_request' && github.base_ref == 'main' && github.head_ref == 'test')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Les tests de l'API, en conteneur
+        # Toute la suite pytest, sur une base SQLite: ni PostgreSQL ni service
+        # extérieur. La même commande que sur le poste.
+        run: ./"$DOSSIER"/tester.sh
+
+  deploiement:
+    name: Construire, ranger et mettre en ligne
+    # Après tout le reste (leçon 5.1): une vérification en échec ne met rien en ligne.
+    # Des tests sautés (pour main, voir la tâche « tests ») ne retiennent pas le
+    # déploiement; des tests en échec, si.
+    needs: [verifications_rapides, tests]
+    if: >-
+      !cancelled() && needs.verifications_rapides.result == 'success'
+      && (needs.tests.result == 'success' || needs.tests.result == 'skipped')
+    permissions:
+      contents: read
+      deployments: write
+    uses: oscar-organisation/oscar-infrastructure/.github/workflows/deploiement-par-image-harbor.yml@main
+    with:
+      # Les applications Coolify console-admin-api-test et console-admin-api-production,
+      # et les environnements GitHub du même nom, où vit COOLIFY_APPLICATION (A2).
+      application: console-admin-api
+      # Le dépôt d'images oscar/console-admin-api: le début commun aux deux
+      # applications de la console, puis le service de la composition.
+      nom_des_images: console-admin
+      # Le dossier de l'API, répété: un workflow appelé ne lit pas env.
+      dossier: oscar_console_admin_api_backend
+      # Le seul service construit; la base est l'image publique postgres.
+      services: api
+      # Ce qui n'entre pas dans l'empreinte du contenu: la documentation et les
+      # fiches du portail. Les modifier ne reconstruit ni ne remet en ligne l'API.
+      ignorer: |
+        *.md
+        catalog-info.yaml
+        mkdocs.yml
+        docs/
+      site_test: https://test-api-console.oscar-bot.com
+      site_production: https://api-console.oscar-bot.com
+      # 200 seulement si l'API répond et que sa base répond, 503 sinon (leçon 3.7).
+      sante_test: https://test-api-console.oscar-bot.com/health
+      sante_production: https://api-console.oscar-bot.com/health
+    secrets:
+      coolify_jeton: ${{ secrets.COOLIFY_JETON }}
+      harbor_compte_envoi_nom: ${{ secrets.HARBOR_COMPTE_ENVOI_NOM }}
+      harbor_compte_envoi_secret: ${{ secrets.HARBOR_COMPTE_ENVOI_SECRET }}
+
+  resume:
+    name: Résumé
+    # Toujours, même quand une tâche échoue: le résumé dit alors ce qui a échoué et que
+    # rien n'a été mis en ligne.
+    if: always()
+    needs: [verifications_rapides, tests, deploiement]
+    runs-on: ubuntu-24.04
+    # Lire le début de l'exécution (sa durée), écrire le commentaire de la PR.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Écrire le résumé, et le commentaire de la PR
+        uses: oscar-organisation/oscar-infrastructure/.github/actions/deploiement-par-image-harbor@main
+        with:
+          etape: resumer
+          taches: ${{ toJSON(needs) }}
+          numero_de_la_pr: ${{ github.event.pull_request.number }}
+          jeton_github: ${{ github.token }}
