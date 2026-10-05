@@ -13,7 +13,7 @@ import type {
  *
  * Le Studio reste utilisable hors ligne : ces appels peuvent donc échouer sans
  * que l'édition s'arrête. Les fonctions lèvent, et l'appelant décide s'il
- * affiche un état « non synchronisé » ou s'il bloque l'action — publier exige
+ * affiche un état « non synchronisé » ou s'il bloque l'action - publier exige
  * le serveur, dessiner non.
  */
 
@@ -80,7 +80,7 @@ export interface PresetServeur {
 /**
  * Catalogue publié, dans l'ordre où il doit s'afficher.
  *
- * L'appel peut échouer — le Studio s'utilise hors ligne. L'appelant retombe
+ * L'appel peut échouer - le Studio s'utilise hors ligne. L'appelant retombe
  * alors sur les formes génériques plutôt que de bloquer la création.
  */
 export function listerPresets(): Promise<PresetServeur[]> {
@@ -258,7 +258,7 @@ export function listerDeploiements(filtres: FiltresDeploiements = {}): Promise<D
  *
  * La composition est copiée, pas référencée : à partir de là le projet
  * appartient à son organisation et vit sa vie. Corriger le préset plus tard ne
- * remonte donc pas dans les projets déjà créés — c'est voulu, un point de
+ * remonte donc pas dans les projets déjà créés - c'est voulu, un point de
  * départ n'est pas une dépendance.
  */
 export function projetDepuisPreset(

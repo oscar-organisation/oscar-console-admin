@@ -218,7 +218,7 @@ export default function StudioDeploymentsPage() {
                     disabled={enRafraichissement}
                     onClick={() => setRevision((valeur) => valeur + 1)}>
               <RefreshCw size={15} className={enRafraichissement ? "spin" : ""} />
-              {enRafraichissement ? "Actualisation…" : "Actualiser"}
+              {enRafraichissement ? "Actualisation..." : "Actualiser"}
             </button>
           </div>
 
@@ -313,7 +313,7 @@ export default function StudioDeploymentsPage() {
             </div>
 
             {premierChargement ? (
-              <p className="deployment-loading"><LoaderCircle size={16} className="spin" /> Chargement des déploiements…</p>
+              <p className="deployment-loading"><LoaderCircle size={16} className="spin" /> Chargement des déploiements...</p>
             ) : visibles.length === 0 ? (
               <div className="deployment-empty">
                 <CheckCircle2 size={21} />

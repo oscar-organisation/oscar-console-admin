@@ -294,7 +294,7 @@ def roles_hors_portee(
     """Roles qui confereraient plus que ce que l'acteur detient lui-meme.
 
     Sans ce controle, un administrateur borne attribue n'importe quel role, donc
-    se fabrique un complice plus puissant que lui — et, en deux etapes, se
+    se fabrique un complice plus puissant que lui - et, en deux etapes, se
     promeut lui-meme.
     """
     if acteur.is_superadmin:
@@ -326,7 +326,8 @@ def _borner(valeur: str | None, longueur: int) -> str | None:
     """
     if valeur is None or len(valeur) <= longueur:
         return valeur
-    return valeur[: longueur - 1] + "…"
+    # Trois points marquent la coupure: la valeur garde au plus `longueur` caractères.
+    return valeur[: longueur - 3] + "..."
 
 
 def write_audit(

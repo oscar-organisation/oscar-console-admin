@@ -168,7 +168,7 @@ export default function SetPassword({ mode }) {
             </button>
           </div>
           <small className={`auth-hint${tropCourt ? " warn" : ""}`}>
-            {longueurMin ?? "…"} caractères minimum. Une phrase dont vous vous souvenez
+            {longueurMin ?? "..."} caractères minimum. Une phrase dont vous vous souvenez
             vaut mieux qu'un mot court parsemé de symboles.
           </small>
         </div>

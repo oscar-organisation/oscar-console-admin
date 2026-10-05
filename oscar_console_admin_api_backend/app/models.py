@@ -687,7 +687,7 @@ class CompositionPreset(Base, TimestampMixin):
     préset est un point de départ que nous maintenons et que tous voient. La
     bibliothèque s'enrichit d'un châssis à la fois.
 
-    `famille` nomme le profil de châssis visé — `rosmaster-m3pro`,
+    `famille` nomme le profil de châssis visé - `rosmaster-m3pro`,
     `unitree-g1`. C'est le même identifiant que celui qui donne son nom à
     l'image du runtime : un préset et l'image qui le fera tourner désignent
     ainsi le même matériel, sans table de correspondance à tenir à jour.

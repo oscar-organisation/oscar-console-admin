@@ -17,6 +17,6 @@ def robot_room(robot: Robot) -> str:
     erreur ne soit levee de part et d'autre.
 
     Le slug est l'identifiant terrain, pose a la creation et jamais modifie par
-    un renommage — c'est la garantie que porte deja le modele. On s'y accroche.
+    un renommage - c'est la garantie que porte deja le modele. On s'y accroche.
     """
     return f"oscar-{room_slug(robot.slug or robot.nom)}-{robot.id[:8]}"

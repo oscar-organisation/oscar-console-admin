@@ -65,7 +65,7 @@ const nodeTypes = { architecture: ArchitectureNode };
 // travail existe ailleurs que sur son poste.
 const ETAT_SYNC: Record<SyncState, { court: string; long: string; icone: JSX.Element }> = {
   SYNCHRONISE: { court: 'Enregistré', long: 'Brouillon synchronisé', icone: <Check size={13} /> },
-  EN_COURS: { court: 'Enregistrement…', long: 'Enregistrement en cours', icone: <CloudUpload size={13} /> },
+  EN_COURS: { court: 'Enregistrement...', long: 'Enregistrement en cours', icone: <CloudUpload size={13} /> },
   ECHEC: { court: 'Non enregistré', long: 'Serveur injoignable, brouillon local', icone: <CloudOff size={13} /> },
   LOCAL: { court: 'Local', long: 'Projet local à ce navigateur', icone: <CloudOff size={13} /> },
 };

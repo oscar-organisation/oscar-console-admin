@@ -124,7 +124,7 @@ export default function PresetVersementDialog({
           <label className="form-field">
             <span>Constructeur</span>
             <input value={constructeur} onChange={(e) => setConstructeur(e.target.value)}
-                   placeholder="Yahboom, Unitree…" />
+                   placeholder="Yahboom, Unitree..." />
           </label>
 
           <label className="form-field">
@@ -142,7 +142,7 @@ export default function PresetVersementDialog({
           </button>
           <button className="primary-button" type="submit" disabled={envoi}>
             {envoi ? <LoaderCircle size={16} className="spin" /> : <Server size={16} />}
-            {envoi ? 'Versement…' : 'Verser au catalogue'}
+            {envoi ? 'Versement...' : 'Verser au catalogue'}
           </button>
         </footer>
       </form>

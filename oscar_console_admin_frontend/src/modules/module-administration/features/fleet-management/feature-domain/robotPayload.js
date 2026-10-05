@@ -4,7 +4,7 @@
  * Extrait du formulaire pour etre testable : la page envoyait
  * `organisation_id` la ou l'API attend `org_id`. Pydantic ignorant une cle
  * inconnue sans rien dire, chaque robot cree depuis l'interface naissait sans
- * organisation — invisible dans une liste filtree, hors de portee d'un
+ * organisation - invisible dans une liste filtree, hors de portee d'un
  * deploiement par flotte ou par site, et en dehors du cloisonnement.
  *
  * La lecture, elle, tolerait les deux noms, ce qui masquait l'ecart : on

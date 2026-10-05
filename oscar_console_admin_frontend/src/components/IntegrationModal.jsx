@@ -64,7 +64,7 @@ export default function IntegrationModal({ robot, onClose }) {
       <div className="modal-shell" data-testid="integration-modal" style={{ maxWidth: 640, width: "94%" }}>
         <div className="modal-head">
           <h3>
-            <IconCpu size={18} /> Intégration & Clés — {robot.nom}
+            <IconCpu size={18} /> Intégration & Clés - {robot.nom}
           </h3>
           <button type="button" className="icon-btn" onClick={onClose}>
             <IconX size={16} />
@@ -97,7 +97,7 @@ export default function IntegrationModal({ robot, onClose }) {
                 </div>
                 <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <p style={{ margin: 0, color: "var(--shell-muted)", fontSize: 12.5 }}>
-                    Elle autorise ce robot — et lui seul — à récupérer les bundles qui lui sont
+                    Elle autorise ce robot - et lui seul - à récupérer les bundles qui lui sont
                     destinés. Réémettre révoque la précédente.
                   </p>
                   {agentKey && (

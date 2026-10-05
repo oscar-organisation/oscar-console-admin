@@ -3,7 +3,7 @@
 Le champ a d'abord porté les deux rôles à la fois, et c'était le défaut : une
 étiquette lisible et une clé qui doit correspondre au profil embarqué n'ont pas
 les mêmes contraintes. Normaliser « ROSMASTER M3 Pro » produisait
-`rosmaster-m3-pro` là où le constructeur écrit `rosmaster-m3pro` — faux, avec
+`rosmaster-m3-pro` là où le constructeur écrit `rosmaster-m3pro` - faux, avec
 l'apparence d'une correction.
 
 Les deux rôles sont désormais séparés, et ces tests le verrouillent : ce que

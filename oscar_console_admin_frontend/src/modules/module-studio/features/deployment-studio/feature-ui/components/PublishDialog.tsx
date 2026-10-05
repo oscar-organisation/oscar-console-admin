@@ -481,7 +481,7 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
           )}
           {enCours && (
             <button className="primary-button" disabled type="button">
-              <LoaderCircle className="spin" size={16} /> En cours…
+              <LoaderCircle className="spin" size={16} /> En cours...
             </button>
           )}
         </footer>
