@@ -132,21 +132,17 @@ jobs:
         # pas lui-même les caractères qu'il interdit: le tiret long et les
         # points de suspension en un seul caractère.
         #
-        # Le contrôle couvre ce que l'équipe OSCAR écrit dans ce dépôt:
-        # documentation, compositions, workflows, scripts, réglages. Le code des
-        # deux applications, repris tel quel du dépôt des développeurs de la
-        # console, en porte encore (dans des commentaires et des textes
-        # affichés): il n'est pas contrôlé ici tant que sa mise en conformité
-        # n'est pas décidée (compte rendu de la reprise, plan 20). Le cockpit XR
-        # est une construction générée, qui se corrige dans son propre dépôt.
+        # Le contrôle couvre tout ce que git suit, le code des deux applications
+        # compris (décision 121), et le demi-cadratin aussi. Seul le cockpit XR
+        # en est exclu: c'est une construction générée depuis le dépôt
+        # oscar_front_casque_vr_ar, qui ne se corrige jamais à la main (leçon
+        # 3.6) mais dans ce dépôt-là, puis par une nouvelle construction.
         run: |
           set -u
-          if git ls-files -z -- '*.md' '*.py' '*.ts' '*.tsx' '*.js' '*.jsx' '*.css' '*.sh' \
-               '*.conf' '*.yml' '*.yaml' '*.json' '*.exemple' '*Dockerfile' \
-               ':!:*package-lock.json' \
-               ":!:$INTERFACE/src" ":!:$INTERFACE/public/xr" \
-               ":!:$API/app" ":!:$API/alembic" ":!:$API/tests" \
-               | xargs -0 -r grep -nP '\x{2014}|\x{2026}' ; then
+          if git ls-files -z -- '*.md' '*.py' '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.css' '*.html' '*.sh' \
+               '*.conf' '*.yml' '*.yaml' '*.json' '*.exemple' '*Dockerfile' '*.ini' '*.txt' \
+               ':!:*package-lock.json' ":!:$INTERFACE/public/xr" \
+               | xargs -0 -r grep -nP '\x{2014}|\x{2013}|\x{2026}' ; then
             echo "::error::Caractère interdit trouvé. Utiliser le tiret simple et trois points."
             exit 1
           fi
