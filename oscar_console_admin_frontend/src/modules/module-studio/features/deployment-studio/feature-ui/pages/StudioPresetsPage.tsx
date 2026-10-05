@@ -119,7 +119,7 @@ export default function StudioPresetsPage() {
           {panne && <p className="dialog-erreur">{panne}</p>}
 
           {chargement ? (
-            <p className="preset-vide"><LoaderCircle size={15} className="spin" /> Chargement du catalogue…</p>
+            <p className="preset-vide"><LoaderCircle size={15} className="spin" /> Chargement du catalogue...</p>
           ) : visibles.length === 0 ? (
             <p className="preset-vide">
               {presets.length === 0

@@ -132,7 +132,7 @@ export default function Inspector({
               </select>
             </Field>
             <Field label="Description">
-              <textarea rows={3} value={node.data.description} onChange={(event) => onUpdateNode(node.id, { description: event.target.value })} placeholder="Expliquez le rôle de ce composant…" />
+              <textarea rows={3} value={node.data.description} onChange={(event) => onUpdateNode(node.id, { description: event.target.value })} placeholder="Expliquez le rôle de ce composant..." />
             </Field>
             <Field label="État de préparation">
               <select value={node.data.status} onChange={(event) => onUpdateNode(node.id, { status: event.target.value as 'BROUILLON' | 'PRET' })}>
@@ -263,7 +263,7 @@ export default function Inspector({
               </select>
             </Field>
             <Field label="Description">
-              <textarea rows={3} value={channel.description} onChange={(event) => onUpdateChannel(node.id, agent.id, channel.id, { description: event.target.value })} placeholder="Exemple de donnée et fréquence attendue…" />
+              <textarea rows={3} value={channel.description} onChange={(event) => onUpdateChannel(node.id, agent.id, channel.id, { description: event.target.value })} placeholder="Exemple de donnée et fréquence attendue..." />
             </Field>
           </>
         )}

@@ -3,7 +3,7 @@
 Le Studio produit un document d'édition (positions des blocs, panneaux
 dépliés, sélection en cours). Le robot, lui, n'a que faire d'un plan : il lui
 faut la liste des services, de leurs agents et de leurs canaux. Ce module fait
-la traduction, et c'est sur cette traduction — pas sur le document — que
+la traduction, et c'est sur cette traduction - pas sur le document - que
 l'empreinte est calculée. Déplacer un bloc ne change donc pas la version qui
 tourne, alors que renommer un canal, si.
 

@@ -276,7 +276,7 @@ def issue_edge_credentials(robot_id: str, request: Request, db: Session = Depend
     """Identifiants LiveKit de l'agent embarqué, dans la forme qu'il attend.
 
     Le runtime embarqué tient deux rôles dans la même room : il publie la vidéo
-    et il reçoit les commandes. LiveKit n'admet qu'un participant par identité —
+    et il reçoit les commandes. LiveKit n'admet qu'un participant par identité -
     leur en donner une seule ferait que le second évince le premier à chaque
     connexion. D'où deux identités distinctes, émises ensemble.
 

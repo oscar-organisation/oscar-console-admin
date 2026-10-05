@@ -14,7 +14,7 @@ import type { OscarProject, ProjectTarget, SyncState } from "./types";
 /**
  * Projets du Studio : brouillon local d'abord, accord avec le serveur ensuite.
  *
- * Le Studio doit rester utilisable sans réseau — c'est une exigence de
+ * Le Studio doit rester utilisable sans réseau - c'est une exigence de
  * terrain, pas un confort : on configure un robot dans une réserve de magasin.
  * L'édition écrit donc toujours dans le navigateur, et pousse ensuite vers le
  * serveur. Un projet qui n'a jamais atteint le serveur reste `LOCAL` : il peut

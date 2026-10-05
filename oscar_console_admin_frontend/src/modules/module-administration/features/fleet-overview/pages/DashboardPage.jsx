@@ -98,7 +98,7 @@ export default function Dashboard() {
                 <IconRobot size={20} />
               </div>
             </div>
-            <div className="kpi-value">{loading ? "—" : data.robots.length}</div>
+            <div className="kpi-value">{loading ? "-" : data.robots.length}</div>
             <div className="kpi-subtext">
               <span className="status-chip online" style={{ padding: "2px 8px", fontSize: 10 }}>
                 {onlineRobots} en ligne
@@ -120,7 +120,7 @@ export default function Dashboard() {
                 <IconUsers size={20} />
               </div>
             </div>
-            <div className="kpi-value">{loading ? "—" : data.users.length}</div>
+            <div className="kpi-value">{loading ? "-" : data.users.length}</div>
             <div className="kpi-subtext" style={{ color: "var(--shell-dim)" }}>
               Comptes opérateurs et administrateurs
             </div>
@@ -135,7 +135,7 @@ export default function Dashboard() {
                 <IconStore size={20} />
               </div>
             </div>
-            <div className="kpi-value">{loading ? "—" : data.sites.length}</div>
+            <div className="kpi-value">{loading ? "-" : data.sites.length}</div>
             <div className="kpi-subtext" style={{ color: "var(--shell-dim)" }}>
               {droits.orgs ? `${data.orgs.length} organisation(s)` : "Sites de votre périmètre"}
             </div>
@@ -150,7 +150,7 @@ export default function Dashboard() {
                 <IconCpu size={20} />
               </div>
             </div>
-            <div className="kpi-value">{loading ? "—" : data.models.length}</div>
+            <div className="kpi-value">{loading ? "-" : data.models.length}</div>
             <div className="kpi-subtext" style={{ color: "var(--shell-dim)" }}>
               Services de détection configurés
             </div>
@@ -203,7 +203,7 @@ export default function Dashboard() {
                             {r.serial || "OSC-STD"}
                           </div>
                         </td>
-                        <td>{r.org_nom || r.site_nom || "—"}</td>
+                        <td>{r.org_nom || r.site_nom || "-"}</td>
                         <td>
                           <div className="battery-gauge" style={{ width: 110 }}>
                             <div className="battery-bar-wrap">
@@ -257,7 +257,7 @@ export default function Dashboard() {
                       <div className="audit-header">
                         <span className="audit-title" style={{ fontSize: 12.5 }}>{a.action || a.event}</span>
                         <span className="audit-time">
-                          {a.created_at ? new Date(a.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                          {a.created_at ? new Date(a.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "-"}
                         </span>
                       </div>
                       <p className="audit-desc" style={{ fontSize: 11.5 }}>

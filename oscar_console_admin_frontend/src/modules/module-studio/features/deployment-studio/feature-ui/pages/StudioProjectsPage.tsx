@@ -178,7 +178,7 @@ export default function StudioProjectsPage() {
           {affiches.length === 0 ? (
             <p>
               {chargement
-                ? "Chargement des projets…"
+                ? "Chargement des projets..."
                 : projects.length === 0
                   ? "Aucun projet pour l’instant. Créez-en un pour composer un bundle de déploiement."
                   : "Tous les projets sont archivés. Affichez-les pour en ressortir un."}
@@ -377,7 +377,7 @@ export default function StudioProjectsPage() {
             <footer className="dialog-footer">
               <button className="secondary-button" disabled={suppression} onClick={() => setASupprimer(null)} type="button">Annuler</button>
               <button className="danger-button" disabled={suppression} onClick={() => void confirmerSuppression()} type="button">
-                {suppression ? <><LoaderCircle className="spin" size={15} /> Suppression…</> : <><Trash2 size={15} /> Supprimer le projet</>}
+                {suppression ? <><LoaderCircle className="spin" size={15} /> Suppression...</> : <><Trash2 size={15} /> Supprimer le projet</>}
               </button>
             </footer>
           </section>

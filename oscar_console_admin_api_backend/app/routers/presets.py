@@ -8,7 +8,7 @@ Ils ne savaient rien des châssis réellement pris en charge, et une composition
 Un préset comble cet écart. Il n'appartient à aucune organisation : c'est là
 toute sa différence avec un bundle. Un bundle est le travail d'un client sur
 ses robots ; un préset est un point de départ que nous maintenons et que tous
-voient. La bibliothèque s'enrichit un châssis à la fois — ROSMASTER
+voient. La bibliothèque s'enrichit un châssis à la fois - ROSMASTER
 aujourd'hui, un autre demain.
 
 D'où une conséquence que le code applique plutôt que de la confier au réglage
@@ -119,7 +119,7 @@ def promote_version(version_id: str, body: CompositionPresetIn, db: Session = De
 
     C'est le chemin par lequel la bibliothèque s'enrichit : on compose et on
     éprouve sur un robot réel, puis on verse au catalogue ce qui a fait ses
-    preuves. Une version encore en brouillon est refusée — un point de départ
+    preuves. Une version encore en brouillon est refusée - un point de départ
     proposé à tous doit d'abord avoir été figé.
     """
     _catalogue_ecrivable(user)

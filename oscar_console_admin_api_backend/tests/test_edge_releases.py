@@ -202,4 +202,4 @@ def test_la_trace_dun_echec_verbeux_est_coupee_et_le_montre(client, contexte):
               if l.get("action") == "EDGE_RELEASE_FAILED"]
     assert lignes, "l'echec doit laisser une trace"
     assert len(lignes[0]["resource"]) <= 200
-    assert lignes[0]["resource"].endswith("…")
+    assert lignes[0]["resource"].endswith("...")

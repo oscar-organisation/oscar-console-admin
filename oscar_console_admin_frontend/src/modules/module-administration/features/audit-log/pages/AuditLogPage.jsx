@@ -137,7 +137,7 @@ export default function Audit() {
                               minute: "2-digit",
                               second: "2-digit",
                             })
-                          : "—"}
+                          : "-"}
                       </td>
                       <td>
                         <span
@@ -154,7 +154,7 @@ export default function Audit() {
                       </td>
                       <td>
                         <span style={{ fontFamily: "var(--font-mono)", fontSize: 12 }}>
-                          {l.resource_type ? `${l.resource_type} #${String(l.resource_id || "").slice(0, 6)}` : "—"}
+                          {l.resource_type ? `${l.resource_type} #${String(l.resource_id || "").slice(0, 6)}` : "-"}
                         </span>
                       </td>
                       <td>
@@ -164,7 +164,7 @@ export default function Audit() {
                           </pre>
                         ) : (
                           <span style={{ color: "var(--shell-muted)", fontSize: 12.5 }}>
-                            {l.details || l.description || "—"}
+                            {l.details || l.description || "-"}
                           </span>
                         )}
                       </td>

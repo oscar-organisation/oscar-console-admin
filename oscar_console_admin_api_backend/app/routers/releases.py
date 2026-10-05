@@ -3,11 +3,11 @@
 La console distribuait jusqu'ici de la configuration. Distribuer du **code**
 exécutable demande trois garanties de plus, et ce module les pose :
 
-1. **l'empreinte voyage à part de l'archive** — le robot refuse ce qui ne
+1. **l'empreinte voyage à part de l'archive** - le robot refuse ce qui ne
    correspond pas à ce qui a été publié ;
 2. **l'empreinte est authentifiée** par la clé propre au robot, pour qu'un
    intermédiaire ne puisse pas annoncer une autre archive que celle publiée ;
-3. **la mise à jour se fait par canal** — un robot témoin en `beta` avant que
+3. **la mise à jour se fait par canal** - un robot témoin en `beta` avant que
    la flotte en `stable` ne suive.
 
 Le retour arrière, lui, appartient au robot : c'est lui qui sait si la version
@@ -55,8 +55,8 @@ def _empreinte_signee(sha256: str, cle_robot_hash: str) -> str:
 
     La clé du robot n'est connue que de lui et du serveur ; signer l'empreinte
     avec elle empêche un intermédiaire d'annoncer une archive qu'il aurait
-    fabriquée. Une signature asymétrique serait plus forte — elle survivrait à
-    la compromission du serveur — et c'est la suite prévue.
+    fabriquée. Une signature asymétrique serait plus forte - elle survivrait à
+    la compromission du serveur - et c'est la suite prévue.
     """
     return hmac.new(cle_robot_hash.encode("utf-8"), sha256.encode("utf-8"), hashlib.sha256).hexdigest()
 

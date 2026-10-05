@@ -168,7 +168,7 @@ export default function StudioEditorPage() {
                         }
                       }}>
                 {suppression
-                  ? <><LoaderCircle className="spin" size={15} /> Suppression…</>
+                  ? <><LoaderCircle className="spin" size={15} /> Suppression...</>
                   : <><Trash2 size={15} /> Supprimer le projet</>}
               </button>
             </footer>

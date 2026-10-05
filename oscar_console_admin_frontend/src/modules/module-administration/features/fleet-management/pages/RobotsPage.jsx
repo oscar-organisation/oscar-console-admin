@@ -587,7 +587,7 @@ export default function Robots() {
         <div className="modal-backdrop show">
           <div className="modal-shell" data-testid="operators-modal" style={{ maxWidth: 640, width: "94%" }}>
             <div className="modal-head">
-              <h3><IconUsers size={18} /> Affectation des Opérateurs — {ops.nom}</h3>
+              <h3><IconUsers size={18} /> Affectation des Opérateurs - {ops.nom}</h3>
               <button type="button" className="icon-btn" onClick={() => setOps(null)}>
                 <IconX size={16} />
               </button>
@@ -607,7 +607,7 @@ export default function Robots() {
         <div className="modal-backdrop show">
           <div className="modal-shell" data-testid="token-result" style={{ maxWidth: 540 }}>
             <div className="modal-head">
-              <h3><IconKey size={18} /> Jetons de Session LiveKit — {issued.robot}</h3>
+              <h3><IconKey size={18} /> Jetons de Session LiveKit - {issued.robot}</h3>
               <button type="button" className="icon-btn" onClick={() => setIssued(null)}>
                 <IconX size={16} />
               </button>
@@ -643,7 +643,7 @@ export default function Robots() {
         <div className="modal-backdrop show">
           <div className="modal-shell" data-testid="diagnostic-modal" style={{ maxWidth: 640, width: "94%" }}>
             <div className="modal-head">
-              <h3><IconActivity size={18} /> Diagnostic Temps Réel — {diag.robot.nom}</h3>
+              <h3><IconActivity size={18} /> Diagnostic Temps Réel - {diag.robot.nom}</h3>
               <button type="button" className="icon-btn" onClick={() => setDiag(null)}>
                 <IconX size={16} />
               </button>

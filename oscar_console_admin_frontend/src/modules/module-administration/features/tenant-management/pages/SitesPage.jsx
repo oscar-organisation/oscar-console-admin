@@ -220,13 +220,13 @@ export default function Sites() {
                         </div>
                       </div>
                     </td>
-                    <td>{s.org_nom || "—"}</td>
+                    <td>{s.org_nom || "-"}</td>
                     <td>
                       <span className="status-chip neutral" style={{ fontSize: 11 }}>
                         {s.ville ? `${s.ville} (${s.code_postal || "-"})` : "Non spécifiée"}
                       </span>
                     </td>
-                    <td style={{ color: "var(--shell-muted)", fontSize: 12.5 }}>{s.adresse || "—"}</td>
+                    <td style={{ color: "var(--shell-muted)", fontSize: 12.5 }}>{s.adresse || "-"}</td>
                     <td className="row-actions">
                       {canUpdate && (
                         <button

@@ -542,7 +542,7 @@ export default function Users() {
         <div className="modal-backdrop show">
           <form className="modal-shell" onSubmit={submitRoles} data-testid="user-roles-modal" style={{ maxWidth: 500 }}>
             <div className="modal-head">
-              <h3><IconShield size={18} /> Rôles — {rolesModal.user.nom}</h3>
+              <h3><IconShield size={18} /> Rôles - {rolesModal.user.nom}</h3>
               <button type="button" className="icon-btn" onClick={() => setRolesModal(null)}>
                 <IconX size={16} />
               </button>

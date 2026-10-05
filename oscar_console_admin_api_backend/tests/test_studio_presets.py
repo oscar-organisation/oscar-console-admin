@@ -2,7 +2,7 @@
 
 Un préset n'appartient à aucune organisation : c'est ce qui le sépare d'un
 bundle, et c'est aussi ce qui impose ses garde-fous. Ce que ces tests
-verrouillent, c'est la portée — qui peut verser au catalogue, et ce qu'un
+verrouillent, c'est la portée - qui peut verser au catalogue, et ce qu'un
 client y voit.
 """
 
@@ -16,7 +16,7 @@ from test_studio_bundles import _publier, contexte, spec, uniq  # noqa: F401
 def preset(**surcharges) -> dict:
     corps = {
         "slug": uniq("rosmaster-m3pro"),
-        "nom": "ROSMASTER M3 Pro — magasin",
+        "nom": "ROSMASTER M3 Pro - magasin",
         "famille": "rosmaster-m3pro",
         "constructeur": "Yahboom",
         "description": "Composition éprouvée en magasin.",
@@ -130,5 +130,5 @@ class TestIntegrite:
         cree = client.post("/api/studio/presets", headers=admin_headers,
                            json=preset()).json()
         r = client.patch(f"/api/studio/presets/{cree['id']}", headers=admin_headers,
-                         json={"nom": "ROSMASTER M3 Pro — entrepôt"}).json()
+                         json={"nom": "ROSMASTER M3 Pro - entrepôt"}).json()
         assert r["revision"] == 1
