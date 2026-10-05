@@ -27,6 +27,7 @@ cp .env.exemple .env              # une fois: les réglages du poste
 docker compose up --build -d      # construire et lancer, sur http://127.0.0.1:18200
 ./tester.sh                       # relecture du code, types, tests unitaires, construction
 ./tester-les-ecrans.sh            # les tests d'écran (Playwright), à la main
+./tester-la-connexion-sur-le-poste.sh   # la connexion de bout en bout, contre l'API du poste
 docker compose down               # arrêter
 ```
 
@@ -42,12 +43,15 @@ Pour se connecter, l'API doit tourner aussi: même commande dans
 | `scripts/update-xr-bundle.sh` | reconstruit le cockpit XR, dans un conteneur, sans jeton |
 | `Dockerfile` | l'image: Vite sous Node 22 construit, nginx sert |
 | `nginx-spa.conf`, `nginx-security-headers.conf` | les règles du serveur web et ses en-têtes de sécurité |
+| `nginx-security-headers.poste.conf` | la même règle de sécurité, plus l'API du poste en `http`; montée sur le poste seulement, par `compose.override.yaml` (décision 120) |
+| `controler-l-image.sh` | contrôle une image construite: règle de sécurité d'origine, cockpit XR sans jeton |
 | `runtime-config.template.js` | les réglages publics écrits au démarrage du conteneur |
 | `compose.yaml` | la composition que Coolify met en ligne: l'image de Harbor, aucun port publié |
 | `compose.override.yaml` | le complément du poste: construction locale, port 18200 |
 | `.env.exemple` | chaque réglage expliqué, avec les valeurs du poste |
 | `tester.sh`, `tester-les-ecrans.sh` | les tests, dans un conteneur jetable |
 | `e2e/`, `playwright.config.ts` | les scénarios des tests d'écran |
+| `e2e-poste/`, `playwright.poste.config.ts`, `tester-la-connexion-sur-le-poste.sh` | le scénario de bout en bout contre la console qui tourne sur le poste |
 | `catalog-info.yaml`, `mkdocs.yml`, `docs/` | la fiche et la documentation du portail technique |
 | `README.md` | les règles de contribution des développeurs de la console |
 | `LISEZ-MOI-espaces.md` | les cinq espaces que porte l'application |

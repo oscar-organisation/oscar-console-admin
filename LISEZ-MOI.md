@@ -107,15 +107,10 @@ des données d'un autre environnement, voir la procédure « Restaurer un
 instantané » de la documentation de l'API
 (`oscar_console_admin_api_backend/docs/restaurer-un-instantane.md`).
 
-**Limite connue au 04/10/2026, à régler.** Sur le poste, la connexion par
-l'interface échoue: sa politique de sécurité du contenu (CSP, dans
-`oscar_console_admin_frontend/nginx-security-headers.conf`) n'autorise le
-navigateur à appeler que des adresses en `https`, et l'API du poste répond en
-`http`. Le navigateur refuse alors l'appel à `/api/auth/login` (mesuré le
-04/10/2026; le même essai, la CSP mise de côté, se connecte et charge la
-console). En test et en production, l'API est en `https`: rien ne bloque. Les
-tests d'écran simulent l'API et ne sont pas touchés. La correction proposée
-est décrite dans la PR de reprise du code.
+Sur le poste, l'API répond en `http`: `compose.override.yaml` donne à
+l'interface une règle de sécurité qui l'autorise à l'appeler, alors que
+l'image, en test et en production, garde la sienne, qui n'accepte que
+`https` (décision 120).
 
 ### 3. Tester
 
@@ -123,6 +118,7 @@ est décrite dans la PR de reprise du code.
 oscar_console_admin_api_backend/tester.sh          # toute la suite de l'API (pytest)
 oscar_console_admin_frontend/tester.sh             # relecture, types, tests unitaires, construction
 oscar_console_admin_frontend/tester-les-ecrans.sh  # les tests d'écran, à la main, si on a touché aux écrans
+oscar_console_admin_frontend/tester-la-connexion-sur-le-poste.sh  # la connexion de bout en bout, contre la console lancée à l'étape 2
 ```
 
 Les deux premiers sont ceux que lancent les vérifications automatiques de

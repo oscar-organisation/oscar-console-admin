@@ -21,6 +21,14 @@
 # dans l'entrepôt: une seule façon de construire. pull_policy: never: le poste
 # ne demande jamais cette image à l'entrepôt, qui est privé.
 #
+# LA RÈGLE DE SÉCURITÉ DU POSTE
+#
+# Sur le poste, l'API répond en http (127.0.0.1:18202), et la règle de
+# sécurité de l'image n'autorise que https: le fichier
+# nginx-security-headers.poste.conf la remplace, monté ci-dessous. Il ne
+# diffère de nginx-security-headers.conf que par l'API du poste; les
+# vérifications automatiques de GitHub le contrôlent.
+#
 # LE NUMÉRO
 #
 # 18200, le premier du bloc 182xx de la console, sur la boucle locale
@@ -38,3 +46,9 @@ services:
     pull_policy: never
     ports:
       - "127.0.0.1:${OSCAR_PORT_PUBLIE_INTERFACE:-18200}:3000"
+    volumes:
+      # La règle de sécurité du poste à la place de celle de l'image: elle
+      # autorise en plus l'API du poste, servie en http sur la boucle locale
+      # (décision 120). Sans elle, le navigateur refuse d'appeler l'API du
+      # poste. L'image, donc le test et la production, garde la règle d'origine.
+      - ./nginx-security-headers.poste.conf:/etc/nginx/snippets/security-headers.conf:ro

@@ -204,6 +204,26 @@ jobs:
             echo "$d: composition valide."
           done
 
+      - name: Les deux règles de sécurité de l'interface ne diffèrent que par l'API du poste
+        # nginx-security-headers.poste.conf, monté sur le poste seulement par
+        # compose.override.yaml (décision 120), est la règle de l'image, plus l'API
+        # du poste servie en http sur la boucle locale. Toute autre différence
+        # arrête les vérifications: une règle changée dans l'un doit l'être dans
+        # l'autre.
+        working-directory: ${{ env.INTERFACE }}
+        run: |
+          set -u
+          ajout=' http://127.0.0.1:\* http://localhost:\*'
+          grep -q "connect-src 'self' https: wss:$ajout;" nginx-security-headers.poste.conf || {
+            echo "::error file=$INTERFACE/nginx-security-headers.poste.conf::la règle du poste n'ajoute plus l'API du poste à connect-src."
+            exit 1
+          }
+          if ! grep -v '^#' nginx-security-headers.poste.conf | sed "s#$ajout##" | cmp -s - nginx-security-headers.conf ; then
+            echo "::error file=$INTERFACE/nginx-security-headers.poste.conf::la règle du poste diffère de nginx-security-headers.conf par autre chose que l'API du poste."
+            exit 1
+          fi
+          echo "Les deux règles ne diffèrent que par l'API du poste."
+
       - name: Le cockpit XR est complet et dit d'où il vient
         # Le cockpit embarqué doit être servi sous /xr/ et nommer la révision du
         # dépôt oscar_front_casque_vr_ar qui l'a produit. L'image refuse aussi de
@@ -249,6 +269,16 @@ jobs:
         # npm run quality: relecture du code, types, tests unitaires,
         # construction, sous la même version de Node que l'image.
         run: ./${{ env.INTERFACE }}/tester.sh
+
+      - name: L'image de l'interface garde la règle de sécurité d'origine
+        # L'image construite comme sur le poste (le complément local porte la
+        # construction), puis contrôlée par le même script que le déploiement
+        # commun: la règle de sécurité de l'image est celle du dépôt, pas celle
+        # du poste (décision 120), et le cockpit XR est là, sans jeton.
+        working-directory: ${{ env.INTERFACE }}
+        run: |
+          docker compose --env-file /dev/null build interface
+          ./controler-l-image.sh "$(docker compose --env-file /dev/null config --images interface)"
 
   deploiement_api:
     name: "API: construire, ranger et mettre en ligne"
@@ -312,6 +342,10 @@ jobs:
       nom_des_images: console-admin
       dossier: oscar_console_admin_frontend
       services: interface
+      # Le contenu de l'image exacte qui sera rangée (leçon 3.4): la règle de
+      # sécurité d'origine, jamais celle du poste, et le cockpit XR sans jeton.
+      controles_des_images: |
+        interface: ./controler-l-image.sh "$IMAGE_A_CONTROLER"
       ignorer: |
         *.md
         catalog-info.yaml

@@ -84,14 +84,16 @@ L'interface s'ouvre sur `http://127.0.0.1:18200`. Pour s'y connecter, l'API
 doit tourner aussi (`oscar_console_admin_api_backend/`, même commande, sur
 `http://127.0.0.1:18202`).
 
-**Limite connue au 04/10/2026, à régler.** Sur le poste, la connexion échoue:
-la politique de sécurité du contenu de l'interface (`connect-src 'self' https:
-wss:`, dans `nginx-security-headers.conf`) refuse l'appel en `http` vers l'API
-du poste. En test et en production, l'API est en `https`: rien ne bloque.
+Sur le poste, l'API répond en `http`: `compose.override.yaml` monte
+`nginx-security-headers.poste.conf`, la règle de sécurité de l'image plus
+l'API du poste, à la place de `nginx-security-headers.conf`. L'image, donc le
+test et la production, garde la règle d'origine: `controler-l-image.sh` le
+vérifie à chaque PR et avant de ranger chaque image (décision 120).
 
 ```bash
 ./tester.sh               # relecture du code, types, tests unitaires, construction
 ./tester-les-ecrans.sh    # les tests d'écran, à la main, avant une PR qui touche aux écrans
+./tester-la-connexion-sur-le-poste.sh   # la connexion de bout en bout, contre l'API du poste
 docker compose down       # arrêter
 ```
 
