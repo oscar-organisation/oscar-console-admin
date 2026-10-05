@@ -51,7 +51,10 @@ branché sur aucune route; Keycloak n'est pas déployé.
 **LiveKit**, le serveur temps réel, transporte la vidéo et les commandes entre
 un robot et son opérateur. L'API fabrique les jetons de session avec
 `LIVEKIT_API_KEY` et `LIVEKIT_API_SECRET`, et interroge LiveKit à
-`LIVEKIT_HOST_URL`.
+`LIVEKIT_HOST_URL`. En test et en production, c'est le LiveKit du nouveau
+serveur, `test-stream.oscar-bot.com` pour le test et `stream.oscar-bot.com`
+pour la production (décisions 114 et 117): les descriptions de déploiement
+de Coolify posent ces valeurs. Sur le poste, aucun LiveKit ne tourne.
 
 Le fonctionnement de la perception (modèles, Model Boxes, affectations, service
 de perception) est décrit dans

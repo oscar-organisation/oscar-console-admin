@@ -5,7 +5,7 @@ describe("buildCockpitUrl", () => {
   it("place les accès dans le fragment et jamais dans la query string", () => {
     const result = new URL(buildCockpitUrl({
       token: "signed-jwt",
-      livekit_url: "wss://stream-livekit.oscar-bot.com",
+      livekit_url: "wss://livekit.example.test",
       room: "oscar-oscar-02-d97da823",
     }, "https://cockpit.example.test"));
 
