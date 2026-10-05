@@ -1,0 +1,64 @@
+# La fiche de l'interface de la console d'administration, lue par le portail
+# technique.
+#
+# Place définitive: oscar-console-admin/oscar_console_admin_frontend/
+# catalog-info.yaml, dans le dossier de l'interface, qui la contient tout
+# entière (décision 62). Le fichier catalog-info.yaml à la racine du dépôt y
+# renvoie. Ce fichier n'entre pas dans l'empreinte du contenu de l'image: le
+# changer ne reconstruit ni ne remet en ligne l'interface.
+#
+# Écrite en français simple: le portail doit être compréhensible par
+# quelqu'un qui n'a jamais codé.
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: console-admin-interface
+  title: Console d'administration, l'interface
+  description: >-
+    L'écran de travail quotidien du client: ses organisations, ses sites, ses
+    utilisateurs et leurs droits, ses robots, ses modèles d'IA, le journal
+    d'audit, le pilotage d'un robot sur écran ou en casque (le cockpit XR), et
+    le Studio des déploiements. Elle ne garde aucune donnée: tout passe par
+    l'API de la console.
+  annotations:
+    # L'état des vérifications automatiques de GitHub, lu dans GitHub Actions.
+    github.com/project-slug: oscar-organisation/oscar-console-admin
+    backstage.io/source-location: url:https://github.com/oscar-organisation/oscar-console-admin/tree/main/oscar_console_admin_frontend/
+    # La documentation, construite par le portail depuis ce dossier
+    # (mkdocs.yml et docs/).
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - console
+    - react
+    - vite
+    - teleoperation
+    - studio
+  links:
+    - url: https://console.oscar-bot.com
+      title: Production
+    - url: https://test-console.oscar-bot.com
+      title: Test
+    - url: https://deploy.oscar-bot.com
+      title: Coolify, projet console-admin
+      icon: dashboard
+    - url: https://github.com/oscar-organisation/oscar-console-admin/tree/main/oscar_console_admin_frontend
+      title: Le code
+      icon: github
+    - url: https://github.com/oscar-organisation/oscar-console-admin/actions
+      title: Les vérifications automatiques de GitHub
+      icon: github
+spec:
+  type: website
+  lifecycle: production
+  owner: group:default/equipe-oscar
+  system: console
+  # Le navigateur appelle l'API de la console pour tout ce qu'il affiche.
+  consumesApis:
+    - api:default/console-admin-api
+  dependsOn:
+    - component:default/console-admin-api
+    - resource:default/coolify
+    - resource:default/proxy
+    - resource:default/entrepot-images
+    - resource:default/ovhcloud

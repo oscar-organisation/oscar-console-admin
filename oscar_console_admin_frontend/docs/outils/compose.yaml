@@ -1,0 +1,30 @@
+# L'outil de la documentation de l'interface, dans un conteneur.
+#
+# Le même modèle que la documentation de Harbor
+# (oscar-infrastructure/oscar_infra_container_registry/docs/outils/compose.yaml),
+# à la même version figée. À lancer depuis le dossier
+# oscar_console_admin_frontend/, avec Docker et rien d'autre:
+#
+#   docker compose -f docs/outils/compose.yaml run --rm construire
+#
+# construire  construit la documentation comme le fait TechDocs, le lecteur de
+#             documentation du portail, et échoue au moindre avertissement:
+#             lien cassé, page oubliée, ancre absente
+
+name: outils-de-la-documentation-de-la-console-admin-interface
+
+services:
+
+  construire:
+    # L'image officielle du générateur de TechDocs, celle du portail
+    # (Backstage 1.55): MkDocs et son module techdocs-core.
+    image: spotify/techdocs:v1.2.8
+    # Aucun réseau: la construction n'a besoin de rien d'extérieur.
+    network_mode: none
+    working_dir: /documentation
+    # --strict transforme chaque avertissement en erreur. Le site produit reste
+    # dans le conteneur, qui disparaît: seul compte le verdict.
+    command: ["build", "--strict", "--site-dir", "/tmp/site"]
+    volumes:
+      # Le dossier de l'interface, où se trouve mkdocs.yml, en lecture seule.
+      - ../..:/documentation:ro

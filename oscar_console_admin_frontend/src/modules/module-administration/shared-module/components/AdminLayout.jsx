@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/auth/AuthContext.jsx";
@@ -9,6 +9,7 @@ import OrganisationSwitcher from "@/components/OrganisationSwitcher.jsx";
 import OscarBrand from "@/components/OscarBrand.jsx";
 import {
   IconHome,
+  IconHistory,
   IconBuilding,
   IconStore,
   IconUsers,
@@ -19,10 +20,10 @@ import {
   IconGrid,
   IconLogOut,
   IconMenu,
-  IconPanelLeftClose,
-  IconPanelLeftOpen,
   IconLayers,
   IconBlocks,
+  IconChevronLeft,
+  IconChevronRight,
   IconX,
 } from "@/components/Icons.jsx";
 
@@ -35,6 +36,7 @@ const ICONS = {
   robot: IconRobot,
   cpu: IconCpu,
   activity: IconActivity,
+  history: IconHistory,
   layers: IconLayers,
   blocks: IconBlocks,
 };
@@ -83,21 +85,21 @@ export default function AdminLayout() {
       {open && <div className="sidebar-backdrop" onClick={close} />}
 
       <aside className={`platform-sidebar${open ? " open" : ""}${collapsed ? " collapsed" : ""}`}>
+        <button
+          className="sidebar-collapse"
+          type="button"
+          title={collapsed ? "Déployer la navigation" : "Réduire la navigation"}
+          aria-label={collapsed ? "Déployer la navigation" : "Réduire la navigation"}
+          aria-pressed={collapsed}
+          onClick={toggleCollapsed}
+        >
+          {collapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
+        </button>
         <div className="sidebar-top-row">
           <a className="brand" href="/" title={branding.applicationName} aria-label={`${branding.applicationName} - espaces`} onClick={(e) => { e.preventDefault(); navigate("/"); }}>
             <OscarBrand compact={collapsed} />
           </a>
           <div className="sidebar-controls">
-            <button
-              className="sidebar-collapse"
-              type="button"
-              title={collapsed ? "Déployer la navigation" : "Réduire la navigation"}
-              aria-label={collapsed ? "Déployer la navigation" : "Réduire la navigation"}
-              aria-pressed={collapsed}
-              onClick={toggleCollapsed}
-            >
-              {collapsed ? <IconPanelLeftOpen size={17} /> : <IconPanelLeftClose size={17} />}
-            </button>
             <button className="sidebar-close" aria-label="Fermer le menu" onClick={close}>
               <IconX size={18} />
             </button>
@@ -110,22 +112,26 @@ export default function AdminLayout() {
 
         <nav className="side-nav" data-testid="admin-nav">
           <div className="side-nav-title">Administration</div>
-          {items.map((n) => {
+          {items.map((n, index) => {
             const Icon = ICONS[n.icon] || IconHome;
             return (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.end}
-                className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
-                data-testid={`nav-${n.to.split("/").pop() || "dashboard"}`}
-                title={n.label}
-                aria-label={n.label}
-                onClick={close}
-              >
-                <span className="nav-icon"><Icon size={17} /></span>
-                <span className="nav-label">{n.label}</span>
-              </NavLink>
+              <Fragment key={n.to}>
+                {index > 0 && items[index - 1]?.section !== n.section && (
+                  <div className="side-nav-divider" aria-hidden="true" />
+                )}
+                <NavLink
+                  to={n.to}
+                  end={n.end}
+                  className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}
+                  data-testid={`nav-${n.to.split("/").pop() || "dashboard"}`}
+                  title={n.label}
+                  aria-label={n.label}
+                  onClick={close}
+                >
+                  <span className="nav-icon"><Icon size={17} /></span>
+                  <span className="nav-label">{n.label}</span>
+                </NavLink>
+              </Fragment>
             );
           })}
 

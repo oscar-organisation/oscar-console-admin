@@ -1,0 +1,107 @@
+# Les fiches de l'API de la console d'administration, lues par le portail
+# technique: l'API comme composant, sa description (OpenAPI), et sa base de
+# données.
+#
+# Place définitive: oscar-console-admin/oscar_console_admin_api_backend/
+# catalog-info.yaml, dans le dossier de l'API, qui la contient tout entière
+# (décision 62). Le fichier catalog-info.yaml à la racine du dépôt y renvoie.
+# Ce fichier n'entre pas dans l'empreinte du contenu de l'image: le changer ne
+# reconstruit ni ne remet en ligne l'API.
+#
+# Écrites en français simple: le portail doit être compréhensible par
+# quelqu'un qui n'a jamais codé.
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: console-admin-api
+  title: Console d'administration, l'API
+  description: >-
+    L'API centrale de la console d'administration du client: organisations,
+    sites, utilisateurs, rôles et droits, robots et jetons de leurs sessions
+    temps réel, modèles d'IA, Studio des déploiements, paquets embarqués des
+    robots et journal d'audit. Elle garde tout dans sa base PostgreSQL.
+  annotations:
+    # L'état des vérifications automatiques de GitHub, lu dans GitHub Actions.
+    github.com/project-slug: oscar-organisation/oscar-console-admin
+    backstage.io/source-location: url:https://github.com/oscar-organisation/oscar-console-admin/tree/main/oscar_console_admin_api_backend/
+    # La documentation, construite par le portail depuis ce dossier
+    # (mkdocs.yml et docs/).
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - console
+    - python
+    - fastapi
+    - postgresql
+  links:
+    - url: https://api-console.oscar-bot.com/health
+      title: Production, la santé
+    - url: https://test-api-console.oscar-bot.com/health
+      title: Test, la santé
+    - url: https://deploy.oscar-bot.com
+      title: Coolify, projet console-admin
+      icon: dashboard
+    - url: https://github.com/oscar-organisation/oscar-console-admin/tree/main/oscar_console_admin_api_backend
+      title: Le code
+      icon: github
+    - url: https://github.com/oscar-organisation/oscar-console-admin/actions
+      title: Les vérifications automatiques de GitHub
+      icon: github
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/equipe-oscar
+  system: console
+  providesApis:
+    - api:default/console-admin-api
+  dependsOn:
+    - resource:default/console-admin-base-de-donnees
+    # LiveKit, qui transporte la vidéo et les commandes des robots: l'API en
+    # fabrique les jetons de session et l'interroge.
+    - component:default/serveur-temps-reel
+    - resource:default/coolify
+    - resource:default/proxy
+    - resource:default/entrepot-images
+    - resource:default/ovhcloud
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: console-admin-api
+  title: API de la console d'administration
+  description: >-
+    L'API que l'interface de la console appelle, sous /api. Sa description est
+    celle que l'API de production publie elle-même.
+  links:
+    - url: https://api-console.oscar-bot.com/docs
+      title: La description, servie par l'API
+spec:
+  type: openapi
+  lifecycle: production
+  owner: group:default/equipe-oscar
+  system: console
+  definition:
+    # Lue à chaque rafraîchissement du catalogue: la description affichée est
+    # toujours celle de l'API en service, jamais une copie qui vieillit.
+    $text: https://api-console.oscar-bot.com/openapi.json
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: console-admin-base-de-donnees
+  title: Console d'administration, la base de données
+  description: >-
+    La base PostgreSQL 16 de l'API de la console: tout ce que la console sait
+    (organisations, utilisateurs, droits, robots, journal d'audit). Un volume
+    par environnement, console-admin-base-de-donnees, à côté de l'API dans la
+    même composition.
+  annotations:
+    backstage.io/source-location: url:https://github.com/oscar-organisation/oscar-console-admin/tree/main/oscar_console_admin_api_backend/
+  tags:
+    - postgresql
+spec:
+  type: database
+  owner: group:default/equipe-oscar
+  system: console

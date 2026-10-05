@@ -1,0 +1,39 @@
+# La documentation de l'API de la console d'administration, telle que
+# TechDocs, le lecteur de documentation du portail Backstage, la construit.
+#
+# Le même modèle que la documentation de Harbor et du déploiement
+# (oscar-infrastructure): ce fichier à côté du dossier docs/, qui porte tout ce
+# qui se lit. Le portail la trouve par catalog-info.yaml, voisin de ce fichier,
+# dont l'annotation backstage.io/techdocs-ref vaut dir:. .
+#
+# Pour construire et vérifier en local, dans un conteneur, depuis ce dossier:
+#   docker compose -f docs/outils/compose.yaml run --rm construire
+
+site_name: OSCAR, la console d'administration, l'API
+site_description: >-
+  L'API de la console d'administration du client et sa base de données: ce
+  qu'elle fait, ses adresses, comment la lancer et la tester sur son poste, ses
+  réglages, sa santé, ses données, et comment elle est mise en ligne.
+repo_url: https://github.com/oscar-organisation/oscar-console-admin
+edit_uri: edit/main/oscar_console_admin_api_backend/docs/
+docs_dir: docs
+
+nav:
+  - Commencer ici: index.md
+  - Restaurer un instantané: restaurer-un-instantane.md
+  - L'intégration de l'IA et de la vision: integration-ia-et-vision.md
+
+# Hors du site: la composition qui construit cette documentation.
+exclude_docs: |
+  /outils/
+
+# Un lien cassé, une ancre absente, une page oubliée dans le menu: chacun est un
+# avertissement, et la construction en mode strict échoue dessus.
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+plugins:
+  - techdocs-core

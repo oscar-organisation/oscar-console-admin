@@ -424,6 +424,28 @@ body {
   font-weight: 580;
 }
 
+/* Le modele du chassis, tel que l'operateur l'a decrit. Une seule etiquette
+   dans le cas courant : afficher aussi la famille technique quand les deux
+   disent la meme chose encombrait la ligne sans rien apprendre. */
+.modele-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 560;
+  color: var(--shell-purple);
+  background: var(--shell-purple-soft);
+}
+
+/* La famille declaree par le robot ne s'affiche que lorsqu'elle contredit la
+   saisie, ou qu'aucune saisie n'existe. C'est alors un ecart a lever, pas une
+   etiquette de plus : elle prend le ton de l'avertissement. */
+.modele-chip--ecart {
+  color: var(--shell-amber, var(--shell-muted));
+  background: var(--shell-amber-soft, var(--shell-elevated));
+}
+
 /* Tables and repeated data */
 .data-table { font-size: 12px; }
 .data-table th {

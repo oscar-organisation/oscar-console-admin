@@ -3,6 +3,9 @@ from urllib.parse import urlparse
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from .config import settings
 from .database import Base, SessionLocal, engine
@@ -67,4 +70,18 @@ app.include_router(api_router, prefix=settings.api_prefix)
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": settings.app_name}
+    """La santé de l'API : 200 si elle répond et si sa base répond, 503 sinon.
+
+    Le contrôle de santé de la composition et le déploiement automatique lisent
+    cette route. Une API qui répondrait 200 sans pouvoir lire sa base se dirait
+    saine alors qu'aucune page de la console ne marcherait.
+    """
+    try:
+        with engine.connect() as connexion:
+            connexion.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "service": settings.app_name, "database": "unreachable"},
+        )
+    return {"status": "ok", "service": settings.app_name, "database": "ok"}

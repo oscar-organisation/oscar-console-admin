@@ -43,6 +43,7 @@ from ..models import (
     Fleet,
     FleetRobot,
     Robot,
+    Site,
 )
 from ..schemas import (
     BundleDraftIn,
@@ -268,9 +269,14 @@ def update_bundle(request: Request, bundle_id: str, body: BundleIn, db: Session 
     bundle.nom = body.nom.strip()
     bundle.description = body.description
     bundle.target = body.target
+    if body.statut is not None:
+        if body.statut not in ("active", "archived"):
+            raise HTTPException(400, "Statut attendu : active ou archived")
+        bundle.statut = body.statut
     db.commit()
     db.refresh(bundle)
-    write_audit(db, actor=user, action="BUNDLE_UPDATE", resource=bundle.nom, org_id=bundle.org_id)
+    write_audit(db, actor=user, action="BUNDLE_UPDATE", resource=bundle.nom,
+                result=bundle.statut, org_id=bundle.org_id)
     return _bundle_out(db, bundle)
 
 
@@ -423,10 +429,15 @@ def list_deployments(request: Request, robot_id: str | None = None, bundle_id: s
 @router.post("/deployments", response_model=list[DeploymentOut], status_code=201)
 def create_deployment(request: Request, body: DeploymentIn, db: Session = Depends(get_db),
                       user=Depends(require("api:deployment.execute", "execute"))):
-    """Demande l'application d'une version sur un robot ou une flotte.
+    """Demande l'application d'une version sur des robots, une flotte ou des sites.
 
-    Déployer sur une flotte crée une ligne par robot : c'est le robot qui
-    applique, et c'est robot par robot que l'on veut savoir si ça a marché.
+    Les trois portées se cumulent et leur union est dédupliquée : cibler une
+    flotte puis l'un de ses robots ne crée pas deux déploiements.
+
+    Quelle que soit la portée demandée, une ligne est créée **par robot**.
+    C'est le robot qui applique, et c'est robot par robot que l'on veut savoir
+    si ça a marché : une flotte de cent robots dont trois échouent n'est pas
+    « une flotte en échec », c'est trois robots à regarder.
     """
     org_id = request_organisation_id(request)
     version = _version_du_perimetre(db, body.version_id, org_id)
@@ -445,8 +456,21 @@ def create_deployment(request: Request, body: DeploymentIn, db: Session = Depend
             db.execute(select(FleetRobot).where(FleetRobot.fleet_id == flotte.id)).scalars()
         ]
         cibles = list(dict.fromkeys(cibles))
+    sites_demandes = list(dict.fromkeys([
+        *body.site_ids,
+        *([body.site_id] if body.site_id else []),
+    ]))
+    for site_id in sites_demandes:
+        site = db.get(Site, site_id)
+        if not site or (org_id and site.org_id != org_id):
+            raise HTTPException(404, "Site introuvable")
+        cibles += [
+            robot.id for robot in
+            db.execute(select(Robot).where(Robot.site_id == site.id)).scalars()
+        ]
+        cibles = list(dict.fromkeys(cibles))
     if not cibles:
-        raise HTTPException(400, "Choisissez au moins un robot")
+        raise HTTPException(400, "Aucun robot ciblé : la portée demandée est vide")
 
     robots = [_robot_du_perimetre(db, robot_id, org_id) for robot_id in cibles]
     if any(robot.org_id != bundle.org_id for robot in robots):
@@ -525,6 +549,25 @@ def _robot_par_reference(db: Session, reference: str) -> Robot:
     return robot
 
 
+def _noter_contact(db: Session, robot: Robot) -> None:
+    """Retient l'instant ou l'agent embarque s'est manifeste.
+
+    Toutes les routes du robot passent par l'authentification, donc marquer ici
+    suffit a couvrir la releve du bundle, celle de la release et les deux
+    comptes rendus. C'est ce qui alimente la pastille de presence, qui affichait
+    jusqu'ici « online » pour un robot eteint (voir app/presence.py).
+
+    Le marquage n'a lieu qu'une fois la cle verifiee : sinon n'importe quel
+    appel non authentifie ferait paraitre un robot eteint en ligne.
+
+    L'ecriture reste hors transaction metier : un contact note en trop ne
+    fausse rien, un contact perdu se rattrape a la releve suivante, 45 secondes
+    plus tard.
+    """
+    robot.vu_le = datetime.now(timezone.utc)
+    db.commit()
+
+
 def _robot_authentifie(db: Session, reference: str, cle: str) -> Robot:
     """Le robot désigné, à condition que la clé présentée soit la sienne.
 
@@ -542,12 +585,14 @@ def _robot_authentifie(db: Session, reference: str, cle: str) -> Robot:
         empreinte = hashlib.sha256(cle.encode("utf-8")).hexdigest()
         if not hmac.compare_digest(empreinte, robot.agent_key_hash):
             raise HTTPException(401, "Clé agent embarqué invalide pour ce robot")
+        _noter_contact(db, robot)
         return robot
     flotte = settings.edge_agent_api_key
     if not flotte:
         raise HTTPException(503, "Aucune clé d'agent émise pour ce robot")
     if not hmac.compare_digest(cle, flotte):
         raise HTTPException(401, "Clé agent embarqué invalide")
+    _noter_contact(db, robot)
     return robot
 
 
@@ -682,6 +727,11 @@ def runtime_release_report(reference: str, body: EdgeReleaseReportIn,
     """
     robot = _robot_authentifie(db, reference, cle)
     robot.edge_version = body.version
+    if body.profil:
+        # Constate, pas impose : on enregistre ce que le robot declare sans
+        # ecraser ce que l'operateur a saisi. L'ecart entre les deux est
+        # precisement ce qu'on veut pouvoir montrer.
+        robot.modele_constate = body.profil
     db.commit()
     write_audit(db, actor=None, action="EDGE_RELEASE_" + body.statut.upper(),
                 resource=f"{robot.nom} → {body.version}" + (f" : {body.message}" if body.message else ""),
