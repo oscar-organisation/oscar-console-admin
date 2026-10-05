@@ -263,7 +263,7 @@ def test_smtp_actif_et_url_de_developpement_refusent_le_demarrage(monkeypatch):
         main._verifier_configuration_courriel()
 
     # Domaine reel : rien ne bloque.
-    monkeypatch.setattr(settings, "public_app_url", "https://admin-console.oscar-bot.com")
+    monkeypatch.setattr(settings, "public_app_url", "https://console.example.test")
     main._verifier_configuration_courriel()
 
 

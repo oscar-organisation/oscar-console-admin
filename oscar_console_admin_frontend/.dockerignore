@@ -5,4 +5,9 @@ dist
 test-results
 playwright-report
 e2e
+e2e-poste
 *.log
+# Les reglages du poste: Vite lirait leurs variables VITE_* et les
+# recopierait dans l application construite.
+.env
+.env.*

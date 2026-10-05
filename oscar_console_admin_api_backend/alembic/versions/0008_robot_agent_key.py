@@ -3,7 +3,7 @@
 La reconciliation des bundles s'authentifiait avec une clé unique partagée par
 toute la flotte : un robot compromis pouvait lire les déploiements de ses
 voisins et rendre compte à leur place. Chaque robot porte désormais l'empreinte
-de sa propre clé — la clé elle-même n'est affichée qu'une fois, à l'émission.
+de sa propre clé - la clé elle-même n'est affichée qu'une fois, à l'émission.
 
 Revision ID: 0008
 Revises: 0007

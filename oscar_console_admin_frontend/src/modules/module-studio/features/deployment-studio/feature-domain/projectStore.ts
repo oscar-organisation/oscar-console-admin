@@ -1,18 +1,20 @@
 import { useLayoutEffect, useSyncExternalStore } from "react";
 import { useAuth } from "@/auth/AuthContext.jsx";
 import {
+  archiverBundle,
   creerBundle,
   enregistrerBrouillon,
   listerBundles,
   lireVersion,
   projetDepuisBundle,
+  supprimerBundle,
 } from "../feature-data/studioApi";
 import type { OscarProject, ProjectTarget, SyncState } from "./types";
 
 /**
  * Projets du Studio : brouillon local d'abord, accord avec le serveur ensuite.
  *
- * Le Studio doit rester utilisable sans réseau — c'est une exigence de
+ * Le Studio doit rester utilisable sans réseau - c'est une exigence de
  * terrain, pas un confort : on configure un robot dans une réserve de magasin.
  * L'édition écrit donc toujours dans le navigateur, et pousse ensuite vers le
  * serveur. Un projet qui n'a jamais atteint le serveur reste `LOCAL` : il peut
@@ -227,8 +229,43 @@ export function ajouterProjet(projet: OscarProject): void {
   publier({ projets: [projet, ...lire().projets] });
 }
 
-export function supprimerProjet(projetId: string): void {
-  publier({ projets: lire().projets.filter((item) => item.id !== projetId) });
+/**
+ * Range un projet hors du plan de travail, ou l'en ressort.
+ *
+ * Un projet deja deploye refuse d'etre supprime : son historique dit ce qui a
+ * tourne sur les robots. Le serveur conseillait de l'archiver, mais rien ne le
+ * permettait. Un projet purement local n'a pas de contrepartie serveur, donc
+ * rien a archiver : on le supprime ou on le garde.
+ */
+export async function archiverProjet(projet: OscarProject, archive: boolean): Promise<void> {
+  if (!projet.bundleId) throw new Error("Ce projet n'existe que dans ce navigateur.");
+  const contexte = generation;
+  await archiverBundle(projet.bundleId, projet.name, archive);
+  if (contexte !== generation) return;
+  publier({
+    projets: lire().projets.map((item) => (item.id === projet.id ? { ...item, archive } : item)),
+  });
+}
+
+
+export async function supprimerProjet(projet: OscarProject): Promise<void> {
+  const contexte = generation;
+  const minuterie = minuteries.get(projet.id);
+  if (minuterie) {
+    window.clearTimeout(minuterie);
+    minuteries.delete(projet.id);
+  }
+  // Un projet serveur ne disparaît localement qu'après confirmation : sinon
+  // il réapparaîtrait au prochain rafraîchissement, ce qui donne l'impression
+  // trompeuse que la suppression a réussi puis a été annulée.
+  if (projet.bundleId) await supprimerBundle(projet.bundleId);
+  if (contexte !== generation) return;
+  publier({
+    projets: lire().projets.filter((item) => item.id !== projet.id),
+    sync: Object.fromEntries(
+      Object.entries(lire().sync).filter(([projetId]) => projetId !== projet.id),
+    ),
+  });
 }
 
 export function remplacerProjet(projet: OscarProject): void {

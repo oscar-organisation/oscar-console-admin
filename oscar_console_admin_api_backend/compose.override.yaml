@@ -1,0 +1,48 @@
+# Ce qui s'ajoute quand on travaille en local, et seulement en local.
+#
+# POURQUOI CE FICHIER EXISTE
+#
+# En local, on veut joindre l'API et sa base depuis le poste, sans nom de
+# domaine: il faut donc publier des ports. En déploiement, on n'en veut surtout
+# pas: le proxy joint l'API par le réseau de Docker, et un port publié est
+# unique sur une machine, ce qui empêcherait le test et la production de
+# tourner côte à côte (leçon 5.4).
+#
+# COMMENT IL EST PRIS EN COMPTE, ET COMMENT IL NE L'EST PAS
+#
+# En local, « docker compose up » lit compose.yaml PUIS ce fichier, et les
+# fusionne, sans rien demander. Coolify, lui, désigne un fichier précis
+# (-f compose.yaml): ce fichier-ci lui est invisible.
+#
+# LA CONSTRUCTION DE L'IMAGE
+#
+# compose.yaml ne fait que nommer l'image de l'entrepôt; elle se construit ici,
+# sur le poste: « docker compose up » la construit si elle manque, « --build »
+# la refait. GitHub construit aussi par ce fichier, avant de ranger l'image dans
+# l'entrepôt: une seule façon de construire.
+# pull_policy: never: le poste ne demande jamais cette image à l'entrepôt, qui
+# est privé; sans lui, docker compose essaie d'abord de la télécharger, échoue,
+# puis construit (mesuré avec l'outil DNS le 04/10/2026).
+#
+# LES NUMÉROS
+#
+# Le bloc 182xx de la console, toujours sur la boucle locale 127.0.0.1 pour que
+# rien ne sorte du poste: 18202 pour l'API, 18203 pour la base. 18200 est
+# l'interface (son propre dossier), 18201 reste réservé à l'authentification.
+# Voir _pilotage/work-report/3-connaissance-du-projet/09-CONVENTION-des-ports.md.
+
+services:
+
+  api:
+    build:
+      # Le dossier de l'API lui-même: le code, ses tests et sa composition
+      # vivent au même niveau (décision 62).
+      context: .
+    pull_policy: never
+    ports:
+      - "127.0.0.1:${OSCAR_PORT_PUBLIE_API:-18202}:8000"
+
+  base-de-donnees:
+    # Pour regarder la base depuis le poste, avec un client PostgreSQL.
+    ports:
+      - "127.0.0.1:${OSCAR_PORT_PUBLIE_BASE_DE_DONNEES:-18203}:5432"

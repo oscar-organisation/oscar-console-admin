@@ -191,9 +191,9 @@ export default function Organisations() {
                     <td>
                       <code style={{ fontSize: 12, color: "var(--shell-muted)" }}>{o.slug}</code>
                     </td>
-                    <td style={{ color: "var(--shell-muted)", fontSize: 12.5 }}>{o.description || "—"}</td>
+                    <td style={{ color: "var(--shell-muted)", fontSize: 12.5 }}>{o.description || "-"}</td>
                     <td style={{ color: "var(--shell-dim)", fontSize: 12, fontFamily: "var(--font-mono)" }}>
-                      {o.created_at ? new Date(o.created_at).toLocaleDateString("fr-FR") : "—"}
+                      {o.created_at ? new Date(o.created_at).toLocaleDateString("fr-FR") : "-"}
                     </td>
                     <td className="row-actions">
                       {canUpdate && (

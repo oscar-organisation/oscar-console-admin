@@ -348,6 +348,22 @@ class Robot(Base, TimestampMixin):
     agent_key_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     serial: Mapped[str | None] = mapped_column(String(120), unique=True)
     firmware: Mapped[str | None] = mapped_column(String(40))
+    # Ce que l'operateur a saisi, tel quel : « ROSMASTER M3 Pro », « Unitree
+    # G1 », « prototype interne v3 ». Rien n'est normalise, rien n'est valide.
+    # C'est une etiquette humaine, et personne ne connait tous les chassis qui
+    # existeront.
+    modele: Mapped[str | None] = mapped_column(String(80), index=True)
+    # Famille technique, lue par le robot dans son propre profil embarque. Le
+    # robot est la seule source qui connaisse l'orthographe exacte, puisque
+    # c'est elle qui nomme son image de runtime (oscar/edge-<famille>). La
+    # deviner depuis une etiquette humaine produirait « rosmaster-m3-pro » la
+    # ou le constructeur ecrit « rosmaster-m3pro ».
+    modele_constate: Mapped[str | None] = mapped_column(String(80))
+    # Dernier contact de l'agent embarque, toutes routes confondues. C'est la
+    # seule mesure de presence dont la console dispose : `statut` n'a jamais ete
+    # reecrit apres la creation du robot, et annoncait « online » un robot
+    # eteint depuis des jours. Voir app/presence.py.
+    vu_le: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     statut: Mapped[str] = mapped_column(String(20), default="offline")  # online|offline|maintenance
     batterie: Mapped[int | None] = mapped_column(Integer)
     capacites: Mapped[list] = mapped_column(JSON, default=list)
@@ -632,6 +648,37 @@ class DeploymentBundle(Base, TimestampMixin):
     )
 
 
+class PerceptionLease(Base):
+    """Robot confie a un worker de perception, pour une duree limitee.
+
+    Le bail est a la fois l'affectation et la preuve de vie. Un worker qui ne
+    le renouvelle plus perd ses robots, et un autre les reprend au passage
+    suivant. C'est ce qui evite qu'une panne silencieuse laisse un robot sans
+    perception : le 23 septembre 2026, deux workers se sont arretes a vingt-sept
+    secondes d'intervalle et la couche de vision est restee hors service
+    dix-huit heures sans que rien ne le signale.
+
+    La cle primaire porte sur le robot, pas sur le couple. Deux workers ne
+    peuvent donc pas se croire responsables du meme robot : la base l'interdit,
+    pas seulement le code.
+    """
+
+    __tablename__ = "perception_leases"
+    robot_id: Mapped[str] = mapped_column(
+        ForeignKey("robots.id", ondelete="CASCADE"), primary_key=True
+    )
+    worker_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    renewed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+
+
 class CompositionPreset(Base, TimestampMixin):
     """Composition de référence livrée par la plateforme.
 
@@ -640,7 +687,7 @@ class CompositionPreset(Base, TimestampMixin):
     préset est un point de départ que nous maintenons et que tous voient. La
     bibliothèque s'enrichit d'un châssis à la fois.
 
-    `famille` nomme le profil de châssis visé — `rosmaster-m3pro`,
+    `famille` nomme le profil de châssis visé - `rosmaster-m3pro`,
     `unitree-g1`. C'est le même identifiant que celui qui donne son nom à
     l'image du runtime : un préset et l'image qui le fera tourner désignent
     ainsi le même matériel, sans table de correspondance à tenir à jour.

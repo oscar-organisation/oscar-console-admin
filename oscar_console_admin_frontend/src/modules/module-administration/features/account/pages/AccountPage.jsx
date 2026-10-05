@@ -39,11 +39,6 @@ export default function AccountPage() {
   const [mdpErr, setMdpErr] = useState("");
   const [longueurMin, setLongueurMin] = useState(null);
 
-  useEffect(() => {
-    charger();
-    chargerPolitiqueMotDePasse().then(setLongueurMin);
-  }, []);
-
   async function charger() {
     try {
       const data = await api.get("/auth/me");
@@ -54,6 +49,11 @@ export default function AccountPage() {
       setErr(getUserErrorMessage(error));
     }
   }
+
+  useEffect(() => {
+    charger();
+    chargerPolitiqueMotDePasse().then(setLongueurMin);
+  }, []);
 
   async function enregistrerProfil(e) {
     e.preventDefault();
@@ -169,7 +169,7 @@ export default function AccountPage() {
                          className="field-shell" data-testid="account-new"
                          value={nouveau} onChange={(e) => setNouveau(e.target.value)}
                          autoComplete="new-password" required />
-                  <small className="auth-hint">{longueurMin ?? "…"} caractères minimum.</small>
+                  <small className="auth-hint">{longueurMin ?? "..."} caractères minimum.</small>
                 </div>
                 <div className="auth-field">
                   <label className="auth-label" htmlFor="account-confirm">Confirmation</label>
@@ -236,7 +236,7 @@ export default function AccountPage() {
                     {moi?.statut === "active" ? "Actif"
                       : moi?.statut === "disabled" ? "Désactivé"
                       : moi?.statut === "invited" ? "Invité"
-                      : "—"}
+                      : "-"}
                   </span>
                 </dd>
               </div>

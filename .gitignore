@@ -30,6 +30,14 @@ out/
 .coverage
 htmlcov/
 
+# Ce que les tests de l API ecrivent quand on les lance hors de tester.sh :
+# la base SQLite et les fichiers deposes par les tests. Ils avaient ete
+# versionnes par erreur, et retires a la reprise du code (plan 20).
+oscar_console_admin_api_backend/tests/_storage/
+oscar_console_admin_api_backend/tests/_releases/
+oscar_console_admin_api_backend/e2e_storage/
+oscar_console_admin_api_backend/*.db
+
 # Caches
 .cache/
 .npm/

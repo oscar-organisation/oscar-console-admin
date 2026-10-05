@@ -13,7 +13,7 @@ import type {
  *
  * Le Studio reste utilisable hors ligne : ces appels peuvent donc échouer sans
  * que l'édition s'arrête. Les fonctions lèvent, et l'appelant décide s'il
- * affiche un état « non synchronisé » ou s'il bloque l'action — publier exige
+ * affiche un état « non synchronisé » ou s'il bloque l'action - publier exige
  * le serveur, dessiner non.
  */
 
@@ -80,7 +80,7 @@ export interface PresetServeur {
 /**
  * Catalogue publié, dans l'ordre où il doit s'afficher.
  *
- * L'appel peut échouer — le Studio s'utilise hors ligne. L'appelant retombe
+ * L'appel peut échouer - le Studio s'utilise hors ligne. L'appelant retombe
  * alors sur les formes génériques plutôt que de bloquer la création.
  */
 export function listerPresets(): Promise<PresetServeur[]> {
@@ -134,6 +134,23 @@ export function creerBundle(entree: { nom: string; description: string; target: 
   return api.post<BundleServeur>("/studio/bundles", entree);
 }
 
+/**
+ * Range ou ressort un projet du plan de travail.
+ *
+ * Un projet deja deploye ne peut pas etre supprime : son historique dit ce qui
+ * a tourne sur les robots. L'archivage est sa seule sortie, et c'est ce que le
+ * refus de suppression conseillait deja sans qu'aucun chemin ne le permette.
+ */
+export function archiverBundle(bundleId: string, nom: string,
+                               archive: boolean): Promise<BundleServeur> {
+  return api.patch<BundleServeur>(`/studio/bundles/${bundleId}`,
+                                  { nom, statut: archive ? "archived" : "active" });
+}
+
+export function supprimerBundle(bundleId: string): Promise<void> {
+  return api.del<void>(`/studio/bundles/${bundleId}`);
+}
+
 export function lireBundle(bundleId: string): Promise<BundleServeur> {
   return api.get<BundleServeur>(`/studio/bundles/${bundleId}`);
 }
@@ -174,16 +191,65 @@ export function listerRobots(): Promise<RobotCible[]> {
   return api.get<RobotCible[]>("/robots");
 }
 
-export function deployer(versionId: string, robotIds: string[], message?: string): Promise<DeploiementServeur[]> {
+export interface Flotte {
+  id: string;
+  nom: string;
+  code: string;
+  robot_ids?: string[];
+}
+
+export interface SiteCible {
+  id: string;
+  nom: string;
+  code: string;
+}
+
+export function listerFlottes(): Promise<Flotte[]> {
+  return api.get<Flotte[]>("/fleets");
+}
+
+export function listerSites(): Promise<SiteCible[]> {
+  return api.get<SiteCible[]>("/sites");
+}
+
+/**
+ * Portée d'un déploiement : des robots nommés, une flotte, ou plusieurs sites.
+ *
+ * Les trois se cumulent côté serveur et leur union est dédupliquée. On envoie
+ * donc la portée telle que l'opérateur l'a exprimée, sans la résoudre nous-même
+ * en liste de robots : résoudre ici figerait la flotte à l'instant du clic,
+ * alors que le serveur la lit au moment où il crée les déploiements.
+ */
+export interface PorteeDeploiement {
+  robotIds?: string[];
+  flotteId?: string;
+  siteIds?: string[];
+}
+
+export function deployer(versionId: string, portee: PorteeDeploiement,
+                         message?: string): Promise<DeploiementServeur[]> {
   return api.post<DeploiementServeur[]>("/studio/deployments", {
     version_id: versionId,
-    robot_ids: robotIds,
+    robot_ids: portee.robotIds ?? [],
+    fleet_id: portee.flotteId ?? null,
+    site_ids: portee.siteIds ?? [],
     message: message || null,
   });
 }
 
-export function listerDeploiements(bundleId: string): Promise<DeploiementServeur[]> {
-  return api.get<DeploiementServeur[]>(`/studio/deployments?bundle_id=${encodeURIComponent(bundleId)}`);
+export interface FiltresDeploiements {
+  bundleId?: string;
+  robotId?: string;
+  statut?: string;
+}
+
+export function listerDeploiements(filtres: FiltresDeploiements = {}): Promise<DeploiementServeur[]> {
+  const parametres = new URLSearchParams();
+  if (filtres.bundleId) parametres.set("bundle_id", filtres.bundleId);
+  if (filtres.robotId) parametres.set("robot_id", filtres.robotId);
+  if (filtres.statut) parametres.set("statut", filtres.statut);
+  const recherche = parametres.toString();
+  return api.get<DeploiementServeur[]>(`/studio/deployments${recherche ? `?${recherche}` : ""}`);
 }
 
 /** Construit le projet d'édition à partir d'un bundle et de sa composition. */
@@ -192,7 +258,7 @@ export function listerDeploiements(bundleId: string): Promise<DeploiementServeur
  *
  * La composition est copiée, pas référencée : à partir de là le projet
  * appartient à son organisation et vit sa vie. Corriger le préset plus tard ne
- * remonte donc pas dans les projets déjà créés — c'est voulu, un point de
+ * remonte donc pas dans les projets déjà créés - c'est voulu, un point de
  * départ n'est pas une dépendance.
  */
 export function projetDepuisPreset(
@@ -223,10 +289,12 @@ export function projetDepuisBundle(bundle: BundleServeur, detail: VersionDetail 
     // porte une valeur, jamais `undefined` explicite.
     ...(bundle.draft_version ? { draftVersionId: bundle.draft_version.id } : {}),
     ...(version ? { sourceVersionId: version.id } : {}),
+    ...(bundle.published_version ? { publishedVersionId: bundle.published_version.id } : {}),
     name: bundle.nom,
     description: bundle.description ?? "",
     target: bundle.target as ProjectTarget,
     status: bundle.published_version ? "PRET_A_DEPLOYER" : "BROUILLON",
+    archive: bundle.statut === "archived",
     version: version?.numero ?? 1,
     updatedAt: bundle.updated_at ?? new Date().toISOString(),
     nodes: detail?.spec?.nodes ?? [],

@@ -60,7 +60,7 @@ function EmptyInspector() {
     <div className="inspector-empty">
       <span className="inspector-empty__icon"><Settings2 size={24} /></span>
       <h3>Sélectionnez un composant</h3>
-      <p>Cliquez sur un bloc, un agent ou un canal pour afficher ses réglages.</p>
+      <p>Cliquez sur un bloc, un module ou un canal pour afficher ses réglages.</p>
       <div className="tip-card">
         <Info size={16} />
         <span>Les noms sont libres. Les identifiants techniques restent stables pour éviter de casser les liaisons.</span>
@@ -110,7 +110,7 @@ export default function Inspector({
         <div>
           <span>Propriétés</span>
           <strong>
-            {selection.type === 'node' ? 'Composant' : selection.type === 'agent' ? 'Agent' : 'Canal'}
+            {selection.type === 'node' ? 'Composant' : selection.type === 'agent' ? 'Module' : 'Canal'}
           </strong>
         </div>
         <button className="icon-button" onClick={onClose} title="Fermer le panneau" type="button"><X size={17} /></button>
@@ -132,7 +132,7 @@ export default function Inspector({
               </select>
             </Field>
             <Field label="Description">
-              <textarea rows={3} value={node.data.description} onChange={(event) => onUpdateNode(node.id, { description: event.target.value })} placeholder="Expliquez le rôle de ce composant…" />
+              <textarea rows={3} value={node.data.description} onChange={(event) => onUpdateNode(node.id, { description: event.target.value })} placeholder="Expliquez le rôle de ce composant..." />
             </Field>
             <Field label="État de préparation">
               <select value={node.data.status} onChange={(event) => onUpdateNode(node.id, { status: event.target.value as 'BROUILLON' | 'PRET' })}>
@@ -190,15 +190,15 @@ export default function Inspector({
         {selection.type === 'agent' && agent && (
           <>
             <div className="selection-path"><span>{node.data.name}</span><ChevronRight size={12} /><strong>{agent.name}</strong></div>
-            <Field label="Nom de l’agent">
+            <Field label="Nom du module">
               <input value={agent.name} onChange={(event) => onUpdateAgent(node.id, agent.id, { name: event.target.value })} />
             </Field>
             <Field label="Identifiant technique">
               <input className="technical-input" value={agent.technicalCode} onChange={(event) => onUpdateAgent(node.id, agent.id, { technicalCode: event.target.value.toUpperCase().replace(/\s+/g, '_') })} />
             </Field>
-            <Field label="Type d’agent" hint="Le type décrit sa fonction ; chaque instance conserve son propre nom.">
+            <Field label="Type de module" hint="Le type décrit sa fonction ; chaque instance conserve son propre nom.">
               <select value={agent.agentType} onChange={(event) => onUpdateAgent(node.id, agent.id, { agentType: event.target.value })}>
-                <option value="TYPE_AGENT_STANDARD">Agent standard</option>
+                <option value="TYPE_AGENT_STANDARD">Module standard</option>
                 <option value="TYPE_AGENT_MEDIA_ROBOT">Média du robot</option>
                 <option value="TYPE_AGENT_CONTROLE_ACTION_ROBOT">Contrôle des actions du robot</option>
                 <option value="TYPE_AGENT_TELEMETRIE_ROBOT">Télémétrie du robot</option>
@@ -263,7 +263,7 @@ export default function Inspector({
               </select>
             </Field>
             <Field label="Description">
-              <textarea rows={3} value={channel.description} onChange={(event) => onUpdateChannel(node.id, agent.id, channel.id, { description: event.target.value })} placeholder="Exemple de donnée et fréquence attendue…" />
+              <textarea rows={3} value={channel.description} onChange={(event) => onUpdateChannel(node.id, agent.id, channel.id, { description: event.target.value })} placeholder="Exemple de donnée et fréquence attendue..." />
             </Field>
           </>
         )}

@@ -177,7 +177,7 @@ def _validate_box_models(db: Session, body: ModelBoxIn, org_id: str) -> list[AiM
         raise HTTPException(400, "Un modèle sélectionné est introuvable")
     if any(model.org_id not in (None, org_id) for model in models):
         raise HTTPException(409, "Tous les modèles doivent appartenir à l'organisation de la Box")
-    bloques = [f"{model.nom} v{model.version} — {raison}" for model in models
+    bloques = [f"{model.nom} v{model.version} - {raison}" for model in models
                if (raison := raison_blocage(model))]
     if bloques:
         raise HTTPException(
@@ -344,7 +344,7 @@ def delete_model(request: Request, model_id: str, db: Session = Depends(get_db),
     Le catalogue n'avait aucune sortie : un import rate, un fichier de test, une
     tache inexecutable restaient la pour toujours et venaient polluer la
     composition des Box. La suppression est refusee tant qu'une Box reference le
-    modele — y compris en brouillon — parce que casser une composition en
+    modele - y compris en brouillon - parce que casser une composition en
     silence est pire que demander de la modifier d'abord.
     """
     model = _scoped_model(db, model_id, request_organisation_id(request))
@@ -445,7 +445,7 @@ def publish_model_box(request: Request, box_id: str, db: Session = Depends(get_d
         raise HTTPException(409, "Seule une Box en brouillon peut être publiée")
     if not box.items:
         raise HTTPException(409, "Ajoutez au moins un modèle à la Box")
-    bloques = [f"{item.model.nom} v{item.model.version} — {raison}" for item in box.items
+    bloques = [f"{item.model.nom} v{item.model.version} - {raison}" for item in box.items
                if (raison := raison_blocage(item.model))]
     if bloques:
         raise HTTPException(409, "Modèles non déployables : " + " ; ".join(bloques))
@@ -587,12 +587,14 @@ def configure_deployment(request: Request, model_id: str, robot_id: str, body: M
     return deployment
 
 
-@router.get("/runtime/robots/{robot_id}/manifest")
-def runtime_manifest(robot_id: str, db: Session = Depends(get_db), _=Depends(_worker_authorized)):
-    robot = db.get(Robot, robot_id)
-    if not robot:
-        raise HTTPException(404, "Robot introuvable")
+def construire_manifeste(db: Session, robot: Robot) -> dict:
+    """Modeles qu'un robot doit executer, resolus depuis les Box affectees.
 
+    Extrait de l'endpoint pour etre appele ailleurs : le registre de baux a
+    besoin de savoir si un robot merite qu'un worker lui soit attribue, et la
+    reponse est exactement « son manifeste contient-il des modeles ». Dupliquer
+    cette resolution aurait garanti qu'elle divergerait.
+    """
     fleet_ids = set(db.execute(
         select(FleetRobot.fleet_id).where(FleetRobot.robot_id == robot.id)
     ).scalars())
@@ -647,7 +649,7 @@ def runtime_manifest(robot_id: str, db: Session = Depends(get_db), _=Depends(_wo
     # Backward compatibility for pre-Box assignments. New Studio flows only use Boxes.
     legacy_rows = db.execute(
         select(AiModelDeployment, AiModel).join(AiModel, AiModel.id == AiModelDeployment.model_id).where(
-            AiModelDeployment.robot_id == robot_id,
+            AiModelDeployment.robot_id == robot.id,
             AiModelDeployment.enabled.is_(True),
             AiModel.statut == "production",
             AiModel.validation_status == "manifest_valid",
@@ -676,6 +678,14 @@ def runtime_manifest(robot_id: str, db: Session = Depends(get_db), _=Depends(_wo
         "active_boxes": active_boxes,
         "models": list(selected.values()),
     }
+
+
+@router.get("/runtime/robots/{robot_id}/manifest")
+def runtime_manifest(robot_id: str, db: Session = Depends(get_db), _=Depends(_worker_authorized)):
+    robot = db.get(Robot, robot_id)
+    if not robot:
+        raise HTTPException(404, "Robot introuvable")
+    return construire_manifeste(db, robot)
 
 
 @router.get("/runtime/robots/{robot_id}/session")

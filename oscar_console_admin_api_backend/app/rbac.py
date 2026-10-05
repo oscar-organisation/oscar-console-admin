@@ -79,7 +79,7 @@ FEATURE_CATALOG: list[tuple[str, str, str, str, list[str]]] = [
     # --- Catalogue de presets ---
     # Les presets sont notre bibliotheque : les memes pour toutes les
     # organisations, un point de depart que nous maintenons. Les lire est
-    # ordinaire, les ecrire ne l'est pas — une composition de reference fautive
+    # ordinaire, les ecrire ne l'est pas - une composition de reference fautive
     # se propagerait a tous les projets crees ensuite.
     ("api:preset.read", "Consulter le catalogue de présets", "api", "studio", VIEW),
     ("api:preset.write", "Maintenir le catalogue de présets", "api", "studio", CRUD),
