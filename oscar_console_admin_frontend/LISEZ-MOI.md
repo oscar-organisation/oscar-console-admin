@@ -55,3 +55,5 @@ Pour se connecter, l'API doit tourner aussi: même commande dans
 | `catalog-info.yaml`, `mkdocs.yml`, `docs/` | la fiche et la documentation du portail technique |
 | `README.md` | les règles de contribution des développeurs de la console |
 | `LISEZ-MOI-espaces.md` | les cinq espaces que porte l'application |
+
+<!-- Essai du 05/10/2026: une PR qui ne touche que l interface, fermée sans fusion. -->
