@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://formats.oscar-bot.com/v1/bundle.schema.json",
+  "title": "Le modèle d'un bundle, format oscar.bundle/1",
+  "description": "Ce que Studio compose et enregistre (conception du lot L1, partie 3.2) : le bundle, ses éléments rangés à plat avec leur parent, et ses liaisons. La version figée d'un bundle (lot L9) est ce même document ; le compilateur (lot L10) le lit. La mise en page (oscar.mise-en-page/1) est un document à part, que seule la console lit : elle n'est pas ici. Rien d'exécutable n'y entre : ni machine, ni salle réelle, ni adresse, ni secret. Ce schéma dit la forme du document ; les règles d'emboîtement (qui contient quoi, la salle unique...) sont vérifiées par la console, et regles_du_modele/regles-du-modele.cas.json en donne les cas.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "bundle", "elements", "liaisons"],
+  "properties": {
+    "format": {"const": "oscar.bundle/1"},
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "nom"],
+      "properties": {
+        "code": {"$ref": "codes-stables.schema.json#/$defs/code_stable"},
+        "nom": {"$ref": "types-communs.schema.json#/$defs/nom_lisible"},
+        "description": {"$ref": "#/$defs/description"}
+      }
+    },
+    "elements": {
+      "description": "Les éléments, à plat, chacun avec son parent ; l'ordre des frères est l'ordre de la liste.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/element"}
+    },
+    "liaisons": {
+      "description": "Les liaisons de données, chacune d'un canal d'émission vers un canal de réception, par leurs identifiants.",
+      "type": "array",
+      "items": {"$ref": "#/$defs/liaison"}
+    }
+  },
+  "$defs": {
+    "identifiant": {
+      "description": "Un identifiant interne : <préfixe>-<12 chiffres hexadécimaux> pour un élément créé par Studio, celui d'origine pour un élément repris de l'ancien format. Il n'est jamais saisi ni affiché. Le même motif est écrit pour le parent d'un élément (un test vérifie qu'ils restent égaux).",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un identifiant interne : lettres sans accent, chiffres, points, deux-points, tirets et tirets bas, par exemple zon-3f2a9c41d0b7."}
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "type_du_catalogue": {
+      "description": "Un type du catalogue, cité par son code et sa version, sans être recopié (conception du lot L1, partie 3.5).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "version"],
+      "properties": {
+        "code": {"$ref": "codes-stables.schema.json#/$defs/code_stable"},
+        "version": {"$ref": "types-communs.schema.json#/$defs/version_semantique"}
+      }
+    },
+    "reglages_de_zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exigence"],
+      "properties": {
+        "exigence": {"$ref": "codes-stables.schema.json#/$defs/exigence_activation_environnement"},
+        "justification": {"type": "string", "maxLength": 500}
+      }
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "sorte", "parent", "code"],
+      "properties": {
+        "id": {"$ref": "#/$defs/identifiant"},
+        "sorte": {"$ref": "codes-stables.schema.json#/$defs/sorte_d_element_du_bundle"},
+        "parent": {
+          "description": "L'identifiant du parent ; null pour un enfant direct du bundle.",
+          "type": ["null", "string"],
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un identifiant interne : lettres sans accent, chiffres, points, deux-points, tirets et tirets bas, par exemple zon-3f2a9c41d0b7."}
+        },
+        "code": {"$ref": "codes-stables.schema.json#/$defs/code_stable"},
+        "nom": {"$ref": "types-communs.schema.json#/$defs/nom_lisible"},
+        "description": {"$ref": "#/$defs/description"},
+        "type": {"$ref": "#/$defs/type_du_catalogue"},
+        "reglages": {
+          "description": "Les réglages propres à la sorte : pour une zone, son exigence et sa justification ; pour un canal, ses réglages repris de l'ancien format jusqu'au lot L2.",
+          "type": "object"
+        },
+        "code_fige": {
+          "description": "Vrai si ce code figure déjà dans une version publiée : il ne change plus (spécification 12.6).",
+          "type": "boolean"
+        },
+        "donnees_reprises": {
+          "description": "Ce que l'adaptateur de l'ancien format a lu et qui n'a pas encore sa place dans le modèle, gardé sans perte.",
+          "type": "object"
+        }
+      },
+      "allOf": [
+        {
+          "if": {"required": ["sorte"], "properties": {"sorte": {"enum": ["ZONE_ENVIRONNEMENT_EXECUTION", "COMPOSANT_SALLE_TEMPS_REEL", "INSTANCE_SERVICE_CONFIGUREE", "INSTANCE_APPLICATION_CONFIGUREE", "INSTANCE_UNITE_CONFIGUREE", "CANAL_RECEPTION", "CANAL_EMISSION"]}}},
+          "then": {
+            "required": ["nom"],
+            "x-raison": {"required": "le champ « {champ} » manque : une zone, la salle, un service, une application, une unité et un canal ont un nom affiché ; seule la structure créée d'office avec une unité peut s'en passer."}
+          }
+        },
+        {
+          "if": {"required": ["sorte"], "properties": {"sorte": {"enum": ["COMPOSANT_SALLE_TEMPS_REEL", "INSTANCE_SERVICE_CONFIGUREE", "INSTANCE_APPLICATION_CONFIGUREE", "INSTANCE_UNITE_CONFIGUREE"]}}},
+          "then": {
+            "required": ["type"],
+            "x-raison": {"required": "le champ « {champ} » manque : la salle, un service, une application et une unité citent leur type du catalogue, par son code et sa version (spécification 12.6)."}
+          }
+        },
+        {
+          "if": {"required": ["sorte"], "properties": {"sorte": {"enum": ["TRAITEMENT_METIER_UNITE", "INTERFACE_COMMUNICATION_UNITE", "BANDE_DONNEES", "BUS_RECEPTION", "BUS_EMISSION", "CANAL_RECEPTION", "CANAL_EMISSION"]}}},
+          "then": {
+            "not": {"required": ["type"]},
+            "x-raison": {"not": "un traitement, une interface, une bande, un bus ou un canal n'a pas de type du catalogue : retirer « type »."}
+          }
+        },
+        {
+          "if": {"required": ["sorte"], "properties": {"sorte": {"const": "ZONE_ENVIRONNEMENT_EXECUTION"}}},
+          "then": {"properties": {"reglages": {"$ref": "#/$defs/reglages_de_zone"}}}
+        },
+        {
+          "if": {"required": ["sorte"], "properties": {"sorte": {"enum": ["COMPOSANT_SALLE_TEMPS_REEL", "INSTANCE_SERVICE_CONFIGUREE", "INSTANCE_APPLICATION_CONFIGUREE", "INSTANCE_UNITE_CONFIGUREE", "TRAITEMENT_METIER_UNITE", "INTERFACE_COMMUNICATION_UNITE", "BANDE_DONNEES", "BUS_RECEPTION", "BUS_EMISSION"]}}},
+          "then": {
+            "not": {"required": ["reglages"]},
+            "x-raison": {"not": "seuls une zone et un canal ont des réglages : retirer « reglages »."}
+          }
+        }
+      ]
+    },
+    "liaison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "destination"],
+      "properties": {
+        "id": {"$ref": "#/$defs/identifiant"},
+        "source": {"$ref": "#/$defs/identifiant"},
+        "destination": {"$ref": "#/$defs/identifiant"}
+      }
+    }
+  }
+}
