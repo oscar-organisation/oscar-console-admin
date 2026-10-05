@@ -25,6 +25,7 @@ from .models import (
 )
 from .rbac import FEATURE_CATALOG
 from .security import hash_password
+from .studio_modele.projets import projet_d_office
 
 _DEFAULT_DATA_DIR = Path(__file__).parent / "seed_data"
 
@@ -117,6 +118,11 @@ def seed_demo(db: Session) -> None:
                             contact=row.get("contact"), statut=row.get("statut", "active"))
         db.add(org)
         orgs[row["slug"]] = org
+    db.flush()
+    # Chaque organisation naît avec son projet robotique, celles de la
+    # démonstration comme les autres.
+    for org in orgs.values():
+        projet_d_office(db, org.id)
     db.commit()
 
     sites: dict[str, Site] = {}

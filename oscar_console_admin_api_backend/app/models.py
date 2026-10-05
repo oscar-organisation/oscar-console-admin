@@ -623,8 +623,31 @@ class AuthToken(Base):
 
 
 # --------------------------------------------------------------------------- #
-#  Studio de déploiement : bundles, versions, déploiements
+#  Studio de déploiement : projets, bundles, versions, déploiements
 # --------------------------------------------------------------------------- #
+class ProjetRobotique(Base, TimestampMixin):
+    """Le projet robotique d'une organisation : ce qui range ses bundles.
+
+    Chaque organisation en reçoit un d'office, PROJET_ROBOTIQUE_PRINCIPAL, à sa
+    création (voir app/studio_modele/projets.py), et chaque bundle y est rangé.
+    Aucun écran ne le gère encore : créer d'autres projets viendra plus tard.
+    Le poser dès maintenant évite de devoir, ce jour-là, ranger après coup des
+    bundles qui n'auraient pas de projet.
+    """
+
+    __tablename__ = "projets_robotiques"
+    __table_args__ = (UniqueConstraint("org_id", "code", name="uq_projet_robotique_org_code"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organisations.id", ondelete="CASCADE"))
+    code: Mapped[str] = mapped_column(String(80), nullable=False)
+    nom: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    statut: Mapped[str] = mapped_column(String(20), default="active")  # active|archived
+    # Vrai pour le projet que la console crée seule ; faux pour ceux qu'une
+    # personne créera.
+    cree_d_office: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class DeploymentBundle(Base, TimestampMixin):
     """Unité déployable composée dans le Studio.
 
@@ -644,6 +667,12 @@ class DeploymentBundle(Base, TimestampMixin):
     target: Mapped[str] = mapped_column(String(60), default="ENVIRONNEMENT_EXECUTION_ROBOT")
     statut: Mapped[str] = mapped_column(String(20), default="active")  # active|archived
     created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    # Le projet où le bundle est rangé. Un projet qui a encore des bundles ne
+    # se supprime pas : on ne perd pas des bundles en effaçant leur projet.
+    projet_id: Mapped[str] = mapped_column(
+        ForeignKey("projets_robotiques.id", ondelete="RESTRICT", name="fk_deployment_bundles_projet_id"),
+        index=True,
+    )
 
     versions: Mapped[list["BundleVersion"]] = relationship(
         back_populates="bundle", cascade="all, delete-orphan", order_by="BundleVersion.numero"

@@ -595,6 +595,9 @@ class BundleOut(BaseModel):
     description: str | None = None
     target: str
     statut: str
+    # Le projet robotique où le bundle est rangé (le projet d'office de son
+    # organisation, en L1).
+    projet_id: str
     created_at: datetime | None = None
     updated_at: datetime | None = None
     draft_version: BundleVersionOut | None = None

@@ -60,6 +60,7 @@ from ..schemas import (
     DeploymentOut,
     DeploymentReportIn,
 )
+from ..studio_modele.projets import projet_d_office
 
 router = APIRouter(prefix="/studio", tags=["studio"])
 
@@ -194,6 +195,7 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
     return {
         "id": bundle.id, "org_id": bundle.org_id, "nom": bundle.nom, "slug": bundle.slug,
         "description": bundle.description, "target": bundle.target, "statut": bundle.statut,
+        "projet_id": bundle.projet_id,
         "created_at": bundle.created_at, "updated_at": bundle.updated_at,
         "draft_version": _brouillon(bundle),
         "published_version": publiee,
@@ -251,9 +253,11 @@ def create_bundle(request: Request, body: BundleIn, db: Session = Depends(get_db
     ).scalar_one_or_none()
     if existant:
         raise HTTPException(409, "Un bundle porte déjà ce nom dans cette organisation")
+    # Chaque bundle est rangé dans le projet d'office de son organisation.
+    projet = projet_d_office(db, org_id)
     bundle = DeploymentBundle(
-        org_id=org_id, nom=body.nom.strip(), slug=slug, description=body.description,
-        target=body.target, created_by=user.id,
+        org_id=org_id, projet_id=projet.id, nom=body.nom.strip(), slug=slug,
+        description=body.description, target=body.target, created_by=user.id,
     )
     db.add(bundle)
     db.commit()

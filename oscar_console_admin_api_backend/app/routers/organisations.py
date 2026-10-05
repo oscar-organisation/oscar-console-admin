@@ -8,6 +8,7 @@ from ..deps import accessible_organisation_ids, require, write_audit
 from ..models import Organisation, Role, Site, User, UserOrganisation, UserRole
 from ..schemas import OrganisationOnboardingIn, OrganisationOnboardingOut, OrgIn, OrgOut
 from ..security import hash_password
+from ..studio_modele.projets import projet_d_office
 
 router = APIRouter(prefix="/organisations", tags=["organisations"])
 
@@ -79,6 +80,9 @@ def create_org(body: OrgIn, request: Request, db: Session = Depends(get_db),
         raise HTTPException(400, "Organisation parente inconnue")
     org = Organisation(**body.model_dump())
     db.add(org)
+    db.flush()
+    # Chaque organisation naît avec son projet robotique, dans la même transaction.
+    projet_d_office(db, org.id)
     db.commit()
     db.refresh(org)
     write_audit(db, actor=user, action="ORG_CREATE", resource=org.nom)
@@ -111,6 +115,8 @@ def onboard_organisation(
     organisation = Organisation(**body.organisation.model_dump())
     db.add(organisation)
     db.flush()
+    # Chaque organisation naît avec son projet robotique, dans la même transaction.
+    projet_d_office(db, organisation.id)
 
     site = None
     if body.site:

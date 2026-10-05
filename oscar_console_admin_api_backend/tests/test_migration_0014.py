@@ -5,32 +5,22 @@ production, la remplit de données à l'ancien format, puis joue la migration :
 montée, contrôle de chaque champ et de chaque empreinte, descente, contrôle du
 retour exact, et remontée.
 
-Alembic tourne dans un processus à part, par la même commande que
-docker-entrypoint.sh (`alembic upgrade head`), sur sa propre base : la base des
-autres tests n'est pas touchée.
-
-Par défaut, la base est un fichier SQLite jetable. Pour jouer les mêmes tests
-sur PostgreSQL, la base de production, on donne l'adresse d'une base vide et
-jetable dans OSCAR_TEST_MIGRATION_URL ; chaque test en efface alors tout le
-contenu (schéma public) avant de commencer.
+La base jetable (SQLite, ou PostgreSQL par OSCAR_TEST_MIGRATION_URL) et la
+façon de lancer Alembic sont communes à tous les tests de migration :
+tests/migrations_jouees.py.
 """
 
 import copy
 import importlib.util
 import json
-import os
-import pathlib
-import subprocess
-import sys
 from datetime import datetime, timezone
 
-import pytest
 import sqlalchemy as sa
 
 from app.bundle_spec import convertir_composition, empreinte, manifeste_runtime
+from migrations_jouees import DOSSIER_API, alembic, base, lire, monter_jusqu_a_0014  # noqa: F401
 from test_unites import composition_ancienne, composition_nouvelle
 
-DOSSIER_API = pathlib.Path(__file__).resolve().parents[1]
 FICHIER_MIGRATION = DOSSIER_API / "alembic" / "versions" / "0014_agent_devient_unite.py"
 
 # Les tables que la migration lit ou écrit, et celles qu'elle ne doit pas toucher.
@@ -48,42 +38,21 @@ def _migration():
     return module
 
 
-@pytest.fixture()
-def base(tmp_path):
-    url = os.environ.get("OSCAR_TEST_MIGRATION_URL") or f"sqlite:///{tmp_path / 'migration.db'}"
-    moteur = sa.create_engine(url, future=True)
-    if moteur.dialect.name == "postgresql":
-        with moteur.begin() as connexion:
-            connexion.execute(sa.text("DROP SCHEMA public CASCADE"))
-            connexion.execute(sa.text("CREATE SCHEMA public"))
-    yield url, moteur
-    moteur.dispose()
-
-
-def alembic(url: str, *arguments: str) -> None:
-    environnement = {**os.environ, "DATABASE_URL": url}
-    resultat = subprocess.run([sys.executable, "-m", "alembic", *arguments], cwd=DOSSIER_API,
-                              env=environnement, capture_output=True, text=True)
-    assert resultat.returncode == 0, resultat.stderr
-
-
 def monter_jusqu_a_0013(url: str, moteur) -> None:
     """Une base vide, amenée à la révision 0013.
 
     Sur PostgreSQL, toute la chaîne des migrations joue, de 0001 à 0013. Sur
     SQLite, c'est impossible : dès 0002, des migrations modifient des tables
-    par ALTER, ce que SQLite ne sait pas faire. La base « à 0013 » y est donc
-    construite depuis les modèles de l'application, les deux colonnes du robot
-    remises sous leur nom d'avant 0014, puis marquée 0013 : le chemin que
-    docker-entrypoint.sh prend déjà pour une base existante sans Alembic.
+    par ALTER, ce que SQLite ne sait pas faire. La base y est donc d'abord
+    amenée à 0014 depuis les modèles de l'application (monter_jusqu_a_0014),
+    puis les deux colonnes du robot sont remises sous leur nom d'avant 0014,
+    et la base est marquée 0013 : le chemin que docker-entrypoint.sh prend
+    déjà pour une base existante sans Alembic.
     """
     if moteur.dialect.name != "sqlite":
         alembic(url, "upgrade", "0013")
         return
-    import app.models  # noqa: F401  (déclare toutes les tables)
-    from app.database import Base
-
-    Base.metadata.create_all(moteur)
+    monter_jusqu_a_0014(url, moteur)
     with moteur.begin() as connexion:
         for ancienne, nouvelle in _migration().COLONNES_DU_ROBOT:
             connexion.execute(sa.text(f"ALTER TABLE robots RENAME COLUMN {nouvelle} TO {ancienne}"))
@@ -122,11 +91,6 @@ def forme_de_la_table_robots(moteur) -> dict:
         "cles_etrangeres": sorted((tuple(f["constrained_columns"]), f["referred_table"])
                                   for f in inspecteur.get_foreign_keys("robots")),
     }
-
-
-def lire(moteur, requete: str, **parametres) -> list:
-    with moteur.connect() as connexion:
-        return connexion.execute(sa.text(requete), parametres).fetchall()
 
 
 def spec_enregistree(moteur, table: str, ligne_id: str):
