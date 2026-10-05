@@ -10,7 +10,7 @@ import copy
 
 import pytest
 
-from app.bundle_spec import RUNTIME_FORMAT, convertir_composition, manifeste_runtime
+from app.bundle_spec import RUNTIME_FORMAT, composition_servie, convertir_composition, manifeste_runtime
 from app.config import Settings
 from app.database import SessionLocal
 from app.models import BundleVersion
@@ -213,7 +213,6 @@ class TestConversion:
         None, [], "texte", 12, {}, {"nodes": "pas une liste"},
         {"nodes": [1, None, {"data": "pas un objet"}]},
         {"nodes": [{"data": {"kind": "INSTANCE_SERVICE"}}]},
-        {"nodes": [{"data": {"agents": [], "units": [{"agentType": "TYPE_AGENT_STANDARD"}]}}]},
     ])
     def test_une_forme_inattendue_reste_telle_quelle(self, forme):
         assert convertir_composition(forme) == forme
@@ -259,12 +258,13 @@ def test_un_brouillon_a_l_ancien_format_est_enregistre_au_nouveau(client, contex
     r = client.put(url + "/draft", headers=contexte["entetes"],
                    json={"spec": _sans_box_ia(composition_ancienne())})
     assert r.status_code == 200, r.text
-    assert r.json()["spec"] == _sans_box_ia(composition_nouvelle())
+    # Servie avec les clés de l'interface d'avant (décision 125), écrite sans.
+    assert r.json()["spec"] == composition_servie(_sans_box_ia(composition_nouvelle()))
     # Ce qui est écrit en base, pas seulement ce qui est renvoyé.
     with SessionLocal() as db:
         assert db.get(BundleVersion, r.json()["id"]).spec == _sans_box_ia(composition_nouvelle())
     relu = client.get(f"/api/studio/versions/{r.json()['id']}", headers=contexte["entetes"]).json()
-    assert relu["spec"] == _sans_box_ia(composition_nouvelle())
+    assert relu["spec"] == composition_servie(_sans_box_ia(composition_nouvelle()))
 
     # Même composition, même empreinte, quel que soit le format reçu.
     nouvelle = client.put(url + "/draft", headers=contexte["entetes"],
@@ -285,7 +285,7 @@ def test_la_liste_des_bundles_compte_les_unites(client, contexte):
                json={"spec": _sans_box_ia(composition_ancienne())})
     fiche = client.get(url, headers=contexte["entetes"]).json()
     assert fiche["unit_count"] == 4
-    assert "agent_count" not in fiche
+    assert fiche["agent_count"] == 4  # décision 125, voir test_compatibilite_decision_125.py
 
 
 def test_un_preset_a_l_ancien_format_est_verse_au_nouveau(client, admin_headers):
@@ -293,10 +293,10 @@ def test_un_preset_a_l_ancien_format_est_verse_au_nouveau(client, admin_headers)
              "famille": "rosmaster-m3pro", "spec": composition_ancienne()}
     cree = client.post("/api/studio/presets", headers=admin_headers, json=corps)
     assert cree.status_code == 201, cree.text
-    assert cree.json()["spec"] == composition_nouvelle()
+    assert cree.json()["spec"] == composition_servie(composition_nouvelle())
     corrige = client.patch(f"/api/studio/presets/{cree.json()['id']}", headers=admin_headers,
                            json={"spec": composition_ancienne()})
-    assert corrige.json()["spec"] == composition_nouvelle()
+    assert corrige.json()["spec"] == composition_servie(composition_nouvelle())
 
 
 def test_l_ancien_en_tete_du_robot_reste_accepte(client, contexte):
@@ -318,7 +318,7 @@ def test_l_emission_de_la_cle_est_journalisee_sous_son_nouveau_nom(client, conte
     robot = contexte["robot"]
     reponse = client.post(f"/api/robots/{robot['id']}/machine-key", headers=contexte["entetes"])
     assert reponse.status_code == 200
-    assert set(reponse.json()) == {"robot", "machine_key", "issued_at", "installation"}
+    assert set(reponse.json()) == {"robot", "machine_key", "agent_key", "issued_at", "installation"}
     journal = client.get("/api/audit", headers=admin_headers,
                          params={"action": "ROBOT_MACHINE_KEY_ISSUE"})
     assert journal.status_code == 200, journal.text

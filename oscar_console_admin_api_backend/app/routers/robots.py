@@ -456,6 +456,11 @@ def integration(robot_id: str, request: Request, db: Session = Depends(get_db),
 
 
 @router.post("/robots/{robot_id}/machine-key")
+# Compatibilité avec l'interface d'avant le renommage (décision 125) : à retirer
+# par une prochaine modification de l'API, une fois l'interface passée.
+# L'interface encore en ligne appelle l'ancienne adresse : même route, même
+# droit, même trace d'audit.
+@router.post("/robots/{robot_id}/agent-key", deprecated=True)
 def issue_machine_key(robot_id: str, request: Request, db: Session = Depends(get_db),
                       user=Depends(require("api:robot.machine_key", "execute"))):
     """Émet la clé de la machine de ce robot, affichée une seule fois.
@@ -478,6 +483,10 @@ def issue_machine_key(robot_id: str, request: Request, db: Session = Depends(get
     return {
         "robot": {"id": robot.id, "nom": robot.nom, "slug": robot.slug},
         "machine_key": cle,
+        # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+        # retirer par une prochaine modification de l'API, une fois l'interface
+        # passée. La même clé, sous le nom que lit l'interface encore en ligne.
+        "agent_key": cle,
         "issued_at": robot.machine_key_issued_at,
         "installation": {
             # Le fichier où le programme du robot lit sa clé. Son nom ne change

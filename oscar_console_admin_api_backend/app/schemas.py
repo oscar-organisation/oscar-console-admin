@@ -3,17 +3,18 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from .bundle_spec import convertir_composition
+from .bundle_spec import composition_servie
 from .presence import presence
 
 ORM = ConfigDict(from_attributes=True)
 
-# Une composition du Studio, toujours au format « unité » : qu'elle entre dans
-# l'API ou qu'elle en sorte, une composition à l'ancien format (`agents`,
-# `agentType`, codes ..._AGENT_...) est convertie au passage (voir
-# convertir_composition dans bundle_spec.py). L'API n'écrit ainsi que le
-# nouveau format, et sait encore lire l'ancien.
-Composition = Annotated[dict, AfterValidator(convertir_composition)]
+# Une composition du Studio telle que l'API la sert (voir composition_servie
+# dans bundle_spec.py) : le format « unité », plus les clés que lit l'interface
+# d'avant le renommage (décision 125). Une composition reçue, elle, reste
+# brute dans le schéma : la route la remet au seul nouveau format avec
+# convertir_composition, en lui donnant la composition enregistrée, qui dit
+# laquelle des deux listes le client a modifiée.
+CompositionServie = Annotated[dict, AfterValidator(composition_servie)]
 
 
 # ---- Auth ------------------------------------------------------------------
@@ -557,7 +558,7 @@ class BundleIn(BaseModel):
 class BundleDraftIn(BaseModel):
     """Composition en cours d'édition, telle que le Studio l'envoie."""
 
-    spec: Composition = Field(default_factory=dict)
+    spec: dict = Field(default_factory=dict)
     notes: str | None = None
     expected_revision: str | None = None
 
@@ -582,7 +583,7 @@ class BundleVersionOut(BaseModel):
 
 
 class BundleVersionDetailOut(BundleVersionOut):
-    spec: Composition = Field(default_factory=dict)
+    spec: CompositionServie = Field(default_factory=dict)
 
 
 class BundleOut(BaseModel):
@@ -603,6 +604,11 @@ class BundleOut(BaseModel):
     # De quoi remplir une liste sans télécharger chaque composition.
     component_count: int = 0
     unit_count: int = 0
+    # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+    # retirer par une prochaine modification de l'API, une fois l'interface
+    # passée. Même valeur que unit_count, sous le nom que lit l'interface
+    # encore en ligne.
+    agent_count: int = 0
 
 
 class BundleValidationOut(BaseModel):
@@ -687,7 +693,7 @@ class CompositionPresetIn(BaseModel):
     famille: str = Field(min_length=2, max_length=80)
     constructeur: str | None = None
     description: str | None = None
-    spec: Composition = Field(default_factory=dict)
+    spec: dict = Field(default_factory=dict)
     ordre: int = 100
     notes: str | None = None
 
@@ -699,7 +705,7 @@ class CompositionPresetPatch(BaseModel):
     famille: str | None = None
     constructeur: str | None = None
     description: str | None = None
-    spec: Composition | None = None
+    spec: dict | None = None
     statut: str | None = None
     ordre: int | None = None
     notes: str | None = None
@@ -713,7 +719,7 @@ class CompositionPresetOut(BaseModel):
     famille: str
     constructeur: str | None = None
     description: str | None = None
-    spec: Composition = Field(default_factory=dict)
+    spec: CompositionServie = Field(default_factory=dict)
     statut: str
     ordre: int
     revision: int

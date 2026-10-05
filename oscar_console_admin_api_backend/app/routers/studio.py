@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session, selectinload
 from ..bundle_spec import (
     RUNTIME_FORMAT,
     boites_ia,
+    convertir_composition,
     empreinte,
     manifeste_runtime,
     valider_specification,
@@ -189,6 +190,7 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
     courante = _brouillon(bundle) or publiee
     manifeste = manifeste_runtime(courante.spec) if courante else {"composants": []}
     composants = manifeste.get("composants", [])
+    unites = sum(len(composant.get("unites", [])) for composant in composants)
     return {
         "id": bundle.id, "org_id": bundle.org_id, "nom": bundle.nom, "slug": bundle.slug,
         "description": bundle.description, "target": bundle.target, "statut": bundle.statut,
@@ -198,7 +200,11 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
         "version_count": len(bundle.versions),
         "robot_count": robots,
         "component_count": len(composants),
-        "unit_count": sum(len(composant.get("unites", [])) for composant in composants),
+        "unit_count": unites,
+        # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+        # retirer par une prochaine modification de l'API, une fois l'interface
+        # passée.
+        "agent_count": unites,
     }
 
 
@@ -317,15 +323,19 @@ def save_draft(request: Request, bundle_id: str, body: BundleDraftIn, db: Sessio
     ):
         raise HTTPException(409, "Brouillon modifié sur un autre poste : rechargez ou conservez une copie locale")
     try:
-        checksum = empreinte(manifeste_runtime(body.spec))
-        valider_specification(body.spec)
+        # En base, le seul nouveau format. La composition enregistrée est celle
+        # que le client a reçue : elle dit, pendant la transition (décision
+        # 125), laquelle des deux listes `units` / `agents` il a modifiée.
+        spec = convertir_composition(body.spec, reference=actuelle.spec if actuelle else None)
+        checksum = empreinte(manifeste_runtime(spec))
+        valider_specification(spec)
     except (TypeError, ValueError, AttributeError):
         raise HTTPException(422, "Structure de composition invalide (nodes, unités, canaux ou edges)")
     if version is None:
         dernier = max((v.numero for v in bundle.versions), default=0)
         version = BundleVersion(bundle_id=bundle.id, numero=dernier + 1, statut="draft")
         db.add(version)
-    version.spec = body.spec
+    version.spec = spec
     version.notes = body.notes
     version.checksum = checksum
     db.commit()

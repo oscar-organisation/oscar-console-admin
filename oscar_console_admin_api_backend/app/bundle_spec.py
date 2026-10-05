@@ -33,6 +33,10 @@ KIND_BUNDLE = "BUNDLE_DEPLOIEMENT"
 # mais une composition à l'ancien format peut encore arriver : brouillon gardé
 # dans un navigateur, script, préset copié d'une ancienne console. On sait donc
 # toujours la lire, et on n'écrit que le nouveau format.
+#
+# Pendant la transition, l'API sert aussi les clés de l'ancien format, pour
+# l'interface encore en ligne (décision 125, voir composition_servie) : ce qui
+# revient de l'une ou l'autre interface est remis au seul nouveau format.
 
 # Une suite de mots en majuscules et chiffres séparés par « _ » : la forme de
 # tous les codes du Studio (TYPE_UNITE_STANDARD, CANAL_EMISSION_01...).
@@ -76,24 +80,65 @@ def _convertir_codes(valeur: Any) -> Any:
     return valeur
 
 
-def _est_a_l_ancien_format(spec: dict) -> bool:
-    """Vrai si un bloc porte encore sa liste sous `agents` (et pas `units`)."""
-    for noeud in _noeuds(spec):
-        donnees = _donnees(noeud)
-        if "agents" in donnees and "units" not in donnees:
-            return True
-    return False
+def _unites_sans_copie(unites: list) -> list:
+    """Les unités d'une liste `units`, sans la copie `agentType` que l'API
+    sert à l'interface d'avant le renommage (décision 125, voir
+    composition_servie). Une unité qui n'a que `agentType` le voit renommé."""
+    return [_renommer_cle(unite, "agentType", "unitType") if isinstance(unite, dict) else unite
+            for unite in unites]
 
 
-def _convertir_donnees_du_bloc(donnees: dict) -> dict:
-    donnees = _renommer_cle(donnees, "agents", "units")
+def _depuis_la_liste_agents(agents: list) -> list:
+    """Les unités d'une liste `agents`, celle de l'ancienne interface.
+
+    Dans cette liste, c'est `agentType` qui fait foi : un `unitType` à côté
+    est la copie servie par l'API, que l'ancienne interface ne met pas à jour.
+    Les codes ne sont pas touchés ici (voir _bloc_au_nouveau_format).
+    """
+    unites = []
+    for agent in agents:
+        if isinstance(agent, dict) and "agentType" in agent:
+            agent = _renommer_cle({cle: valeur for cle, valeur in agent.items() if cle != "unitType"},
+                                  "agentType", "unitType")
+        unites.append(agent)
+    return unites
+
+
+def _bloc_au_nouveau_format(donnees: dict, unites_servies: list | None) -> tuple[dict, bool]:
+    """Le contenu d'un bloc au nouveau format, et s'il était à l'ancien.
+
+    Trois formes possibles :
+
+    - `agents` seul : le bloc vient de l'ancienne interface (ou d'avant la
+      migration). La liste devient `units`, et chaque code du bloc perd le mot
+      AGENT pour UNITE.
+    - `agents` et `units` : la forme double que l'API sert pendant la
+      transition (décision 125), renvoyée par une des deux interfaces. Chacune
+      ne modifie que sa liste et rend l'autre telle qu'elle l'a reçue. Si
+      `units` est restée exactement celle que l'API avait servie et que
+      `agents` a changé, c'est l'ancienne interface qui a travaillé : sa liste
+      fait foi. Dans tous les autres cas, `units` fait foi. `agents` est retirée.
+    - `units` seul : le nouveau format ; seule la copie `agentType` est retirée.
+    """
+    if "agents" in donnees and "units" not in donnees:
+        donnees = _renommer_cle(donnees, "agents", "units")
+        if isinstance(donnees["units"], list):
+            donnees = {**donnees, "units": _depuis_la_liste_agents(donnees["units"])}
+        return _convertir_codes(donnees), True
+
+    if "agents" in donnees:
+        unites, agents = donnees["units"], donnees["agents"]
+        if (isinstance(unites, list) and isinstance(agents, list) and unites_servies is not None
+                and _unites_sans_copie(unites) == unites_servies
+                and _depuis_la_liste_agents(agents) != unites_servies):
+            unites = _convertir_codes(_depuis_la_liste_agents(agents))
+        donnees = {cle: (unites if cle == "units" else valeur)
+                   for cle, valeur in donnees.items() if cle != "agents"}
+
     unites = donnees.get("units")
-    if isinstance(unites, list):
-        donnees = {**donnees, "units": [
-            _renommer_cle(unite, "agentType", "unitType") if isinstance(unite, dict) else unite
-            for unite in unites
-        ]}
-    return _convertir_codes(donnees)
+    if isinstance(unites, list) and any(isinstance(u, dict) and "agentType" in u for u in unites):
+        donnees = {**donnees, "units": _unites_sans_copie(unites)}
+    return donnees, False
 
 
 def _avec_donnees_converties(element: Any, convertir) -> Any:
@@ -103,36 +148,86 @@ def _avec_donnees_converties(element: Any, convertir) -> Any:
     return {**element, "data": convertir(element["data"])}
 
 
-def convertir_composition(spec: Any) -> Any:
-    """La composition au format « unité », sans modifier celle reçue.
+def _unites_servies_par_bloc(reference: Any) -> dict:
+    """Pour chaque bloc de la composition enregistrée, la liste d'unités que
+    l'API a servie (sans les copies de compatibilité)."""
+    reference = convertir_composition(reference)
+    if not isinstance(reference, dict):
+        return {}
+    servies = {}
+    for noeud in _noeuds(reference):
+        unites = _donnees(noeud).get("units")
+        if isinstance(unites, list):
+            servies[noeud.get("id")] = unites
+    return servies
 
-    C'est la seule fonction de conversion du serveur. Une composition est à
-    l'ancien format si l'un de ses blocs porte encore la clé `agents` ; elle
-    est alors convertie en entier :
 
-    - `data.agents` d'un bloc devient `data.units` (un bloc qui porte les
-      deux ne garde que `units`) ;
-    - `agentType` d'une unité devient `unitType` (même règle) ;
-    - dans le contenu (`data`) des blocs et des liaisons, chaque code perd le
-      mot AGENT pour UNITE : INSTANCE_AGENT_CAMERA devient INSTANCE_UNITE_CAMERA,
-      TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT devient ..._CANAL_UNITE.
+def convertir_composition(spec: Any, reference: Any = None) -> Any:
+    """La composition au seul format « unité », sans modifier celle reçue.
+
+    C'est la seule fonction de conversion du serveur : tout ce que l'API
+    enregistre ou calcule passe par elle. Bloc par bloc (voir
+    _bloc_au_nouveau_format) :
+
+    - `data.agents` devient `data.units`, `agentType` devient `unitType`, et
+      dans un bloc à l'ancien format chaque code perd le mot AGENT pour UNITE :
+      INSTANCE_AGENT_CAMERA devient INSTANCE_UNITE_CAMERA,
+      TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_AGENT devient ..._CANAL_UNITE ;
+    - un bloc qui porte les deux listes n'en garde qu'une. `reference` est la
+      composition enregistrée, celle que l'API a servie au client : elle dit
+      laquelle des deux listes le client a modifiée.
 
     Ne changent jamais : les identifiants (`id`, donc les poignées
     `in:<unité>:<canal>` des liaisons), les noms et descriptions saisis, et ce
     qui n'a pas la forme attendue (pas un objet, liste absente). Une
-    composition déjà au nouveau format ressort telle quelle : le mot AGENT y
-    garde son sens d'intelligence artificielle.
+    composition déjà au seul nouveau format ressort telle quelle : le mot
+    AGENT y garde son sens d'intelligence artificielle.
     """
-    if not isinstance(spec, dict) or not _est_a_l_ancien_format(spec):
+    if not isinstance(spec, dict) or not isinstance(spec.get("nodes"), list):
         return spec
-    resultat = dict(spec)
-    if isinstance(spec.get("nodes"), list):
-        resultat["nodes"] = [_avec_donnees_converties(noeud, _convertir_donnees_du_bloc)
-                             for noeud in spec["nodes"]]
-    if isinstance(spec.get("edges"), list):
-        resultat["edges"] = [_avec_donnees_converties(lien, _convertir_codes)
-                             for lien in spec["edges"]]
+    servies = _unites_servies_par_bloc(reference) if reference is not None else {}
+    noeuds, ancienne, changee = [], False, False
+    for noeud in spec["nodes"]:
+        if isinstance(noeud, dict) and isinstance(noeud.get("data"), dict):
+            donnees, etait_ancien = _bloc_au_nouveau_format(noeud["data"], servies.get(noeud.get("id")))
+            ancienne = ancienne or etait_ancien
+            if donnees is not noeud["data"]:
+                noeud, changee = {**noeud, "data": donnees}, True
+        noeuds.append(noeud)
+    if not changee:
+        return spec
+    resultat = {**spec, "nodes": noeuds}
+    if ancienne and isinstance(spec.get("edges"), list):
+        resultat["edges"] = [_avec_donnees_converties(lien, _convertir_codes) for lien in spec["edges"]]
     return resultat
+
+
+def composition_servie(spec: Any) -> Any:
+    """La composition telle que l'API la sert : le nouveau format, plus les
+    clés que lit l'interface d'avant le renommage.
+
+    Compatibilité avec l'interface d'avant le renommage (décision 125) : à
+    retirer par une prochaine modification de l'API, une fois l'interface
+    passée. L'API et l'interface sont mises en ligne en même temps, sans ordre :
+    l'interface encore en ligne lit `node.data.agents` (et plante sans elle) et
+    `agentType`. Chaque bloc qui a `units` porte donc aussi `agents`, la même
+    liste, et chaque unité porte aussi `agentType`, la valeur de `unitType`.
+    Les codes restent au nouveau format. Ce qui revient est remis au seul
+    nouveau format par convertir_composition.
+    """
+    spec = convertir_composition(spec)
+    if not isinstance(spec, dict) or not isinstance(spec.get("nodes"), list):
+        return spec
+    noeuds = []
+    for noeud in spec["nodes"]:
+        donnees = noeud.get("data") if isinstance(noeud, dict) else None
+        if isinstance(donnees, dict) and isinstance(donnees.get("units"), list):
+            unites = [{**unite, "agentType": unite["unitType"]}
+                      if isinstance(unite, dict) and "unitType" in unite else unite
+                      for unite in donnees["units"]]
+            noeud = {**noeud, "data": {**donnees, "units": unites, "agents": unites}}
+        noeuds.append(noeud)
+    return {**spec, "nodes": noeuds}
 
 
 def _noeuds(spec: dict) -> list[dict]:

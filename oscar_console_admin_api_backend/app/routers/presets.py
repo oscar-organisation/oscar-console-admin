@@ -101,7 +101,8 @@ def create_preset(body: CompositionPresetIn, db: Session = Depends(get_db),
 
     preset = CompositionPreset(
         slug=body.slug, nom=body.nom, constructeur=body.constructeur,
-        famille=body.famille, description=body.description, spec=body.spec,
+        famille=body.famille, description=body.description,
+        spec=convertir_composition(body.spec),  # en base, le seul nouveau format
         ordre=body.ordre, notes=body.notes, created_by=user.id,
     )
     db.add(preset)
@@ -163,6 +164,10 @@ def update_preset(reference: str, body: CompositionPresetPatch, db: Session = De
     _catalogue_ecrivable(user)
     preset = _preset(db, reference)
     champs = body.model_dump(exclude_unset=True)
+    if champs.get("spec") is not None:
+        # En base, le seul nouveau format ; le préset enregistré est celui que
+        # le client a reçu (voir convertir_composition, décision 125).
+        champs["spec"] = convertir_composition(champs["spec"], reference=preset.spec)
     if "statut" in champs and champs["statut"] not in STATUTS:
         raise HTTPException(400, f"Statut inconnu : {champs['statut']}")
     touche_le_fond = any(c in champs for c in ("spec", "famille"))

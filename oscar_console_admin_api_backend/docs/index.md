@@ -86,6 +86,28 @@ leur mise à jour), et le réglage `EDGE_AGENT_API_KEY` quand
 `EDGE_RUNTIME_API_KEY` est vide. **Un robot dont le programme ne lit que le
 manifeste `v1` refuse le `v2`**: son programme doit apprendre à lire `unites`.
 
+**Compatibilité avec l'interface d'avant le renommage (décision 125).** L'API
+et l'interface sont mises en ligne en même temps, sans ordre: l'API sert donc
+aussi ce que lit l'interface encore en ligne, le temps qu'elle passe.
+
+- La liste des bundles sert `agent_count`, la même valeur que `unit_count`.
+- `POST /api/robots/{id}/agent-key` répond comme `/machine-key` (même droit,
+  même trace d'audit), et la réponse porte la clé sous `machine_key` et
+  `agent_key`, sur les deux adresses.
+- Toute composition servie porte, dans chaque bloc qui a `units`, une clé
+  `agents` qui contient la même liste, et chaque unité porte `agentType`, la
+  valeur de `unitType`. Les codes restent au nouveau format.
+- Une composition reçue est enregistrée au seul nouveau format. Si un bloc
+  porte les deux listes, chaque interface n'a pu modifier que la sienne: si
+  `units` est restée celle que l'API avait servie et que `agents` a changé,
+  c'est l'interface d'avant qui a travaillé, et sa liste fait foi; sinon
+  `units` fait foi.
+
+Tout cela est à retirer par une prochaine modification de l'API, une fois
+l'interface passée (`composition_servie` dans `app/bundle_spec.py`, la clé
+`agent_count`, l'adresse `/agent-key` et la clé `agent_key`, et le fichier de
+tests `tests/test_compatibilite_decision_125.py`).
+
 ## Les réglages
 
 La liste complète, expliquée, est dans
