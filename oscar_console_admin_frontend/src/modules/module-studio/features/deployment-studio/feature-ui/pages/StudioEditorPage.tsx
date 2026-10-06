@@ -39,13 +39,13 @@ function useEcranSuffisant(): boolean {
 }
 
 /**
- * L'éditeur d'un bundle. Deux écrans y vivent le temps du passage au nouveau
- * Studio (on ajoute avant de retirer, décision 125) :
- * - `/studio/:projectId` : l'ancien éditeur, toujours en service ;
- * - `/studio/:bundleId/composition` : le nouveau Studio, où l'on compose un
- *   bundle au nouveau format (étapes I3 à I5 du lot L1).
- * Le nom du paramètre de la route dit lequel ouvrir. L'ancien partira à
- * l'étape I6, et le nouveau prendra alors l'adresse `/studio/:bundleId`.
+ * L'éditeur d'un bundle (lot L1). Deux écrans y vivent le temps que Joel
+ * valide le nouveau (on ajoute avant de retirer, décision 125) :
+ * - `/studio/:bundleId` : le nouveau Studio, qui remplace l'ancien ;
+ * - `/studio/:projectId/ancien` : l'ancien éditeur, gardé à part, joignable
+ *   par le menu du bundle (« Ancien éditeur »). Il ne peut plus enregistrer
+ *   un bundle passé au nouveau Studio (le serveur le refuse).
+ * Le nom du paramètre de la route dit lequel ouvrir.
  */
 export default function StudioEditorPage() {
   const { bundleId } = useParams();
@@ -115,7 +115,7 @@ function NouveauStudio({ bundleId }: { readonly bundleId: string }) {
   );
 }
 
-/** L'ancien éditeur, inchangé : il reste en service jusqu'à l'étape I6. */
+/** L'ancien éditeur, gardé tel quel (ses mots seuls disent « bundle ») jusqu'à la validation du nouveau. */
 function AncienEditeur() {
   const perimetre = useStudioPerimetre();
   const { projectId } = useParams();
@@ -155,9 +155,9 @@ function AncienEditeur() {
     return (
       <div className="studio-scope">
         <div className="studio-projects">
-          <h2>Projet introuvable</h2>
-          <p>Ce projet n’est ni sur le serveur ni dans ce navigateur.</p>
-          <Link to="/studio">Revenir aux projets</Link>
+          <h2>Bundle introuvable</h2>
+          <p>Ce bundle n’est ni sur le serveur ni dans ce navigateur.</p>
+          <Link to="/studio">Revenir aux bundles</Link>
         </div>
       </div>
     );
@@ -174,9 +174,9 @@ function AncienEditeur() {
           <h2>{project.name}</h2>
           <p>
             Le plan de composition demande un écran d’au moins {LARGEUR_MINIMALE} px.
-            Ouvrez ce projet depuis un poste de travail pour le modifier.
+            Ouvrez ce bundle depuis un poste de travail pour le modifier.
           </p>
-          <Link to="/studio">Revenir aux projets</Link>
+          <Link to="/studio">Revenir aux bundles</Link>
         </div>
       </div>
     );
@@ -217,14 +217,14 @@ function AncienEditeur() {
               <div className="dialog-icon dialog-icon--danger"><Trash2 size={20} /></div>
               <div>
                 <span>Suppression</span>
-                <h2 id="supprimer-projet-titre">Supprimer ce projet ?</h2>
+                <h2 id="supprimer-projet-titre">Supprimer ce bundle ?</h2>
               </div>
               <button className="icon-button" disabled={suppression} type="button"
                       onClick={() => setASupprimer(false)}><X size={18} /></button>
             </header>
             <div className="project-delete-dialog__body">
               <strong>{project.name}</strong>
-              <p>Le projet et ses versions non déployées seront supprimés. Cette action est définitive.</p>
+              <p>Le bundle et ses versions non déployées seront supprimés. Cette action est définitive.</p>
               <small>
                 <AlertTriangle size={14} /> S’il a déjà été déployé, son historique le protège :
                 le serveur refusera, et l’archivage reste la bonne sortie.
@@ -244,14 +244,14 @@ function AncienEditeur() {
                         } catch (erreur) {
                           setPanne(erreur instanceof Error
                             ? erreur.message
-                            : "Le projet n’a pas pu être supprimé.");
+                            : "Le bundle n’a pas pu être supprimé.");
                         } finally {
                           setSuppression(false);
                         }
                       }}>
                 {suppression
                   ? <><LoaderCircle className="spin" size={15} /> Suppression...</>
-                  : <><Trash2 size={15} /> Supprimer le projet</>}
+                  : <><Trash2 size={15} /> Supprimer le bundle</>}
               </button>
             </footer>
           </section>

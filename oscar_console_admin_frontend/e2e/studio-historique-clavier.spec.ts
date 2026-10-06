@@ -31,7 +31,7 @@ test("R1.4 : cinquante gestes à l'écran, tout annuler, tout rétablir : chaque
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   test.setTimeout(150_000);
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-reference/composition");
+  await page.goto("/studio/bundle-reference");
   const canevas = page.getByTestId("espace-composition");
   const proprietes = page.getByRole("complementary", { name: "Propriétés" });
   const annulerBouton = page.locator(".studio-topbar").getByRole("button", { name: "Annuler", exact: true });
@@ -94,7 +94,7 @@ test("R1.7 : les gestes essentiels se font au clavier seul, le focus toujours vi
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   test.setTimeout(90_000);
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-neuf/composition");
+  await page.goto("/studio/bundle-neuf");
   await expect(page.getByRole("region", { name: "Pour commencer" })).toBeVisible();
   const canevas = page.getByTestId("espace-composition");
   const focusDans = (selecteur: string) => page.evaluate((s) => Boolean(document.activeElement?.closest(s)), selecteur);
@@ -204,7 +204,7 @@ test("Vérifier : le serveur relit le brouillon, et « Localiser » mène à l'�
     niveau: "AVERTISSEMENT", code: "CANAL_NON_RELIE", titre: "Canal non relié",
     explication: "L'entrée « Commande de la base » ne reçoit rien.", correction: "Reliez-lui une sortie.", element: "can-01",
   }] });
-  await page.goto("/studio/bundle-reference/composition");
+  await page.goto("/studio/bundle-reference");
   const verifier = page.locator(".studio-topbar").getByRole("button", { name: /Vérifier/ });
   await verifier.click();
   const panneau = page.getByRole("complementary", { name: "Problèmes du bundle" });

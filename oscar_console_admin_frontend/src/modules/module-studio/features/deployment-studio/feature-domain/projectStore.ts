@@ -242,7 +242,7 @@ export function ajouterProjet(projet: OscarProject): void {
  * rien a archiver : on le supprime ou on le garde.
  */
 export async function archiverProjet(projet: OscarProject, archive: boolean): Promise<void> {
-  if (!projet.bundleId) throw new Error("Ce projet n'existe que dans ce navigateur.");
+  if (!projet.bundleId) throw new Error("Ce bundle n'existe que dans ce navigateur.");
   const contexte = generation;
   await archiverBundle(projet.bundleId, projet.name, archive);
   if (contexte !== generation) return;

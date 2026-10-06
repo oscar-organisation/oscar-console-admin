@@ -94,6 +94,14 @@ export interface EtatDuBrouillon {
   /** Le prochain essai automatique, en secondes, après un échec ; null s'il n'y en a plus. */
   readonly prochainEssaiDans: number | null;
   readonly propositionDeReprise: PropositionDeReprise | null;
+  /**
+   * Le dernier état que le serveur a confirmé (lu à l'ouverture, ou accepté à
+   * un enregistrement) : c'est de lui que partent « mes changements » et
+   * « ceux de l'autre poste » dans la fenêtre de conflit.
+   */
+  readonly base: EtatStudio | null;
+  /** Pendant un conflit : la version que le serveur a maintenant, relue pour la montrer. */
+  readonly versionEnConflit: BrouillonServeur | null;
   /** Les problèmes rendus par le serveur à la dernière vérification (« Vérifier »). */
   readonly verification: VerificationDuBrouillon | null;
   /** Vrai si le brouillon a changé depuis la dernière vérification : elle date. */
@@ -120,6 +128,8 @@ const ETAT_INITIAL: EtatDuBrouillon = {
   messageDEnregistrement: null,
   prochainEssaiDans: null,
   propositionDeReprise: null,
+  base: null,
+  versionEnConflit: null,
   verification: null,
   verificationPerimee: false,
   verificationEnCours: false,
@@ -241,9 +251,13 @@ export function configurerPerimetre(utilisateur: string | null, organisation: st
  */
 export type PreparationDeLaMiseEnPage = (brouillon: BrouillonServeur) => MiseEnPage;
 
+/** La préparation donnée à la dernière ouverture : une réouverture (après un conflit) la reprend. */
+let preparationDeLOuverture: PreparationDeLaMiseEnPage | null = null;
+
 /** Ouvre le brouillon d'un bundle : le serveur d'abord ; une copie locale qui diffère est seulement proposée. */
 export async function ouvrir(bundleId: string, preparer?: PreparationDeLaMiseEnPage): Promise<void> {
   reinitialiser();
+  preparationDeLOuverture = preparer ?? null;
   const contexteDeLOuverture = generation;
   publier({ bundleId, chargement: "CHARGEMENT" });
   try {
@@ -268,6 +282,7 @@ export async function ouvrir(bundleId: string, preparer?: PreparationDeLaMiseEnP
       chargement: "PRET",
       catalogue,
       serveur,
+      base: { modele: serveur.modele, miseEnPage: serveur.mise_en_page },
       revision: serveur.revision,
       historique: creerHistorique(present),
       enregistrement: serveur.revision === 0 ? "JAMAIS_ENREGISTRE" : "ENREGISTRE",
@@ -325,6 +340,7 @@ async function enregistrer(): Promise<void> {
     else if (etat.historique) ecrireLaCopie(bundleId, etat.historique.present, reponse.revision);
     publier({
       revision: reponse.revision,
+      base: envoye,
       enregistrement: aJour ? "ENREGISTRE" : "MODIFIE",
       messageDEnregistrement: null,
     });
@@ -336,8 +352,15 @@ async function enregistrer(): Promise<void> {
     envoiEnVol = null;
     const probleme = normalizeError(erreur);
     if (probleme.status === 409) {
-      // Quelqu'un a enregistré depuis : rien n'est écrasé, la personne choisit.
+      // Quelqu'un a enregistré depuis : rien n'est écrasé, la personne choisit. La version du
+      // serveur se relit, pour montrer ce qui diffère de chaque côté.
       publier({ enregistrement: "CONFLIT", messageDEnregistrement: probleme.userMessage, prochainEssaiDans: null });
+      try {
+        const versionEnConflit = await lireBrouillon(bundleId);
+        if (contexteDeLEnvoi === generation && etat.enregistrement === "CONFLIT") publier({ versionEnConflit });
+      } catch {
+        // Sans elle, la fenêtre de conflit propose les mêmes choix, sans le détail de l'autre poste.
+      }
       return;
     }
     if (!probleme.retryable) {
@@ -512,6 +535,8 @@ export async function remplacerLaVersionDuServeur(): Promise<void> {
       historique: present,
       revision: serveur.revision,
       serveur,
+      base: { modele: serveur.modele, miseEnPage: serveur.mise_en_page },
+      versionEnConflit: null,
       propositionDeReprise: null,
       enregistrement: "MODIFIE",
       messageDEnregistrement: null,
@@ -528,7 +553,7 @@ export async function ouvrirLaVersionDuServeur(): Promise<void> {
   const { bundleId } = etat;
   if (!bundleId) return;
   effacerLaCopie(bundleId);
-  await ouvrir(bundleId);
+  await ouvrir(bundleId, preparationDeLOuverture ?? undefined);
 }
 
 /* --------------------------------------------------------------------- *

@@ -147,6 +147,11 @@ describe("l'enregistrement", () => {
     await vi.advanceTimersByTimeAsync(1200);
     expect(lireEtat()).toMatchObject({ enregistrement: "CONFLIT", messageDEnregistrement: message });
 
+    // La version du serveur est relue, pour montrer ce qui diffère de chaque côté ; la base reste celle d'avant.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(lireBrouillon).toHaveBeenCalledTimes(2);
+    expect(lireEtat().versionEnConflit?.revision).toBe(3);
+    expect(lireEtat().base?.modele).toEqual(brouillonDeReference.modele);
     // Les gestes continuent, gardés à l'écran et dans la copie locale, mais rien ne part.
     jouer({ operation: "regler", id: "zon-01", champs: { nom: "Robot de l'accueil" } });
     await vi.advanceTimersByTimeAsync(60_000);
@@ -168,7 +173,9 @@ describe("l'enregistrement", () => {
     vi.mocked(enregistrerBrouillon).mockResolvedValueOnce(enregistre(6));
     await remplacerLaVersionDuServeur();
     expect(vi.mocked(enregistrerBrouillon).mock.calls[1]?.[1]).toMatchObject({ revisionAttendue: 5 });
-    expect(lireEtat()).toMatchObject({ revision: 6, enregistrement: "ENREGISTRE" });
+    expect(lireEtat()).toMatchObject({ revision: 6, enregistrement: "ENREGISTRE", versionEnConflit: null });
+    // La base est maintenant ce que le serveur vient d'accepter.
+    expect(lireEtat().base).toBe(present());
 
     // « Ouvrir la version du serveur » : l'historique repart à vide.
     vi.mocked(lireBrouillon).mockResolvedValueOnce(brouillonDuServeur(7));

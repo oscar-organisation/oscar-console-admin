@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Cable, Check, CircleHelp, History, LayoutGrid, Layers3, LoaderCircle, Plus, Redo2, Undo2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Cable, Check, CircleHelp, History, LayoutGrid, Layers3, LoaderCircle, Plus, Redo2, RotateCw, Undo2, X } from "lucide-react";
 import type { BrouillonServeur } from "../../feature-data/studioApi";
 import {
+  abandonnerLaCopieLocale,
   abandonnerLeGeste,
   annuler,
+  copieLocaleEnTexte,
   jouer,
+  ouvrirLaVersionDuServeur,
   previsualiser,
+  reessayer,
+  remplacerLaVersionDuServeur,
+  reprendreLaCopieLocale,
   retablir,
   verifier,
   type EtatDuBrouillon,
@@ -60,13 +66,16 @@ import { ID_DU_CADRE, disposer } from "./canevas/disposition";
 import GuideDuStudio from "./GuideDuStudio";
 import { ranger } from "./canevas/rangement";
 import ConfirmationSuppression, { type CibleDeSuppression } from "./ConfirmationSuppression";
+import ConflitEnregistrement from "./ConflitEnregistrement";
 import EspaceComposition, { type Centrage, type PointDeLEcran } from "./EspaceComposition";
 import type { Reglage } from "./inspecteur/reglage";
 import Inspecteur from "./inspecteur/Inspecteur";
 import Legende from "./Legende";
 import MenuAjouter, { type ChoixDuMenu } from "./MenuAjouter";
+import MenuDuBundle from "./MenuDuBundle";
 import PanneauProblemes, { type GroupeDeProblemes } from "./PanneauProblemes";
 import Palette from "./Palette";
+import RepriseBrouillonLocal from "./RepriseBrouillonLocal";
 
 /**
  * L'éditeur d'un bundle au nouveau Studio (conception du lot L1, partie 6.1),
@@ -661,6 +670,11 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, brouillon }:
             {enregistrement === "EN_COURS" && <LoaderCircle className="spin" size={13} aria-hidden="true" />}
             {" "}{motDeLEnregistrement}
           </span>
+          {(enregistrement === "ECHEC" || enregistrement === "REFUSE") && (
+            <button className="secondary-button ec-reessayer" type="button" onClick={() => void reessayer()} title={messageDEnregistrement ?? undefined}>
+              <RotateCw size={14} aria-hidden="true" /> Réessayer
+            </button>
+          )}
           <div className="topbar-actions">
             <div className="ec-historique" role="group" aria-label="Historique des gestes">
               <button className="secondary-button ec-bouton-icone" type="button" onClick={annuler} disabled={!historique || !peutAnnuler(historique)}
@@ -688,6 +702,7 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, brouillon }:
               {verificationEnCours ? <LoaderCircle className="spin" size={15} aria-hidden="true" /> : <AlertCircle size={15} aria-hidden="true" />}
               {" "}Vérifier {nombreDeProblemes > 0 && <b aria-label={`${nombreDeProblemes} problème${nombreDeProblemes > 1 ? "s" : ""}`}>{nombreDeProblemes}</b>}
             </button>
+            <MenuDuBundle bundleId={serveur.bundle_id} nomDuBundle={modele.bundle.nom} />
           </div>
         </header>
 
@@ -705,6 +720,26 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, brouillon }:
       </main>
 
       <p className="ec-invisible" aria-live="polite">Choisi : {descriptionDeLaSelection}</p>
+      {brouillon.propositionDeReprise && (
+        <RepriseBrouillonLocal
+          proposition={brouillon.propositionDeReprise}
+          nomDuBundle={modele.bundle.nom}
+          copieEnTexte={copieLocaleEnTexte() ?? ""}
+          onReprendre={reprendreLaCopieLocale}
+          onAbandonner={abandonnerLaCopieLocale}
+          onRemplacer={() => void remplacerLaVersionDuServeur()}
+        />
+      )}
+      {enregistrement === "CONFLIT" && (
+        <ConflitEnregistrement
+          base={brouillon.base}
+          present={etat}
+          serveur={brouillon.versionEnConflit}
+          message={messageDEnregistrement}
+          onOuvrirLaVersionDuServeur={() => void ouvrirLaVersionDuServeur()}
+          onRemplacer={() => void remplacerLaVersionDuServeur()}
+        />
+      )}
       {menuOuvert && (
         <MenuAjouter
           surtitre={menuOuvert.surtitre}

@@ -67,7 +67,7 @@ export default function StudioPresetsPage() {
   const retirer = async (preset: PresetServeur) => {
     // Retirer un preset ne touche a aucun projet : la composition y a ete
     // copiee, pas referencee. La confirmation porte donc sur le catalogue.
-    if (!window.confirm(`Retirer « ${preset.nom} » du catalogue ? Les projets déjà créés ne changent pas.`)) return;
+    if (!window.confirm(`Retirer « ${preset.nom} » du catalogue ? Les bundles déjà créés ne changent pas.`)) return;
     setEnCours(preset.slug);
     try {
       await supprimerPreset(preset.slug);

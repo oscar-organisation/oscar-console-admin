@@ -41,6 +41,8 @@ export const PERMISSIONS = ["ui:studio.page", "api:bundle.read", "api:bundle.wri
 export interface Serveur {
   readonly requetes: string[];
   readonly enregistrements: { modele: Modele; mise_en_page: unknown; revision_attendue: number }[];
+  /** Les corps des créations de bundle (POST /studio/bundles). */
+  readonly creations: { nom: string; description: string; depart: unknown }[];
 }
 
 export interface Modele {
@@ -49,7 +51,6 @@ export interface Modele {
   liaisons: { id: string; source: string; destination: string }[];
 }
 
-/** Le serveur simulé ; il note chaque requête et garde chaque brouillon reçu. */
 /** Ce que le serveur simulé rend à « Vérifier » : des problèmes rangés comme ceux du serveur (spécification 18.2). */
 export interface ProblemeSimule {
   niveau: "ERREUR" | "AVERTISSEMENT";
@@ -60,13 +61,42 @@ export interface ProblemeSimule {
   element: string | null;
 }
 
-export async function serveur(page: Page, options: { brouillonIntrouvable?: boolean; problemes?: ProblemeSimule[] } = {}): Promise<Serveur> {
+/** Un bundle de la liste, tel que le serveur le rend (BundleOut). */
+export function bundleDeLaListe(id: string, nom: string, champs: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id, org_id: "org-e2e", nom, slug: id, description: "", target: "ENVIRONNEMENT_EXECUTION_ROBOT", statut: "active",
+    draft_version: null, published_version: null, version_count: 0, robot_count: 0, component_count: 0, unit_count: 0,
+    projet_id: "projet-e2e", format_brouillon: "oscar.bundle/1", updated_at: "2026-10-06T00:30:00Z", ...champs,
+  };
+}
+
+/** La liste par défaut : un bundle de l'ancienne console, pas encore repris. */
+export const LISTE_PAR_DEFAUT = [bundleDeLaListe("bundle-ancien", "Accueil et inventaire du magasin", {
+  published_version: { id: "version-ancienne-publiee", bundle_id: "bundle-ancien", numero: 1, statut: "published" },
+  version_count: 1, component_count: 6, unit_count: 6, format_brouillon: "ancien",
+})];
+
+export interface OptionsDuServeur {
+  brouillonIntrouvable?: boolean;
+  problemes?: ProblemeSimule[];
+  /** La liste des bundles ; LISTE_PAR_DEFAUT sinon. */
+  bundles?: Record<string, unknown>[];
+  /** La liste ne répond pas : 503, avec sa cause. */
+  listeEnPanne?: boolean;
+  /** Un autre poste enregistre avant nous : le premier enregistrement répond 409. */
+  conflit?: { modele: Modele; revision: number };
+}
+
+/** Le serveur simulé ; il note chaque requête et garde chaque brouillon reçu. */
+export async function serveur(page: Page, options: OptionsDuServeur = {}): Promise<Serveur> {
   await page.addInitScript(() => {
     window.localStorage.setItem("oscar_access", "e2e-access");
     window.localStorage.setItem("oscar_refresh", "e2e-refresh");
     window.localStorage.setItem("oscar.studio.guide.dismissed", "true");
   });
-  const etat: Serveur = { requetes: [], enregistrements: [] };
+  const etat: Serveur = { requetes: [], enregistrements: [], creations: [] };
+  let liste = options.bundles ?? LISTE_PAR_DEFAUT;
+  let conflitEnAttente = options.conflit !== undefined;
   const brouillons = new Map<string, Record<string, unknown>>([
     ["bundle-ancien", REPRISE], ["bundle-reference", REFERENCE], ["bundle-neuf", NEUF], ["bundle-range", REFERENCE_SANS_MISE_EN_PAGE],
   ]);
@@ -94,6 +124,17 @@ export async function serveur(page: Page, options: { brouillonIntrouvable?: bool
         : { json: trouve });
       return;
     }
+    if (brouillon && methode === "PUT" && conflitEnAttente) {
+      // L'autre poste a enregistré : la révision du serveur a monté, son contenu a changé.
+      conflitEnAttente = false;
+      const avant = brouillons.get(brouillon[1] ?? "") ?? {};
+      brouillons.set(brouillon[1] ?? "", { ...avant, modele: options.conflit?.modele, revision: options.conflit?.revision });
+      await route.fulfill({ status: 409, json: {
+        detail: `Ce brouillon a été modifié depuis un autre poste (révision ${options.conflit?.revision}). Rechargez-le pour voir ces changements ; vos modifications restent proposées à côté.`,
+        code: "BROUILLON_MODIFIE_AILLEURS", revision_serveur: options.conflit?.revision,
+      } });
+      return;
+    }
     if (brouillon && methode === "PUT") {
       const corps = requete.postDataJSON();
       etat.enregistrements.push(corps);
@@ -115,13 +156,41 @@ export async function serveur(page: Page, options: { brouillonIntrouvable?: bool
       return;
     }
     if (chemin === "/studio/bundles" && methode === "GET") {
+      await route.fulfill(options.listeEnPanne
+        ? { status: 503, json: { detail: "Le service du Studio est momentanément indisponible." } }
+        : { json: liste });
+      return;
+    }
+    if (chemin === "/studio/bundles" && methode === "POST") {
+      // Un bundle créé naît avec son brouillon : il s'ouvre ensuite comme « bundle-neuf ».
+      const corps = requete.postDataJSON();
+      etat.creations.push(corps);
+      const cree = bundleDeLaListe("bundle-neuf", corps.nom, { description: corps.description });
+      liste = [cree, ...liste];
+      await route.fulfill({ status: 201, json: cree });
+      return;
+    }
+    const unBundle = /^\/studio\/bundles\/([^/]+)$/.exec(chemin);
+    if (unBundle && methode === "GET") {
+      const trouve = liste.find((bundle) => bundle.id === unBundle[1]) ?? bundleDeLaListe(unBundle[1] ?? "", "Bundle");
+      await route.fulfill({ json: trouve });
+      return;
+    }
+    if (unBundle && methode === "PATCH") {
+      const corps = requete.postDataJSON();
+      liste = liste.map((bundle) => (bundle.id === unBundle[1] ? { ...bundle, statut: corps.statut } : bundle));
+      await route.fulfill({ json: liste.find((bundle) => bundle.id === unBundle[1]) });
+      return;
+    }
+    if (unBundle && methode === "DELETE") {
+      liste = liste.filter((bundle) => bundle.id !== unBundle[1]);
+      await route.fulfill({ status: 204, body: "" });
+      return;
+    }
+    if (chemin === "/studio/presets" && methode === "GET") {
       await route.fulfill({ json: [{
-        id: "bundle-ancien", org_id: "org-e2e", nom: "Accueil et inventaire du magasin", slug: "accueil",
-        description: "", target: "ENVIRONNEMENT_EXECUTION_ROBOT", statut: "active",
-        draft_version: null,
-        published_version: { id: "version-ancienne-publiee", bundle_id: "bundle-ancien", numero: 1, statut: "published" },
-        version_count: 1, robot_count: 0, component_count: 6, unit_count: 6,
-        projet_id: "projet-e2e", format_brouillon: "ancien",
+        id: "preset-m3", slug: "rosmaster-m3-pro", nom: "ROSMASTER M3 Pro", famille: "rosmaster-m3-pro", constructeur: "Yahboom",
+        description: "La composition de référence du M3 Pro.", spec: { nodes: [], edges: [] }, statut: "published", ordre: 1, revision: 1,
       }] });
       return;
     }

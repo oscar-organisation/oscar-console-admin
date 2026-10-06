@@ -57,8 +57,11 @@ describe("le rangement automatique", () => {
         nom: "Externe", type: { code: "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", version: "1.0.0" },
         reglages: { exigence: "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE" } },
     ] } as ModeleBundle);
-    // L'indice met l'Externe tout à gauche et la zone web tout à droite : le groupe l'emporte sur l'indice.
-    const indice: MiseEnPage = { format: FORMAT_DE_LA_MISE_EN_PAGE, blocs: { "zon-ext": { x: 0, y: 0 }, "zon-03": { x: 5000, y: 0 } } };
+    // L'indice met l'Externe tout à gauche et la zone web tout à droite : le groupe l'emporte sur l'indice,
+    // qui ne départage que les zones d'un même groupe (le robot avant le serveur).
+    const indice: MiseEnPage = { format: FORMAT_DE_LA_MISE_EN_PAGE, blocs: {
+      "zon-ext": { x: 0, y: 0 }, "zon-01": { x: 100, y: 0 }, "zon-02": { x: 200, y: 0 }, "zon-03": { x: 5000, y: 0 },
+    } };
     const range = ranger(sansLiaison, indice);
     const ordre = ["zon-01", "zon-02", "zon-03", "zon-ext"].sort((a, b) => (range.blocs[a]?.x ?? 0) - (range.blocs[b]?.x ?? 0));
     expect(ordre).toEqual(["zon-03", "zon-01", "zon-02", "zon-ext"]);

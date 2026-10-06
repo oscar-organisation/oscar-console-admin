@@ -67,7 +67,7 @@ const ETAT_SYNC: Record<SyncState, { court: string; long: string; icone: JSX.Ele
   SYNCHRONISE: { court: 'Enregistré', long: 'Brouillon synchronisé', icone: <Check size={13} /> },
   EN_COURS: { court: 'Enregistrement...', long: 'Enregistrement en cours', icone: <CloudUpload size={13} /> },
   ECHEC: { court: 'Non enregistré', long: 'Serveur injoignable, brouillon local', icone: <CloudOff size={13} /> },
-  LOCAL: { court: 'Local', long: 'Projet local à ce navigateur', icone: <CloudOff size={13} /> },
+  LOCAL: { court: 'Local', long: 'Bundle local à ce navigateur', icone: <CloudOff size={13} /> },
 };
 
 interface StudioProps {
@@ -303,7 +303,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
       });
     }
     setSelection(null);
-    flash('Élément retiré du projet.');
+    flash('Élément retiré du bundle.');
   }, [flash, project.edges, project.nodes, selection, update]);
 
   const locate = useCallback((nodeId: string) => {
@@ -325,9 +325,9 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
   return (
     <main className="studio-shell">
       <header className="studio-topbar">
-        <button className="back-button" onClick={onBack} title="Retour aux projets" type="button"><ArrowLeft size={18} /></button>
+        <button className="back-button" onClick={onBack} title="Retour aux bundles" type="button"><ArrowLeft size={18} /></button>
         <div className="topbar-divider" />
-        <div className="project-heading"><span>Projet</span><strong>{project.name}</strong></div>
+        <div className="project-heading"><span>Bundle</span><strong>{project.name}</strong></div>
         <button className="version-button" type="button">Version {project.version} <ChevronDown size={13} /></button>
         <span className="save-state">{ETAT_SYNC[syncEtat].icone} {ETAT_SYNC[syncEtat].court}</span>
         <div className="topbar-actions">
@@ -335,7 +335,7 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
             <div className="projet-menu">
               <button className="secondary-button projet-menu__bouton" type="button"
                       aria-haspopup="menu" aria-expanded={menuOuvert}
-                      aria-label="Actions sur le projet"
+                      aria-label="Actions sur le bundle"
                       disabled={actionEnCours}
                       onClick={() => setMenuOuvert((ouvert) => !ouvert)}>
                 <MoreHorizontal size={16} />
@@ -366,19 +366,19 @@ function Canvas({ project, onChange, onBack, canPublish, canDeploy, canManage, c
                                 setActionEnCours(true);
                                 try {
                                   await onArchiver(!project.archive);
-                                  flash(project.archive ? 'Projet désarchivé.' : 'Projet archivé.');
+                                  flash(project.archive ? 'Bundle désarchivé.' : 'Bundle archivé.');
                                 } finally {
                                   setActionEnCours(false);
                                 }
                               }}>
                         {project.archive ? <ArchiveRestore size={14} /> : <Archive size={14} />}
-                        {project.archive ? 'Sortir des archives' : 'Archiver le projet'}
+                        {project.archive ? 'Sortir des archives' : 'Archiver le bundle'}
                       </button>
                     )}
                     {canManage && (
                       <button role="menuitem" className="is-danger" type="button"
                               onClick={() => { setMenuOuvert(false); onSupprimer(); }}>
-                        <Trash2 size={14} /> Supprimer le projet
+                        <Trash2 size={14} /> Supprimer le bundle
                       </button>
                     )}
                   </div>

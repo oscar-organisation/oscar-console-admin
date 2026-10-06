@@ -24,13 +24,15 @@ import {
  * Mis à jour à l'étape I4 : l'écran n'est plus un aperçu en lecture ; il
  * reprend le dessin de l'ancien éditeur (barre d'état, blocs, légende), et la
  * reprise tient sur une ligne, ses points se lisant dans le panneau des
- * problèmes. Les scénarios de l'étape I3 suivent ces changements.
+ * problèmes. Les scénarios de l'étape I3 suivent ces changements. À l'étape
+ * I6, le nouveau Studio prend l'adresse du bundle, /studio/<id> ; le passage
+ * depuis la liste se joue dans e2e/studio.spec.ts.
  */
 
 test("un bundle de l'ancienne console s'ouvre par la reprise, rangé, ses points dans le panneau des problèmes", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-ancien/composition");
+  await page.goto("/studio/bundle-ancien");
 
   await expect(page.locator(".project-heading strong")).toHaveText("Accueil et inventaire du magasin");
   await expect(page.getByText("BUNDLE_DEPLOIEMENT_ACCUEIL_INVENTAIRE")).toBeVisible();
@@ -74,7 +76,7 @@ test("un bundle de l'ancienne console s'ouvre par la reprise, rangé, ses points
 test("le bundle de référence s'affiche : zones, salle, entrées à gauche, sorties à droite, flèches, légende", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-reference/composition");
+  await page.goto("/studio/bundle-reference");
   const canevas = page.getByTestId("espace-composition");
   await expect(page.locator(".project-heading strong")).toHaveText("Téléopération du M3");
   // Pas de reprise : ce bundle est déjà au nouveau format.
@@ -135,7 +137,7 @@ test("le bundle de référence s'affiche : zones, salle, entrées à gauche, sor
 test("un bundle qui ne s'ouvre pas le dit, avec sa cause, et propose de réessayer", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   await serveur(page, { brouillonIntrouvable: true });
-  await page.goto("/studio/bundle-ancien/composition");
+  await page.goto("/studio/bundle-ancien");
   const alerte = page.getByRole("alert");
   await expect(alerte).toContainText("Ce bundle n’a pas pu s’ouvrir");
   await expect(alerte).toContainText("Bundle introuvable");
@@ -143,22 +145,10 @@ test("un bundle qui ne s'ouvre pas le dit, avec sa cause, et propose de réessay
   await expect(alerte.getByRole("link", { name: "Revenir à la liste" })).toHaveAttribute("href", "/studio");
 });
 
-test("la liste de l'ancien Studio ouvre le nouveau canevas, à part de l'ancien éditeur", async ({ page }) => {
-  test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
-  await serveur(page);
-  await page.goto("/studio");
-  await page.getByRole("button", { name: "Voir le bundle Accueil et inventaire du magasin dans le nouveau canevas" }).click();
-  await expect(page).toHaveURL(/\/studio\/bundle-ancien\/composition$/);
-  await expect(page.locator(".project-heading strong")).toHaveText("Accueil et inventaire du magasin");
-  // Le retour mène à la liste.
-  await page.getByRole("link", { name: "Revenir à la liste des bundles" }).click();
-  await expect(page).toHaveURL(/\/studio$/);
-});
-
 test("sur un écran étroit, le canevas renvoie vers un poste de travail", async ({ page }) => {
   test.skip(ecranLarge(page), "Cas propre aux petits écrans.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-ancien/composition");
+  await page.goto("/studio/bundle-ancien");
   await expect(page.getByText(/demande un écran d’au moins 1100 px/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Revenir à la liste" })).toBeVisible();
   // Rien n'est chargé pour rien.
@@ -169,7 +159,7 @@ test("R1.1 : le bundle de référence se compose à la souris, s'enregistre et s
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   test.setTimeout(60_000);
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-neuf/composition");
+  await page.goto("/studio/bundle-neuf");
   const canevas = page.getByTestId("espace-composition");
   // Un bundle vide dit par quoi commencer.
   await expect(page.getByRole("region", { name: "Pour commencer" })).toContainText("Commencez par une zone");
@@ -268,7 +258,7 @@ test("R1.1 : le bundle de référence se compose à la souris, s'enregistre et s
 test("R1.2 : chaque dépôt interdit est refusé avec sa raison, près du point de dépôt, et rien n'est créé", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-range/composition");
+  await page.goto("/studio/bundle-range");
   await ajusterALEcran(page);
   const canevas = page.getByTestId("espace-composition");
   const refus = page.locator(".ec-refus");
@@ -307,7 +297,7 @@ test("R1.2 : chaque dépôt interdit est refusé avec sa raison, près du point 
 test("R1.2 : dans un bundle vide, la salle est refusée tant qu'aucune zone n'existe", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-neuf/composition");
+  await page.goto("/studio/bundle-neuf");
   await deposer(page, "Salle temps réel", page.getByTestId("espace-composition"), { x: 120, y: 120 });
   await expect(page.locator(".ec-refus")).toContainText("La salle temps réel se pose seule avec la première zone. Ajoutez d'abord une zone.");
   await expect(page.locator(".studio-statusbar")).toContainText("0 zone");
@@ -317,7 +307,7 @@ test("R1.2 : dans un bundle vide, la salle est refusée tant qu'aucune zone n'ex
 test("une liaison tirée vers une entrée s'éclaire, se crée, se choisit et se retire ; lâchée dans le vide, elle dit quoi faire", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
   const etat = await serveur(page);
-  await page.goto("/studio/bundle-range/composition");
+  await page.goto("/studio/bundle-range");
   await ajusterALEcran(page);
   const canevas = page.getByTestId("espace-composition");
   const sortie = canevas.locator('.react-flow__handle[data-handleid="can-02"]');

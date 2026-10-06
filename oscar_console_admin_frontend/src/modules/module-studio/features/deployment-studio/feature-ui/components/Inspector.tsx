@@ -115,7 +115,7 @@ export default function Inspector({
       <div className="inspector__content">
         {selection.type === 'node' && (
           <>
-            <div className="selection-path"><span>Projet</span><ChevronRight size={12} /><strong>{node.data.name}</strong></div>
+            <div className="selection-path"><span>Bundle</span><ChevronRight size={12} /><strong>{node.data.name}</strong></div>
             <Field label="Nom affiché" hint="Modifiable sans casser les liaisons.">
               <input value={node.data.name} onChange={(event) => onUpdateNode(node.id, { name: event.target.value })} />
             </Field>
@@ -239,7 +239,7 @@ export default function Inspector({
             <Field label="Nom du canal">
               <input value={channel.name} onChange={(event) => onUpdateChannel(node.id, unit.id, channel.id, { name: event.target.value })} />
             </Field>
-            <Field label="Adresse logique" hint="Générée à la création, stable et unique dans le projet.">
+            <Field label="Adresse logique" hint="Générée à la création, stable et unique dans le bundle.">
               <input className="technical-input" value={channel.technicalCode} onChange={(event) => onUpdateChannel(node.id, unit.id, channel.id, { technicalCode: event.target.value.toUpperCase().replace(/\s+/g, '_') })} />
             </Field>
             <Field label={channel.direction === 'RECEPTION' ? 'Type d’entrée' : 'Type de sortie'}>
