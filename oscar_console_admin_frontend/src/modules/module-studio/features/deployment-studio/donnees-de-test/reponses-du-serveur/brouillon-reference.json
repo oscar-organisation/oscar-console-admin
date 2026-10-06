@@ -1,0 +1,303 @@
+{
+  "bundle_id": "bundle-reference",
+  "format": "oscar.bundle/1",
+  "modele": {
+    "format": "oscar.bundle/1",
+    "bundle": {
+      "code": "BUNDLE_DEPLOIEMENT_TELEOPERATION_M3",
+      "nom": "Téléopération du M3",
+      "description": "Piloter le M3 au clavier et à la manette, avec la vidéo."
+    },
+    "elements": [
+      {
+        "id": "zon-01",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT_M3",
+        "nom": "Robot M3 Pro",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "sal-01",
+        "sorte": "COMPOSANT_SALLE_TEMPS_REEL",
+        "parent": null,
+        "code": "COMPOSANT_SALLE_TEMPS_REEL",
+        "nom": "Salle temps réel",
+        "type": {
+          "code": "COMPOSANT_SALLE_TEMPS_REEL",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "zon-02",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR_TRAITEMENT",
+        "nom": "Serveur de traitement",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE",
+          "justification": "Le robot se pilote sans lui : il n'est pas sur le chemin de commande."
+        }
+      },
+      {
+        "id": "zon-03",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_APPLICATION_WEB_TELEOPERATION",
+        "nom": "Téléopération web",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "svc-01",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-01",
+        "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT",
+        "nom": "Service actions du robot",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "uni-01",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "svc-01",
+        "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE",
+        "nom": "Commande de la base",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "trt-01",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "uni-01",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"
+      },
+      {
+        "id": "itf-01",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "uni-01",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"
+      },
+      {
+        "id": "bnd-01",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-01",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "nom": "Bande principale"
+      },
+      {
+        "id": "bre-01",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-01",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "nom": "Réception"
+      },
+      {
+        "id": "bem-01",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-01",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "nom": "Émission"
+      },
+      {
+        "id": "can-01",
+        "sorte": "CANAL_RECEPTION",
+        "parent": "bre-01",
+        "code": "CANAL_RECEPTION_COMMANDE_BASE",
+        "nom": "Commande de la base",
+        "reglages": {
+          "type": "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+          "format": "BINAIRE_COMPACT"
+        }
+      },
+      {
+        "id": "svc-02",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-01",
+        "code": "INSTANCE_SERVICE_CONFIGUREE_MEDIA_ROBOT",
+        "nom": "Service média du robot",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "uni-03",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "svc-02",
+        "code": "INSTANCE_UNITE_CONFIGUREE_MEDIA_ROBOT",
+        "nom": "Média du robot",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "trt-03",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "uni-03",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"
+      },
+      {
+        "id": "itf-03",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "uni-03",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"
+      },
+      {
+        "id": "bnd-03",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-03",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "nom": "Bande principale"
+      },
+      {
+        "id": "bre-03",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-03",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "nom": "Réception"
+      },
+      {
+        "id": "bem-03",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-03",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "nom": "Émission"
+      },
+      {
+        "id": "app-01",
+        "sorte": "INSTANCE_APPLICATION_CONFIGUREE",
+        "parent": "zon-03",
+        "code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION",
+        "nom": "Application de téléopération",
+        "type": {
+          "code": "TYPE_APPLICATION_GENERIQUE",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "uni-02",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "app-01",
+        "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_OPERATEUR",
+        "nom": "Commande de l'opérateur",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "trt-02",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "uni-02",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"
+      },
+      {
+        "id": "itf-02",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "uni-02",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"
+      },
+      {
+        "id": "bnd-02",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-02",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "nom": "Bande principale"
+      },
+      {
+        "id": "bre-02",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-02",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "nom": "Réception"
+      },
+      {
+        "id": "bem-02",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-02",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "nom": "Émission"
+      },
+      {
+        "id": "can-02",
+        "sorte": "CANAL_EMISSION",
+        "parent": "bem-02",
+        "code": "CANAL_EMISSION_COMMANDE_BASE",
+        "nom": "Commande de la base",
+        "reglages": {
+          "type": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+          "format": "BINAIRE_COMPACT"
+        }
+      }
+    ],
+    "liaisons": [
+      {
+        "id": "lia-01",
+        "source": "can-02",
+        "destination": "can-01"
+      }
+    ]
+  },
+  "mise_en_page": {
+    "format": "oscar.mise-en-page/1",
+    "blocs": {
+      "zon-01": {
+        "x": 40,
+        "y": 120
+      },
+      "zon-02": {
+        "x": 40,
+        "y": 640
+      },
+      "zon-03": {
+        "x": 900,
+        "y": 120
+      },
+      "sal-01": {
+        "x": 40,
+        "y": 24
+      },
+      "svc-01": {
+        "x": 24,
+        "y": 64
+      },
+      "svc-02": {
+        "x": 24,
+        "y": 400
+      },
+      "app-01": {
+        "x": 24,
+        "y": 64
+      }
+    }
+  },
+  "revision": 2,
+  "etat": "ETAT_BROUILLON_BUNDLE_EN_EDITION",
+  "origine": {
+    "sorte": "VIDE"
+  },
+  "reprise": null,
+  "modifie_le": "2026-10-06T00:00:00",
+  "modifie_par": "utilisateur-studio"
+}

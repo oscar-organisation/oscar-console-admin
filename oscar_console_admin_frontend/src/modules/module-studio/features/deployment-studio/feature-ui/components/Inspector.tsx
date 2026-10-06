@@ -14,6 +14,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
+import { FORMATS_DE_DONNEES } from '../../feature-domain/modele/canaux';
 import { INPUT_TYPES, OUTPUT_TYPES, TARGETS } from '../../feature-domain/catalogue';
 import { listerBoxIA, type BoxIA } from '../../feature-data/studioApi';
 import type {
@@ -25,14 +26,9 @@ import type {
   UnitConfig,
 } from '../../feature-domain/types';
 
-const DATA_FORMATS: Array<{ value: DataFormat; label: string }> = [
-  { value: 'BINAIRE_COMPACT', label: 'Binaire compact, haute fréquence' },
-  { value: 'OBJET_JSON', label: 'Objet structuré, données métier' },
-  { value: 'NOMBRE', label: 'Nombre' },
-  { value: 'BOOLEEN', label: 'Vrai / faux' },
-  { value: 'TEXTE', label: 'Texte' },
-  { value: 'IMAGE', label: 'Image' },
-];
+// Les formats sont écrits une seule fois, dans modele/canaux.ts.
+const DATA_FORMATS: Array<{ value: DataFormat; label: string }> =
+  FORMATS_DE_DONNEES.map((choix) => ({ value: choix.code, label: choix.aide }));
 
 interface InspectorProps {
   nodes: ArchitectureNode[];

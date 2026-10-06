@@ -1,0 +1,358 @@
+{
+  "familles": [
+    {
+      "code": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Environnements",
+      "ordre": 10
+    },
+    {
+      "code": "FAMILLE_PALETTE_TEMPS_REEL",
+      "nom": "Temps réel",
+      "ordre": 20
+    },
+    {
+      "code": "FAMILLE_PALETTE_APPAREILS",
+      "nom": "Appareils",
+      "ordre": 30
+    },
+    {
+      "code": "FAMILLE_PALETTE_MESSAGERIE_EVENEMENTS",
+      "nom": "Messagerie d'événements",
+      "ordre": 40
+    },
+    {
+      "code": "FAMILLE_PALETTE_RESEAU_INTERNET",
+      "nom": "Réseau et Internet",
+      "ordre": 50
+    },
+    {
+      "code": "FAMILLE_PALETTE_STOCKAGE",
+      "nom": "Stockage",
+      "ordre": 60
+    },
+    {
+      "code": "FAMILLE_PALETTE_PROGRAMMES_EXISTANTS",
+      "nom": "Programmes existants",
+      "ordre": 70
+    },
+    {
+      "code": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Services et applications",
+      "ordre": 80
+    }
+  ],
+  "types": [
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone robot",
+      "description": "L'ordinateur embarqué d'un robot : ses services tournent près des capteurs et des moteurs.",
+      "exemple": "Le M3 Pro, avec son service actions et son service média.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_SERVICE_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 10,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone serveur",
+      "description": "Un serveur de traitement, chez vous ou loué : ses services font les calculs lourds, loin du robot.",
+      "exemple": "Le serveur qui analyse la vidéo du robot, facultatif pour le piloter.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_SERVICE_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 20,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone application web",
+      "description": "Un navigateur web : ses applications servent une personne, depuis n'importe quel poste.",
+      "exemple": "La page de téléopération ouverte dans un navigateur.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 30,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_ORDINATEUR_BUREAU",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone ordinateur de bureau",
+      "description": "Un ordinateur où une application s'installe, quand un navigateur ne suffit pas.",
+      "exemple": "Le poste de supervision installé à l'accueil du magasin.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 40,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_APPAREIL_MOBILE",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone appareil mobile",
+      "description": "Un téléphone ou une tablette : ses applications suivent la personne dans ses déplacements.",
+      "exemple": "La tablette du responsable de rayon.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 50,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_CASQUE_REALITE_VIRTUELLE",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone casque de réalité virtuelle",
+      "description": "Un casque de réalité virtuelle ou mixte : ses applications placent la personne dans la scène du robot.",
+      "exemple": "Le cockpit de pilotage immersif.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 60,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_SIMULATEUR",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone simulateur",
+      "description": "Un simulateur qui tient la place du robot, pour essayer sans risque. Il reçoit des services et des applications, selon le scénario.",
+      "exemple": "Le robot simulé qui rejoue une tournée de nuit.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [
+        "INSTANCE_SERVICE_CONFIGUREE",
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "contenu_cree": [],
+      "ordre": 70,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE",
+      "version": "1.0.0",
+      "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+      "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+      "nom": "Zone Externe",
+      "description": "Les serveurs qui ne sont pas sur vos machines : une API, une messagerie, un stockage d'un tiers. Elle ne reçoit que des connexions vers eux, ni service ni application.",
+      "exemple": "L'API de prévisions météo qu'interroge un service du robot.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [],
+      "contenu_cree": [],
+      "ordre": 80,
+      "dans_la_palette": false
+    },
+    {
+      "code": "COMPOSANT_SALLE_TEMPS_REEL",
+      "version": "1.0.0",
+      "sorte": "COMPOSANT_SALLE_TEMPS_REEL",
+      "famille": "FAMILLE_PALETTE_TEMPS_REEL",
+      "nom": "Salle temps réel",
+      "description": "Le lieu de rendez-vous des unités du bundle : elles s'y échangent leurs données en temps réel. Une par bundle, posée seule avec la première zone.",
+      "exemple": "La salle où la commande de l'opérateur rejoint la base du robot.",
+      "parents_autorises": [
+        "BUNDLE_DEPLOIEMENT"
+      ],
+      "recoit": [],
+      "contenu_cree": [],
+      "ordre": 10,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_SERVICE_GENERIQUE",
+      "version": "1.0.0",
+      "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Service",
+      "description": "Un programme sans écran, dans une zone robot ou serveur, qui héberge des unités. Déposé, il arrive avec sa première unité.",
+      "exemple": "Le service actions du robot, qui commande la base.",
+      "parents_autorises": [
+        "ZONE_ENVIRONNEMENT_EXECUTION"
+      ],
+      "recoit": [
+        "INSTANCE_UNITE_CONFIGUREE"
+      ],
+      "contenu_cree": [
+        "INSTANCE_UNITE_CONFIGUREE"
+      ],
+      "ordre": 10,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_APPLICATION_GENERIQUE",
+      "version": "1.0.0",
+      "sorte": "INSTANCE_APPLICATION_CONFIGUREE",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Application",
+      "description": "Un programme avec un écran, pour une personne, dans une zone application web, ordinateur, mobile ou casque. Elle héberge des unités. Déposée, elle arrive avec sa première unité.",
+      "exemple": "L'application de téléopération de l'opérateur.",
+      "parents_autorises": [
+        "ZONE_ENVIRONNEMENT_EXECUTION"
+      ],
+      "recoit": [
+        "INSTANCE_UNITE_CONFIGUREE"
+      ],
+      "contenu_cree": [
+        "INSTANCE_UNITE_CONFIGUREE"
+      ],
+      "ordre": 20,
+      "dans_la_palette": true
+    },
+    {
+      "code": "TYPE_UNITE_STANDARD",
+      "version": "1.0.0",
+      "sorte": "INSTANCE_UNITE_CONFIGUREE",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Unité",
+      "description": "Un rôle dans un service ou une application : elle reçoit des données, les traite et en émet. Elle arrive avec son traitement, son interface, une bande et ses deux bus.",
+      "exemple": "La commande de la base, qui reçoit les ordres de l'opérateur.",
+      "parents_autorises": [
+        "INSTANCE_SERVICE_CONFIGUREE",
+        "INSTANCE_APPLICATION_CONFIGUREE"
+      ],
+      "recoit": [
+        "TRAITEMENT_METIER_UNITE",
+        "INTERFACE_COMMUNICATION_UNITE"
+      ],
+      "contenu_cree": [
+        "TRAITEMENT_METIER_UNITE",
+        "INTERFACE_COMMUNICATION_UNITE",
+        "BANDE_DONNEES",
+        "BUS_RECEPTION",
+        "BUS_EMISSION"
+      ],
+      "ordre": 30,
+      "dans_la_palette": true
+    },
+    {
+      "code": "BANDE_DONNEES",
+      "version": "1.0.0",
+      "sorte": "BANDE_DONNEES",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Bande de données",
+      "description": "Un groupe de bus dans l'interface d'une unité : ses bus de réception et d'émission y sont rangés.",
+      "exemple": "La bande principale de la commande de la base.",
+      "parents_autorises": [
+        "INTERFACE_COMMUNICATION_UNITE"
+      ],
+      "recoit": [
+        "BUS_RECEPTION",
+        "BUS_EMISSION"
+      ],
+      "contenu_cree": [],
+      "ordre": 40,
+      "dans_la_palette": true
+    },
+    {
+      "code": "BUS_RECEPTION",
+      "version": "1.0.0",
+      "sorte": "BUS_RECEPTION",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Bus de réception",
+      "description": "Il range les canaux par lesquels l'unité reçoit des données.",
+      "exemple": "Le bus où arrivent les ordres de l'opérateur.",
+      "parents_autorises": [
+        "BANDE_DONNEES"
+      ],
+      "recoit": [
+        "CANAL_RECEPTION"
+      ],
+      "contenu_cree": [],
+      "ordre": 50,
+      "dans_la_palette": true
+    },
+    {
+      "code": "BUS_EMISSION",
+      "version": "1.0.0",
+      "sorte": "BUS_EMISSION",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Bus d'émission",
+      "description": "Il range les canaux par lesquels l'unité émet des données.",
+      "exemple": "Le bus d'où part l'état de la base.",
+      "parents_autorises": [
+        "BANDE_DONNEES"
+      ],
+      "recoit": [
+        "CANAL_EMISSION"
+      ],
+      "contenu_cree": [],
+      "ordre": 60,
+      "dans_la_palette": true
+    },
+    {
+      "code": "CANAL_RECEPTION",
+      "version": "1.0.0",
+      "sorte": "CANAL_RECEPTION",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Canal de réception",
+      "description": "Une entrée de l'unité : ce qu'elle reçoit, et sous quel format. Il se dessine à gauche de l'unité.",
+      "exemple": "Les ordres de déplacement envoyés par l'opérateur.",
+      "parents_autorises": [
+        "BUS_RECEPTION"
+      ],
+      "recoit": [],
+      "contenu_cree": [],
+      "ordre": 70,
+      "dans_la_palette": true
+    },
+    {
+      "code": "CANAL_EMISSION",
+      "version": "1.0.0",
+      "sorte": "CANAL_EMISSION",
+      "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+      "nom": "Canal d'émission",
+      "description": "Une sortie de l'unité : ce qu'elle émet, et sous quel format. Il se dessine à droite de l'unité.",
+      "exemple": "La vitesse mesurée de la base, envoyée à l'opérateur.",
+      "parents_autorises": [
+        "BUS_EMISSION"
+      ],
+      "recoit": [],
+      "contenu_cree": [],
+      "ordre": 80,
+      "dans_la_palette": true
+    }
+  ]
+}

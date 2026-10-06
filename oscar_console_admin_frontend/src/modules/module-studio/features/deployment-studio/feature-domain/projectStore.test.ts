@@ -10,7 +10,7 @@ import {
 import { lireVersion, listerBundles, supprimerBundle } from "../feature-data/studioApi";
 
 vi.mock("../feature-data/studioApi", () => ({
-  listerBundles: vi.fn(), creerBundle: vi.fn(), enregistrerBrouillon: vi.fn(),
+  listerBundles: vi.fn(), creerBundle: vi.fn(), enregistrerBrouillonAncienFormat: vi.fn(),
   lireVersion: vi.fn(), projetDepuisBundle: vi.fn(), supprimerBundle: vi.fn(),
 }));
 

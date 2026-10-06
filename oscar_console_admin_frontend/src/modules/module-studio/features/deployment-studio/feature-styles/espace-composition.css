@@ -1,0 +1,366 @@
+/* Feuille du nouveau canevas du Studio (lot L1, étape I3).
+   Elle vit à part de studio.css, qui sert l'ancien éditeur encore en service :
+   chaque règle est préfixée par .espace-composition, et ne touche donc pas
+   l'ancien écran. L'étape I7 réécrira studio.css et y rangera ces règles.
+
+   Les couleurs viennent des jetons de la console (--shell-...), qui suivent
+   le thème sombre (par défaut) et le thème clair. Les familles de la palette
+   ont chacune une teinte sourde, qui classe sans attirer ; l'orange de la
+   charte (--action-primary) reste la seule couleur d'action. Les hauteurs
+   des parties d'un bloc sont celles de MESURES (canevas/disposition.ts) : la
+   taille des zones se calcule sur elles. Textes : 14 px au moins, 12 px pour
+   le texte secondaire (spécification 20.3). */
+
+.espace-composition {
+  --famille-environnements: #7fa7d9;
+  --famille-temps-reel: #b39ddb;
+  --famille-appareils: #c9a66b;
+  --famille-messagerie: #d48fa6;
+  --famille-reseau: #6fb7c7;
+  --famille-stockage: #a3a38a;
+  --famille-programmes: #a89584;
+  --famille-services: #7fbfa6;
+  /* Les liaisons et leurs flèches : React Flow lit ces variables. */
+  --xy-edge-stroke: #9aa3ad;
+  --xy-edge-stroke-width: 2;
+  --xy-background-color: var(--shell-bg);
+  --xy-background-pattern-color: var(--shell-line-strong);
+  --xy-minimap-background-color: var(--shell-surface);
+  --xy-minimap-node-background-color: var(--shell-elevated);
+  --xy-minimap-mask-background-color: rgba(0, 0, 0, 0.45);
+  --xy-controls-button-background-color: var(--shell-surface);
+  --xy-controls-button-background-color-hover: var(--shell-elevated);
+  --xy-controls-button-color: var(--shell-text);
+  --xy-controls-button-color-hover: var(--shell-text-strong);
+  --xy-controls-button-border-color: var(--shell-line);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 1100px;
+  color: var(--shell-text);
+  background: var(--shell-bg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+:root[data-theme="light"] .espace-composition {
+  --famille-environnements: #3d6aa3;
+  --famille-temps-reel: #6f56a8;
+  --famille-appareils: #8a6a2a;
+  --famille-messagerie: #a04d6b;
+  --famille-reseau: #2e7f91;
+  --famille-stockage: #6b6b4f;
+  --famille-programmes: #6e5a48;
+  --famille-services: #2f7d63;
+  --xy-edge-stroke: #5b6470;
+  --xy-minimap-mask-background-color: rgba(240, 240, 240, 0.6);
+}
+
+.espace-composition *,
+.espace-composition *::before,
+.espace-composition *::after { box-sizing: border-box; }
+
+.espace-composition :focus-visible {
+  outline: 2px solid var(--action-primary);
+  outline-offset: 2px;
+}
+
+/* Les messages pleine page : chargement, erreur, écran trop étroit. */
+.espace-composition--message {
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: auto;
+  min-height: 60vh;
+  min-width: 0;
+  padding: 48px 24px;
+  text-align: center;
+}
+.espace-composition--message h2 { margin: 0; font-size: 18px; }
+.espace-composition--message p { margin: 0; max-width: 520px; color: var(--shell-muted); line-height: 1.5; }
+.espace-composition a { color: var(--shell-text-strong); }
+.espace-composition .ec-actions { display: flex; align-items: center; gap: 16px; }
+.espace-composition .ec-bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  background: var(--action-primary);
+  font: 600 14px/1 var(--font-sans);
+  cursor: pointer;
+}
+.espace-composition .ec-tourne { animation: ec-tourne 1s linear infinite; }
+@keyframes ec-tourne { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .espace-composition .ec-tourne { animation: none; }
+}
+
+/* La barre du haut. */
+.espace-composition .ec-barre {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--shell-surface);
+}
+.espace-composition .ec-retour {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--shell-text);
+}
+.espace-composition .ec-retour:hover { background: var(--shell-elevated); }
+.espace-composition .ec-titre { display: grid; gap: 2px; min-width: 0; }
+.espace-composition .ec-titre small { color: var(--shell-muted); font-size: 12px; }
+.espace-composition .ec-titre h1 { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.25; }
+.espace-composition .ec-titre code { color: var(--shell-muted); font: 12px/1.3 var(--font-mono); }
+.espace-composition .ec-lecture {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 auto;
+  color: var(--shell-muted);
+  font-size: 14px;
+}
+
+/* La reprise d'un bundle de l'ancienne console. */
+.espace-composition .ec-reprise {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--shell-amber-soft);
+  line-height: 1.5;
+}
+.espace-composition .ec-reprise p { margin: 0; }
+.espace-composition .ec-reprise summary { margin-top: 4px; font-weight: 600; cursor: pointer; }
+.espace-composition .ec-reprise ul { margin: 6px 0 0; padding-left: 20px; }
+
+/* Le canevas, et sa colonne de légende. */
+.espace-composition .ec-corps { display: flex; flex: 1; min-height: 0; }
+.espace-composition .ec-canevas { position: relative; flex: 1; min-width: 0; }
+.espace-composition .ec-cote {
+  flex: 0 0 auto;
+  width: 300px;
+  padding: 12px;
+  overflow: auto;
+  border-left: 1px solid var(--shell-line);
+  background: var(--shell-surface);
+}
+.espace-composition .react-flow__minimap,
+.espace-composition .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 10px;
+}
+
+/* Le cadre du bundle. */
+.espace-composition .ec-cadre {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 18px;
+  background: var(--shell-surface);
+}
+.espace-composition .ec-cadre__titre {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+.espace-composition .ec-cadre__titre small { color: var(--shell-muted); font-size: 12px; }
+.espace-composition .ec-cadre__titre strong { font-size: 15px; }
+
+/* Les zones d'environnement. */
+.espace-composition .ec-zone {
+  width: 100%;
+  height: 100%;
+  border: 1.5px solid color-mix(in srgb, var(--ec-teinte) 60%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ec-teinte) 6%, transparent);
+}
+.espace-composition .ec-zone--externe { border-style: dashed; }
+.espace-composition .ec-zone__entete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 64px;
+  padding: 0 16px;
+}
+.espace-composition .ec-zone__entete > svg { flex-shrink: 0; color: var(--ec-teinte); }
+.espace-composition .ec-zone__entete div { display: grid; gap: 2px; min-width: 0; }
+.espace-composition .ec-zone__entete strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-zone__entete small { color: var(--shell-muted); font-size: 12px; }
+.espace-composition .ec-marque {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px dashed var(--shell-line-strong);
+  border-radius: 999px;
+  color: var(--shell-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.espace-composition .ec-marque--a-preciser { border-style: solid; border-color: currentColor; color: var(--shell-amber); }
+:root[data-theme="light"] .espace-composition .ec-marque--a-preciser { color: #8a5a00; }
+
+/* La salle temps réel. */
+.espace-composition .ec-salle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 0 14px;
+  border: 1.5px solid color-mix(in srgb, var(--ec-teinte) 60%, transparent);
+  border-radius: 12px;
+  background: var(--shell-card);
+}
+.espace-composition .ec-salle > svg { flex-shrink: 0; color: var(--ec-teinte); }
+.espace-composition .ec-salle div { display: grid; gap: 2px; min-width: 0; }
+.espace-composition .ec-salle strong { font-size: 14px; }
+.espace-composition .ec-salle small { overflow: hidden; color: var(--shell-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Un service ou une application, ses unités et leurs canaux. */
+.espace-composition .ec-composant {
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 12px;
+  background: var(--shell-card);
+}
+.espace-composition .ec-composant__entete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--shell-line);
+}
+.espace-composition .ec-composant__entete > svg { flex-shrink: 0; color: var(--ec-teinte); }
+.espace-composition .ec-composant__entete div { display: grid; gap: 1px; min-width: 0; }
+.espace-composition .ec-composant__entete strong,
+.espace-composition .ec-composant__entete small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-composant__entete strong { font-size: 14px; }
+.espace-composition .ec-composant__entete small { color: var(--shell-muted); font-size: 12px; }
+.espace-composition .ec-composant__vide {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin: 0;
+  padding: 0 14px;
+  color: var(--shell-muted);
+  font-size: 13px;
+}
+.espace-composition .ec-unite + .ec-unite { margin-top: 8px; }
+.espace-composition .ec-unite__entete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.espace-composition .ec-unite__entete > svg { flex-shrink: 0; color: var(--shell-muted); }
+.espace-composition .ec-unite__entete span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-unite__entete small { margin-left: auto; color: var(--shell-muted); font-size: 12px; font-weight: 400; }
+.espace-composition .ec-unite__canaux { display: grid; grid-template-columns: 1fr 1fr; }
+.espace-composition .ec-unite__canaux ul { margin: 0; padding: 0; list-style: none; min-width: 0; }
+.espace-composition .ec-canal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  min-width: 0;
+  font-size: 14px;
+}
+.espace-composition .ec-canal--entree { padding: 0 6px 0 16px; }
+.espace-composition .ec-canal--sortie { justify-content: flex-end; padding: 0 16px 0 6px; }
+.espace-composition .ec-canal__nom { overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Les poignées : une zone de saisie de 24 × 24 px, un point de 10 px dessiné
+   au centre. L'entrée est un point creux, la sortie un point plein. */
+.espace-composition .react-flow__handle.ec-poignee {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.espace-composition .react-flow__handle.ec-poignee::after {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--xy-edge-stroke);
+  border-radius: 50%;
+  content: "";
+}
+.espace-composition .react-flow__handle.ec-poignee--entree::after { background: var(--shell-card); }
+.espace-composition .react-flow__handle.ec-poignee--sortie::after { background: var(--xy-edge-stroke); }
+
+/* La légende. */
+.espace-composition .ec-legende { font-size: 13px; }
+.espace-composition .ec-legende__bascule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--shell-text);
+  font: 600 14px/1 var(--font-sans);
+  cursor: pointer;
+}
+.espace-composition .ec-legende__liste { display: grid; gap: 8px; margin: 6px 0 4px; padding: 0; list-style: none; }
+.espace-composition .ec-legende__liste li { display: flex; align-items: center; gap: 10px; line-height: 1.35; }
+.espace-composition .ec-legende__liste .ec-marque { margin-left: 0; }
+.espace-composition .ec-legende__entree,
+.espace-composition .ec-legende__sortie {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--xy-edge-stroke);
+  border-radius: 50%;
+}
+.espace-composition .ec-legende__sortie { background: var(--xy-edge-stroke); }
+.espace-composition .ec-legende__fleche { flex-shrink: 0; }
+.espace-composition .ec-legende__fleche line { stroke: var(--xy-edge-stroke); stroke-width: 2; }
+.espace-composition .ec-legende__fleche path { fill: var(--xy-edge-stroke); }
+.espace-composition .ec-legende__zone {
+  flex-shrink: 0;
+  width: 20px;
+  height: 14px;
+  border: 1.5px solid var(--famille-environnements);
+  border-radius: 4px;
+}
+.espace-composition .ec-legende__zone--externe { border-style: dashed; }
+.espace-composition .ec-legende__famille { display: inline-flex; color: var(--ec-teinte); }
+
+/* La barre du bas : les compteurs réels. */
+.espace-composition .ec-pied {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 20px;
+  border-top: 1px solid var(--shell-line);
+  background: var(--shell-surface);
+  color: var(--shell-muted);
+  font-size: 13px;
+}
+.espace-composition .ec-pied__alerte { display: inline-flex; align-items: center; gap: 6px; color: var(--shell-amber); }

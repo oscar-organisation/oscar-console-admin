@@ -83,6 +83,15 @@ export const studioModuleManifest: ApplicationModuleManifest = {
       component: StudioDeploymentsPage,
     },
     {
+      // Le nouveau canevas, en lecture, à côté de l'ancien éditeur le temps
+      // du passage (lot L1). Deux segments : il ne se confond avec aucune
+      // autre route. Le nom du paramètre dit à la page lequel ouvrir.
+      id: "studio.composition",
+      path: ":bundleId/composition",
+      policy: pagePolicy("studio.editor.route", DEPLOYMENT_STUDIO_PERMISSIONS.PAGE),
+      component: StudioEditorPage,
+    },
+    {
       // Route dynamique en dernier : les ecrans nommes seraient sinon pris
       // pour des identifiants de projet.
       id: "studio.editor",

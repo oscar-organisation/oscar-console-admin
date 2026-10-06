@@ -1,5 +1,6 @@
 import { api } from "@/shared/kernel/api";
 import { projetAuFormatActuel } from "../feature-domain/formatComposition";
+import type { CatalogueStudio, MiseEnPage, ModeleBundle } from "../feature-domain/modele/types";
 import type {
   ArchitectureEdge,
   ArchitectureNode,
@@ -12,10 +13,15 @@ import type {
 /**
  * Accès au Studio côté serveur.
  *
- * Le Studio reste utilisable hors ligne : ces appels peuvent donc échouer sans
- * que l'édition s'arrête. Les fonctions lèvent, et l'appelant décide s'il
- * affiche un état « non synchronisé » ou s'il bloque l'action - publier exige
- * le serveur, dessiner non.
+ * Deux familles de routes vivent ici le temps du passage au nouveau Studio
+ * (décision 125 : on ajoute avant de retirer) :
+ * - celles de l'ancien éditeur, au format de React Flow (`/draft`, `/validate`,
+ *   `/publish`...), qui partiront avec lui ;
+ * - celles du nouveau Studio (lot L1), en bas de ce fichier : le catalogue
+ *   des types, et le brouillon au format oscar.bundle/1, enregistré par
+ *   révision entière.
+ *
+ * Les fonctions lèvent en cas d'échec ; l'appelant décide de ce qu'il montre.
  */
 
 export interface VersionServeur {
@@ -44,6 +50,11 @@ export interface BundleServeur {
   robot_count: number;
   component_count: number;
   unit_count: number;
+  /** Le projet robotique où le bundle est rangé (le projet d'office de son organisation). */
+  projet_id?: string;
+  /** « oscar.bundle/1 » s'il a un brouillon au nouveau format, « ancien » s'il n'a que
+   *  des versions de l'ancien éditeur, null s'il n'a encore rien. */
+  format_brouillon?: string | null;
 }
 
 interface VersionDetail extends VersionServeur {
@@ -133,7 +144,17 @@ export function listerBundles(): Promise<BundleServeur[]> {
   return api.get<BundleServeur[]>("/studio/bundles");
 }
 
-export function creerBundle(entree: { nom: string; description: string; target: ProjectTarget }): Promise<BundleServeur> {
+/**
+ * Crée un bundle. Sans `depart`, il naît à l'ancien format, pour l'ancien
+ * éditeur ; avec `depart`, il naît avec son brouillon au nouveau format, vide
+ * ou repris d'un préset du catalogue (le serveur fait la conversion).
+ */
+export function creerBundle(entree: {
+  nom: string;
+  description: string;
+  target?: ProjectTarget;
+  depart?: DepartDUnBundle;
+}): Promise<BundleServeur> {
   return api.post<BundleServeur>("/studio/bundles", entree);
 }
 
@@ -162,7 +183,8 @@ export function lireVersion(versionId: string): Promise<VersionDetail> {
   return api.get<VersionDetail>(`/studio/versions/${versionId}`);
 }
 
-export function enregistrerBrouillon(bundleId: string, projet: OscarProject): Promise<VersionServeur> {
+/** L'enregistrement de l'ancien éditeur, au format de React Flow ; il part avec lui. */
+export function enregistrerBrouillonAncienFormat(bundleId: string, projet: OscarProject): Promise<VersionServeur> {
   return api.put<VersionServeur>(`/studio/bundles/${bundleId}/draft`, {
     spec: { nodes: projet.nodes, edges: projet.edges },
     notes: projet.description || null,
@@ -304,4 +326,97 @@ export function projetDepuisBundle(bundle: BundleServeur, detail: VersionDetail 
     edges: detail?.spec?.edges ?? [],
     syncedAt: new Date().toISOString(),
   });
+}
+
+/* ------------------------------------------------------------------------- *
+ *  Le nouveau Studio (lot L1) : le catalogue et le brouillon au nouveau format
+ * ------------------------------------------------------------------------- */
+
+/** Le point de départ d'un bundle composé dans le nouveau Studio. */
+export type DepartDUnBundle = { sorte: "VIDE" } | { sorte: "PRESET"; slug: string };
+
+/** D'où vient le brouillon ; « ANCIEN_FORMAT » pour un bundle de l'ancienne console, repris. */
+export type OrigineDuBrouillon =
+  | { sorte: "VIDE" }
+  | { sorte: "PRESET"; slug: string }
+  | { sorte: "ANCIEN_FORMAT"; version_id: string; numero: number };
+
+/** Un problème signalé par la vérification ou par la reprise (spécification 18.2). */
+export interface ProblemeDuStudio {
+  niveau: "ERREUR" | "AVERTISSEMENT";
+  code: string;
+  titre: string;
+  explication: string;
+  correction: string;
+  element: string | null;
+}
+
+/** Le rapport de la reprise d'un ancien bundle : rien n'est perdu, tout ce qui
+ *  n'a pas encore sa place dans le modèle est nommé ici, avec sa raison. */
+export interface RapportDeReprise {
+  problemes: ProblemeDuStudio[];
+  non_repris: { champ: string; valeur?: unknown; raison: string }[];
+  non_classes: unknown[];
+}
+
+/** La réponse de `GET /studio/bundles/{id}/brouillon`. */
+export interface BrouillonServeur {
+  bundle_id: string;
+  format: string;
+  modele: ModeleBundle;
+  mise_en_page: MiseEnPage;
+  /** 0 tant que rien n'est enregistré (un bundle neuf, ou la reprise d'un ancien). */
+  revision: number;
+  etat: string;
+  origine: OrigineDuBrouillon;
+  reprise: RapportDeReprise | null;
+  modifie_le: string | null;
+  modifie_par: string | null;
+}
+
+/** La réponse d'un enregistrement accepté. */
+export interface BrouillonEnregistre {
+  revision: number;
+  etat: string;
+  empreinte_modele: string;
+  modifie_le: string | null;
+}
+
+export interface VerificationDuBrouillon {
+  revision: number;
+  problemes: ProblemeDuStudio[];
+  erreurs: number;
+  avertissements: number;
+}
+
+/** Les familles de la palette et les types publiés, dans leur ordre. */
+export function lireCatalogue(): Promise<CatalogueStudio> {
+  return api.get<CatalogueStudio>("/studio/catalogue");
+}
+
+/** Le brouillon d'un bundle ; pour un bundle de l'ancienne console, sa reprise, non enregistrée. */
+export function lireBrouillon(bundleId: string): Promise<BrouillonServeur> {
+  return api.get<BrouillonServeur>(`/studio/bundles/${bundleId}/brouillon`);
+}
+
+/**
+ * Enregistre le brouillon entier, en disant de quelle révision il part. Si
+ * quelqu'un a enregistré entre-temps, le serveur refuse (409) sans rien
+ * écraser ; un modèle qui enfreint une règle est refusé (422) avec sa raison.
+ */
+export function enregistrerBrouillon(bundleId: string, envoi: {
+  modele: ModeleBundle;
+  miseEnPage: MiseEnPage;
+  revisionAttendue: number;
+}): Promise<BrouillonEnregistre> {
+  return api.put<BrouillonEnregistre>(`/studio/bundles/${bundleId}/brouillon`, {
+    modele: envoi.modele,
+    mise_en_page: envoi.miseEnPage,
+    revision_attendue: envoi.revisionAttendue,
+  });
+}
+
+/** Les problèmes du brouillon enregistré. N'écrit rien. */
+export function verifierBrouillon(bundleId: string): Promise<VerificationDuBrouillon> {
+  return api.post<VerificationDuBrouillon>(`/studio/bundles/${bundleId}/brouillon/verification`);
 }

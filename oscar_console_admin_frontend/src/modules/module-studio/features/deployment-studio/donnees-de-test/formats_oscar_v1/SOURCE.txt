@@ -1,0 +1,23 @@
+Copie des formats OSCAR, prise à une étiquette fixe du dépôt qui en est la source.
+
+L'interface ne lit pas ces fichiers en service : ses tests les lisent, pour
+vérifier que les règles du modèle du navigateur (feature-domain/modele/regles.ts)
+rendent, cas par cas, le même verdict que le serveur, qui joue le même fichier
+de cas (oscar_console_admin_api_backend/tests/test_studio_regles_du_modele.py).
+
+Ces fichiers sont recopiés de la copie que garde l'API, au même chemin, sous
+oscar_console_admin_api_backend/tests/donnees/formats_oscar_v1/ : même étiquette,
+même commit, mêmes empreintes. Ne les modifiez jamais à la main :
+feature-domain/modele/regles-partagees.test.ts compare chacun à son empreinte
+ci-dessous. Pour passer à une autre étiquette, mettez d'abord à jour la copie de
+l'API, puis recopiez ces fichiers et remplacez l'étiquette, le commit et les
+empreintes de ce fichier par ceux du SOURCE.txt de l'API.
+
+depot: https://github.com/oscar-organisation/oscar-tools
+etiquette: formats-oscar-v1.1.0
+commit: 5122f7713039f4dbf5ce03d65b0faa92987d51ca
+dossier: oscar_tools_studio_generate_contract_profiles/formats_oscar_v1
+
+empreintes:
+708160a7061f532fa7687d0f834fcc7e23837bb217d10bb4cfcab0348532e6f8  regles_du_modele/regles-du-modele.cas.json
+618f766069e9421636b5019429b744b37acba4ed547784986749b313de3a7d84  exemples/bundle/valides/bundle-reference-l1.json

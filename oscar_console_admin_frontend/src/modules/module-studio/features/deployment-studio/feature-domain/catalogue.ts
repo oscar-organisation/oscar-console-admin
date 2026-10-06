@@ -9,6 +9,7 @@ import {
   PackageOpen,
   ServerCog,
 } from 'lucide-react';
+import { TYPES_DE_RECEPTION, TYPES_D_EMISSION } from './modele/canaux';
 import type { InputChannelType, OutputChannelType, ProjectTarget } from './types';
 
 export const TARGETS: Array<{ value: ProjectTarget; label: string; hint: string }> = [
@@ -34,66 +35,13 @@ export const TARGETS: Array<{ value: ProjectTarget; label: string; hint: string 
   },
 ];
 
-export const INPUT_TYPES: Array<{ value: InputChannelType; label: string; hint: string }> = [
-  {
-    value: 'TYPE_ENTREE_INJECTION_APPLICATION',
-    label: 'Donnée fournie par l’application',
-    hint: 'La logique de l’application appelle directement le canal.',
-  },
-  {
-    value: 'TYPE_ENTREE_ABONNEMENT_TEMPS_REEL',
-    label: 'Abonnement temps réel',
-    hint: 'Reçoit les données émises par une autre unité de la salle du robot.',
-  },
-  {
-    value: 'TYPE_ENTREE_SERVICE_LOCAL',
-    label: 'Service présent sur la même machine',
-    hint: 'Reçoit une donnée par communication locale.',
-  },
-  {
-    value: 'TYPE_ENTREE_CONSOMMATION_COURTIER_MESSAGES',
-    label: 'Courtier de messages',
-    hint: 'Consomme un sujet publié sur un système de messages.',
-  },
-  {
-    value: 'TYPE_ENTREE_ABONNEMENT_ROS_2',
-    label: 'Canal ROS 2 du robot',
-    hint: 'S’abonne à un sujet ROS 2, par exemple un capteur.',
-  },
-];
+// Les types de canaux vivent dans modele/canaux.ts, seul endroit où ils sont
+// écrits : l'ancien éditeur les lit là, sous la forme qu'il attend.
+export const INPUT_TYPES: Array<{ value: InputChannelType; label: string; hint: string }> =
+  TYPES_DE_RECEPTION.map((choix) => ({ value: choix.code, label: choix.libelle, hint: choix.aide }));
 
-export const OUTPUT_TYPES: Array<{ value: OutputChannelType; label: string; hint: string }> = [
-  {
-    value: 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE',
-    label: 'Canal précis d’une unité',
-    hint: 'Envoie en temps réel vers un canal de réception précis.',
-  },
-  {
-    value: 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_PLUSIEURS_CANAUX',
-    label: 'Plusieurs canaux temps réel',
-    hint: 'Diffuse la même donnée à plusieurs destinations configurées.',
-  },
-  {
-    value: 'TYPE_SORTIE_RAPPEL_APPLICATION',
-    label: 'Rappel vers l’application',
-    hint: 'Déclenche une fonction fournie par l’application intégratrice.',
-  },
-  {
-    value: 'TYPE_SORTIE_SERVICE_LOCAL',
-    label: 'Service présent sur la même machine',
-    hint: 'Transmet par communication locale.',
-  },
-  {
-    value: 'TYPE_SORTIE_PUBLICATION_COURTIER_MESSAGES',
-    label: 'Publication vers un courtier de messages',
-    hint: 'Publie la donnée sur un sujet externe.',
-  },
-  {
-    value: 'TYPE_SORTIE_PUBLICATION_ROS_2',
-    label: 'Publication vers ROS 2',
-    hint: 'Publie vers un sujet ROS 2 du robot.',
-  },
-];
+export const OUTPUT_TYPES: Array<{ value: OutputChannelType; label: string; hint: string }> =
+  TYPES_D_EMISSION.map((choix) => ({ value: choix.code, label: choix.libelle, hint: choix.aide }));
 
 export const PALETTE_ITEMS = [
   {
