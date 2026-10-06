@@ -6,8 +6,10 @@ import { presentationDeLaFamille } from "../familles";
 
 /**
  * La légende du canevas (conception du lot L1, partie 6.4) : posée sur le
- * canevas, en bas à gauche à côté du zoom, étroite, repliable mais ouverte
- * par défaut ; elle ne prend jamais la place du panneau des propriétés.
+ * canevas, en bas à gauche à côté du zoom, étroite. Elle est repliée par
+ * défaut (étape I7) : ouverte, elle couvrait le bas du canevas. Repliée, ce
+ * n'est qu'un bouton discret, que le cadrage du canevas évite (canevas/cadrage.ts) ;
+ * elle ne passe par-dessus les blocs que quand la personne l'ouvre.
  * Chaque marque a une forme ou un mot en plus de sa couleur (spécification
  * 10.6). Les familles présentes sur le canevas s'y lisent avec leur pictogramme.
  */
@@ -25,6 +27,7 @@ export default function Legende({ familles }: { readonly familles: readonly Fami
         type="button"
         aria-expanded={ouverte}
         aria-controls="ec-legende-contenu"
+        title={ouverte ? "Replier la légende" : "Ouvrir la légende : ce que veulent dire les points, les flèches et les cadres"}
         onClick={basculer}
       >
         <Map size={13} aria-hidden="true" /> Légende {ouverte ? <ChevronDown size={13} aria-hidden="true" /> : <ChevronUp size={13} aria-hidden="true" />}

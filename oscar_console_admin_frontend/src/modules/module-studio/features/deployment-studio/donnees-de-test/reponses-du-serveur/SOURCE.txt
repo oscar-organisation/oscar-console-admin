@@ -17,6 +17,15 @@ remplacées par des valeurs fixes :
   l'enregistrement du bundle de référence (exemple de la source des formats et
   tests/donnees/mise-en-page-reference-L1.json de l'API). Remplacés :
   bundle_id (« bundle-reference »), modifie_le, modifie_par.
+  Produite à nouveau le 06/10/2026 (étape I7), de la même façon, par l'API de
+  la branche travail/studio-l1-interface-3 au commit b6c0740, quand la mise en
+  page de référence de l'API a été régénérée par ranger()
+  (feature-ui/components/canevas/rangement.ts) : celle d'avant avait été
+  écrite pour des blocs plus petits, et des zones s'y recouvraient. Seule la
+  mise en page a changé. Le test « la mise en page de référence est celle que
+  donne Ranger » (canevas/rangement.test.ts) le vérifie ; s'il échoue après un
+  changement de ranger(), régénérer d'abord le fichier de l'API par ranger(),
+  puis cette réponse.
 
 Si l'API change ces réponses, les produire à nouveau de la même façon, plutôt
 que de les corriger à la main.
@@ -24,4 +33,4 @@ que de les corriger à la main.
 empreintes:
 26c067bbef7b8ec608918e78f1ca4eb288722999649096cbdb1cfe68041b2dbc  catalogue.json
 6b2dfa27f6f1c84fc5789b9a5cf8c69c78bbbae20eaa3b5ea01df7a36fabbea2  brouillon-reprise-ancien-format.json
-8fc4d62daf5584e210b56a031ddf0ad312bcc7b7e68a941044a43de085176868  brouillon-reference.json
+adc1c676604fb8d3b0e6b10f693672a06e04497ff40a7847ad08e2a14c47eef7  brouillon-reference.json

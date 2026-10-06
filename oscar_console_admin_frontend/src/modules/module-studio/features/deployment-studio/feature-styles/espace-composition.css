@@ -41,9 +41,20 @@
   --xy-controls-button-color: var(--shell-text);
   --xy-controls-button-color-hover: var(--shell-text-strong);
   --xy-controls-button-border-color: var(--shell-line);
+  /* Les voiles : un fond à peine marqué sous un code, une puce, un compteur. Ils éclaircissent le
+     thème sombre et assombrissent le thème clair : un blanc translucide disparaîtrait sur du blanc. */
+  --ec-voile: rgba(255, 255, 255, 0.06);
+  --ec-voile-leger: rgba(255, 255, 255, 0.03);
+  /* Ce qui flotte sur le canevas : la légende, l'état vide, le guide, le panneau des problèmes. */
+  --ec-flottant: rgba(16, 21, 27, 0.94);
 }
 
+/* Le thème clair (étape I7). Les familles, les points et les liaisons gardent leur teinte, plus
+   foncée ; les petits textes, l'ambre des conseils et l'orange des liens passent à un contraste
+   d'au moins 4,5 pour 1 sur fond blanc. L'orange reste celui de la charte, en plus foncé pour le
+   texte seulement : un texte fin en #D85810 sur du blanc se lit mal. */
 :root[data-theme="light"] .espace-composition {
+  color-scheme: light;
   --famille-environnements: #3d6aa3;
   --famille-temps-reel: #6f56a8;
   --famille-services: #2f7d63;
@@ -52,6 +63,14 @@
   --ec-application: #078e9b;
   --xy-edge-stroke: #5b6470;
   --xy-minimap-mask-background-color: rgba(240, 240, 240, 0.6);
+  --ec-voile: rgba(0, 0, 0, 0.05);
+  --ec-voile-leger: rgba(0, 0, 0, 0.025);
+  --ec-flottant: rgba(255, 255, 255, 0.97);
+  /* Le gris de l'ancien éditeur (#aeb8c2) est fait pour un fond sombre : trop pâle ici. */
+  --studio-microcopy: #5b6571;
+  --studio-microcopy-quiet: #677080;
+  --shell-amber: #9a5a00;
+  --shell-blue-strong: #b84a0c;
 }
 
 .espace-composition :focus-visible {
@@ -94,6 +113,10 @@
 .espace-composition .ec-bouton-icone { min-width: 34px; padding: 0 8px; }
 .espace-composition .ec-bouton-icone:disabled { cursor: not-allowed; opacity: 0.4; }
 .espace-composition .topbar-actions .primary-button:disabled { cursor: progress; }
+/* Le nombre de problèmes, sur le bouton orange « Vérifier » : du blanc sur un voile, lisible dans
+   les deux thèmes (l'ambre de l'ancien éditeur se perdait sur l'orange). */
+.espace-composition .validation-button b,
+.espace-composition .validation-button.has-errors b { color: #ffffff; background: rgba(0, 0, 0, 0.24); }
 
 /* Le canevas a le focus : un contour à l'intérieur, toujours visible, jamais la couleur seule. */
 .espace-composition .ec-canevas:focus-visible { outline: 2px solid var(--shell-blue); outline-offset: -3px; }
@@ -164,7 +187,7 @@
   color: var(--famille-environnements);
   background: color-mix(in srgb, var(--famille-environnements) 14%, transparent);
 }
-.espace-composition .palette-card--neutre .palette-card__icon { color: var(--shell-muted); background: rgba(255, 255, 255, 0.05); }
+.espace-composition .palette-card--neutre .palette-card__icon { color: var(--shell-muted); background: var(--ec-voile); }
 .espace-composition .palette-card--cyan .palette-card__icon { color: var(--ec-application); }
 .espace-composition .ec-palette__vide { margin: 4px 12px 12px; color: var(--shell-muted); font-size: 11px; }
 
@@ -333,7 +356,7 @@
   padding: 4px 7px;
   color: var(--studio-microcopy, var(--shell-muted));
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ec-voile);
   font-size: 8.5px;
   font-weight: 800;
   text-transform: uppercase;
@@ -349,7 +372,7 @@
   padding: 0 12px;
   border-top: 1px solid var(--shell-line-strong);
   border-bottom: 1px solid var(--shell-line-strong);
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--ec-voile-leger);
 }
 .espace-composition .ec-noeud__meta code { overflow: hidden; color: var(--studio-microcopy, var(--shell-dim)); font: 500 8.5px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
 .espace-composition .ec-noeud__meta span { flex: 0 0 auto; max-width: 45%; overflow: hidden; color: var(--studio-microcopy, var(--shell-dim)); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
@@ -372,7 +395,7 @@
   overflow: visible;
   border: 1px solid var(--shell-line-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.028);
+  background: var(--ec-voile-leger);
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -392,7 +415,7 @@
   overflow: hidden;
   color: var(--studio-microcopy, var(--shell-muted));
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--ec-voile);
   font-size: 8.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -420,7 +443,7 @@
   height: 15px;
   padding: 0 3px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.065);
+  background: var(--ec-voile);
   font-size: 8px;
 }
 .espace-composition .ec-bus__nom {
@@ -576,12 +599,11 @@
   color: var(--shell-text);
   border: 1px solid var(--shell-line-strong);
   border-radius: 16px;
-  background: rgba(16, 21, 27, 0.94);
+  background: var(--ec-flottant);
   box-shadow: var(--shadow-md);
   text-align: center;
   transform: translate(-50%, -50%);
 }
-:root[data-theme="light"] .espace-composition .ec-depart { background: rgba(255, 255, 255, 0.96); }
 .espace-composition .ec-depart strong { font: 750 16px/1.3 var(--font-sans); }
 .espace-composition .ec-depart p { margin: 0; color: var(--shell-muted); font-size: 12px; line-height: 1.5; }
 .espace-composition .ec-depart small { color: var(--shell-dim); font-size: 11px; }
@@ -597,10 +619,9 @@
   color: var(--shell-text);
   border: 1px solid var(--shell-line-strong);
   border-radius: 9px;
-  background: rgba(16, 21, 27, 0.92);
+  background: var(--ec-flottant);
   box-shadow: var(--shadow-sm);
 }
-:root[data-theme="light"] .espace-composition .ec-legende { background: rgba(255, 255, 255, 0.95); }
 .espace-composition .ec-legende--repliee { width: auto; }
 .espace-composition .ec-legende__bascule {
   display: flex;
@@ -888,19 +909,27 @@
   color: var(--studio-microcopy-quiet, var(--shell-dim));
   border: 1px dashed var(--shell-line-strong);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--ec-voile-leger);
   font-size: 10px;
   text-align: center;
 }
 .espace-composition .ec-unite-vide > svg { flex: 0 0 auto; }
 .espace-composition .ec-ajouter-unite { width: 100%; }
 
-/* Le thème clair : les surfaces que la feuille de l'ancien éditeur peint en sombre. */
+/* Les surfaces flottantes que la feuille de l'ancien éditeur peint toujours en sombre : elles
+   suivent ici le thème (le jeton --ec-flottant). */
+.espace-composition .guide-card,
+.espace-composition .validation-panel { background: var(--ec-flottant); }
+
+/* Le thème clair : les autres surfaces que la feuille de l'ancien éditeur peint en sombre. */
 :root[data-theme="light"] .espace-composition .inspector__footer { background: rgba(255, 255, 255, 0.95); }
 :root[data-theme="light"] .espace-composition .react-flow__minimap { background: var(--shell-surface); }
 :root[data-theme="light"] .espace-composition .react-flow__minimap-mask { fill: rgba(240, 240, 240, 0.6); }
 :root[data-theme="light"] .espace-composition .form-field .technical-input { color: var(--shell-text); background: var(--shell-card); }
-:root[data-theme="light"] .espace-composition .guide-card,
-:root[data-theme="light"] .espace-composition .validation-panel { background: rgba(255, 255, 255, 0.97); }
-:root[data-theme="light"] .espace-composition .ec-unite-vide,
-:root[data-theme="light"] .espace-composition .ec-unite { background: rgba(0, 0, 0, 0.02); }
+/* La liste des bundles : l'aperçu de chaque carte prend le papier de la charte, ses boutons un fond clair. */
+:root[data-theme="light"] .ec-liste .project-card__preview { background: linear-gradient(145deg, #f3f1ec, #ebe7e0); }
+:root[data-theme="light"] .ec-liste .project-card__preview::before { background-image: radial-gradient(#cdc6bb 1px, transparent 1px); }
+:root[data-theme="light"] .ec-liste .project-card__action { background: rgba(255, 255, 255, 0.92); }
+/* L'ombre d'un glissement depuis la palette : posée hors de l'éditeur, elle suit le thème ici. */
+:root[data-theme="light"] .ec-ombre { color: #1d1d1f; border-color: rgba(0, 0, 0, 0.12); background: #ffffff; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12); }
+:root[data-theme="light"] .ec-ombre small { color: #5b6571; }

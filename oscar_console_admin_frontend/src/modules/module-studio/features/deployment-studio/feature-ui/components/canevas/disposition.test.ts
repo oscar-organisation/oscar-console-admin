@@ -35,10 +35,13 @@ describe("la disposition du canevas", () => {
 
   it("emboîte les blocs comme le modèle, aux positions de la mise en page, relatives au parent", () => {
     const { noeuds } = reference();
-    expect(noeud(noeuds, "zon-01")).toMatchObject({ type: "zone", parentId: ID_DU_CADRE, position: { x: 40, y: 120 } });
-    expect(noeud(noeuds, "sal-01")).toMatchObject({ type: "salle", parentId: ID_DU_CADRE, position: { x: 40, y: 24 } });
-    expect(noeud(noeuds, "svc-02")).toMatchObject({ type: "composant", parentId: "zon-01", position: { x: 24, y: 400 } });
-    expect(noeud(noeuds, "app-01")).toMatchObject({ type: "composant", parentId: "zon-03", position: { x: 24, y: 64 } });
+    const { blocs } = brouillonDeReference.mise_en_page;
+    expect(noeud(noeuds, "zon-01")).toMatchObject({ type: "zone", parentId: ID_DU_CADRE, position: blocs["zon-01"] });
+    expect(noeud(noeuds, "sal-01")).toMatchObject({ type: "salle", parentId: ID_DU_CADRE, position: blocs["sal-01"] });
+    expect(noeud(noeuds, "svc-02")).toMatchObject({ type: "composant", parentId: "zon-01", position: blocs["svc-02"] });
+    expect(noeud(noeuds, "app-01")).toMatchObject({ type: "composant", parentId: "zon-03", position: blocs["app-01"] });
+    // Les positions passent telles quelles : celles d'un enfant restent relatives à son parent.
+    expect(blocs["svc-02"]).toEqual({ x: 24, y: 355 });
     // Les unités et les canaux ne sont pas des nœuds : ils se rangent dans leur composant.
     expect(noeuds.map((n) => n.type).sort()).toEqual(
       ["bundle", "composant", "composant", "composant", "salle", "zone", "zone", "zone"]);
@@ -155,11 +158,16 @@ describe("la disposition du canevas", () => {
   });
 
   it("des blocs qui se recouvrent sont signalés, jamais déplacés d'eux-mêmes ; « Ranger » les remet en ordre", () => {
-    // La mise en page de référence a été faite pour des blocs plus petits : la zone robot recouvre le serveur.
-    const { chevauchements, noeuds } = reference();
+    // Une mise en page faite pour des blocs plus petits (celle de référence avant l'étape I7) :
+    // la zone robot, devenue plus haute, recouvre la zone serveur posée sous elle.
+    const petitsBlocs: MiseEnPage = figer({ format: "oscar.mise-en-page/1", blocs: {
+      "zon-01": { x: 40, y: 120 }, "zon-02": { x: 40, y: 640 }, "zon-03": { x: 900, y: 120 }, "sal-01": { x: 40, y: 24 },
+      "svc-01": { x: 24, y: 64 }, "svc-02": { x: 24, y: 400 }, "app-01": { x: 24, y: 64 },
+    } });
+    const { chevauchements, noeuds } = disposer(brouillonDeReference.modele, petitsBlocs, catalogue);
     expect([...chevauchements].sort()).toEqual(["zon-01", "zon-02"]);
-    expect(noeud(noeuds, "zon-02").position).toEqual(brouillonDeReference.mise_en_page.blocs["zon-02"]);
-    const rangee = disposer(brouillonDeReference.modele, ranger(brouillonDeReference.modele, brouillonDeReference.mise_en_page), catalogue);
+    expect(noeud(noeuds, "zon-02").position).toEqual(petitsBlocs.blocs["zon-02"]);
+    const rangee = disposer(brouillonDeReference.modele, ranger(brouillonDeReference.modele, petitsBlocs), catalogue);
     expect(rangee.chevauchements).toEqual([]);
   });
 });

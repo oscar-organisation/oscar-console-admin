@@ -35,6 +35,23 @@ export const NEUF = {
 };
 /** Le bundle de référence, sans mise en page : il s'ouvre rangé, ses zones côte à côte. */
 export const REFERENCE_SANS_MISE_EN_PAGE = { ...REFERENCE, bundle_id: "bundle-range", mise_en_page: { format: "oscar.mise-en-page/1", blocs: {} } };
+/**
+ * Le bundle de référence placé à rebours : la zone de l'application à droite du robot. La liaison
+ * revient alors de droite à gauche ; les zones gardent leurs places rangées, sans se recouvrir.
+ */
+export const REFERENCE_A_REBOURS = {
+  ...REFERENCE,
+  bundle_id: "bundle-a-rebours",
+  mise_en_page: {
+    ...REFERENCE.mise_en_page,
+    blocs: {
+      ...REFERENCE.mise_en_page.blocs,
+      "zon-01": REFERENCE.mise_en_page.blocs["zon-03"],
+      "zon-02": REFERENCE.mise_en_page.blocs["zon-01"],
+      "zon-03": REFERENCE.mise_en_page.blocs["zon-02"],
+    },
+  },
+};
 
 export const PERMISSIONS = ["ui:studio.page", "api:bundle.read", "api:bundle.write", "api:bundle.publish"];
 
@@ -99,6 +116,7 @@ export async function serveur(page: Page, options: OptionsDuServeur = {}): Promi
   let conflitEnAttente = options.conflit !== undefined;
   const brouillons = new Map<string, Record<string, unknown>>([
     ["bundle-ancien", REPRISE], ["bundle-reference", REFERENCE], ["bundle-neuf", NEUF], ["bundle-range", REFERENCE_SANS_MISE_EN_PAGE],
+    ["bundle-a-rebours", REFERENCE_A_REBOURS],
   ]);
   await page.route("**/api/**", async (route) => {
     const requete = route.request();

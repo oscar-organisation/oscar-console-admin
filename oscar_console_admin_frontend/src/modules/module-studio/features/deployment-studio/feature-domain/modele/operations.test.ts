@@ -8,7 +8,7 @@ import {
 import { codeDepuisNom } from "./identifiants";
 import { appliquerGeste, consequencesDUneSuppression, type Geste, type ResultatDUnGeste } from "./operations";
 import { verifierModele } from "./regles";
-import { EXIGENCE_FACULTATIVE, SORTES, type EtatStudio } from "./types";
+import { EXIGENCE_FACULTATIVE, SORTES, type EtatStudio, type Position } from "./types";
 
 /**
  * La bibliothèque des opérations : chaque geste du Studio, ses refus, et ce
@@ -177,13 +177,14 @@ describe("régler, placer, changer de parent", () => {
 
   it("ranger remplace toute la mise en page en un seul geste, sans toucher au modèle", () => {
     const depart = etatDeReference();
-    const blocs = { "zon-03": { x: 40, y: 120 }, "zon-01": { x: 480, y: 120 }, "app-01": { x: 24, y: 64 }, "inconnu": { x: 1, y: 1 },
+    // La zone de l'application et la zone robot échangent leurs places ; l'application garde la sienne.
+    const blocs = { "zon-03": { x: 516, y: 120 }, "zon-01": { x: 40, y: 120 }, "app-01": { x: 24, y: 64 }, "inconnu": { x: 1, y: 1 },
       // L'unité n'a pas de place à elle : elle se range seule dans son service.
       "uni-01": { x: 5, y: 5 } };
     const resultat = jouer(depart, { operation: "mettreEnPage", blocs });
     const etat = accepte(resultat);
     expect(etat.modele).toBe(depart.modele);
-    expect(etat.miseEnPage.blocs).toEqual({ "zon-03": { x: 40, y: 120 }, "zon-01": { x: 480, y: 120 }, "app-01": { x: 24, y: 64 } });
+    expect(etat.miseEnPage.blocs).toEqual({ "zon-03": { x: 516, y: 120 }, "zon-01": { x: 40, y: 120 }, "app-01": { x: 24, y: 64 } });
     if (resultat.accepte) {
       // Les blocs déplacés, et ceux qui perdent leur place (ils en recevront une calculée).
       expect([...resultat.changements.modifies].sort()).toEqual(["sal-01", "svc-01", "svc-02", "zon-01", "zon-02", "zon-03"]);
@@ -301,7 +302,8 @@ describe("ce que garantit chaque geste", () => {
   it("un geste qui ne change rien rend le même état", () => {
     const depart = etatDeReference();
     const gestes: Geste[] = [
-      { operation: "placer", id: "zon-01", position: { x: 40, y: 120 } },
+      // La zone robot posée à la place qu'elle a déjà.
+      { operation: "placer", id: "zon-01", position: depart.miseEnPage.blocs["zon-01"] as Position },
       { operation: "regler", id: "svc-01", champs: { nom: "Service actions du robot" } },
       { operation: "reglerBundle", champs: { nom: depart.modele.bundle.nom } },
       { operation: "emboiter", id: "svc-01", parent: "zon-01" },
