@@ -875,3 +875,32 @@
 .ec-liste .ec-liste__vide strong { color: var(--shell-text); font-size: 15px; }
 .ec-liste .ec-liste__vide p { display: flex; align-items: center; gap: 8px; max-width: 460px; margin: 0; font-size: 12.5px; line-height: 1.5; }
 .ec-liste .ec-liste__ancien { display: flex; align-items: center; gap: 6px; height: auto !important; margin: -6px 0 12px !important; color: var(--shell-amber) !important; font-size: 11px !important; }
+
+/* Un service ou une application sans unité : la place où la déposer (hauteur : MESURES.uniteVide, marge comprise). */
+.espace-composition .ec-unite-vide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 63px;
+  margin: 0 0 8px;
+  padding: 0 12px;
+  color: var(--studio-microcopy-quiet, var(--shell-dim));
+  border: 1px dashed var(--shell-line-strong);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 10px;
+  text-align: center;
+}
+.espace-composition .ec-unite-vide > svg { flex: 0 0 auto; }
+.espace-composition .ec-ajouter-unite { width: 100%; }
+
+/* Le thème clair : les surfaces que la feuille de l'ancien éditeur peint en sombre. */
+:root[data-theme="light"] .espace-composition .inspector__footer { background: rgba(255, 255, 255, 0.95); }
+:root[data-theme="light"] .espace-composition .react-flow__minimap { background: var(--shell-surface); }
+:root[data-theme="light"] .espace-composition .react-flow__minimap-mask { fill: rgba(240, 240, 240, 0.6); }
+:root[data-theme="light"] .espace-composition .form-field .technical-input { color: var(--shell-text); background: var(--shell-card); }
+:root[data-theme="light"] .espace-composition .guide-card,
+:root[data-theme="light"] .espace-composition .validation-panel { background: rgba(255, 255, 255, 0.97); }
+:root[data-theme="light"] .espace-composition .ec-unite-vide,
+:root[data-theme="light"] .espace-composition .ec-unite { background: rgba(0, 0, 0, 0.02); }
