@@ -3,7 +3,7 @@ import { useAuth } from "@/auth/AuthContext.jsx";
 import {
   archiverBundle,
   creerBundle,
-  enregistrerBrouillon,
+  enregistrerBrouillonAncienFormat,
   listerBundles,
   lireVersion,
   projetDepuisBundle,
@@ -198,7 +198,7 @@ export function synchroniser(projet: OscarProject, options?: { immediat?: boolea
     minuteries.delete(projet.id);
     marquer(projet.id, "EN_COURS");
     try {
-      const version = await enregistrerBrouillon(bundleId, projet);
+      const version = await enregistrerBrouillonAncienFormat(bundleId, projet);
       if (contexte !== generation) return;
       enregistrerLocalement({
         ...projet,
