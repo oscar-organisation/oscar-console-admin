@@ -16,7 +16,7 @@ import {
 } from "./historique";
 import { appliquerGeste, type Geste } from "./operations";
 import { typeDuCatalogue } from "./regles";
-import { SORTES, type Element, type EtatStudio, type Sorte } from "./types";
+import { SORTES, type Element, type EtatStudio, type Position, type Sorte } from "./types";
 
 /**
  * Annuler et rétablir (recette R1.4 : cinquante gestes, tout annuler, tout
@@ -167,8 +167,9 @@ describe("annuler et rétablir", () => {
 
   it("un geste qui ne change rien n'entre pas non plus", () => {
     const historique = creerHistorique(etatDeReference());
+    // La zone robot posée à la place qu'elle a déjà.
     const { historique: apres } = jouerGeste(historique,
-      { operation: "placer", id: "zon-01", position: { x: 40, y: 120 } }, contexteDeTest());
+      { operation: "placer", id: "zon-01", position: historique.present.miseEnPage.blocs["zon-01"] as Position }, contexteDeTest());
     expect(apres).toBe(historique);
   });
 

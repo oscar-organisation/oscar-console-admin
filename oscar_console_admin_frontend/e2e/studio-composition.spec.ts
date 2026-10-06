@@ -106,12 +106,9 @@ test("le bundle de référence s'affiche : zones, salle, entrées à gauche, sor
   const chemin = liaison.locator("path.react-flow__edge-path");
   await expect(chemin).toHaveAttribute("marker-end", /url\(/);
   expect(await chemin.getAttribute("marker-start")).toBeNull();
-  // Dans cette mise en page, l'application est à droite du robot : la liaison revient de droite à
-  // gauche, et passe sous tous les blocs, jamais à travers.
-  const basDeLaLiaison = await chemin.evaluate((element) => element.getBoundingClientRect().bottom);
-  const basDesZones = await canevas.locator(".react-flow__node-zone").evaluateAll((zones) =>
-    Math.max(...zones.map((zone) => zone.getBoundingClientRect().bottom)));
-  expect(basDeLaLiaison).toBeGreaterThan(basDesZones);
+  // Sa mise en page est celle que donne « Ranger » (étape I7) : l'application, qui commande, est à
+  // gauche du robot ; la liaison va de gauche à droite, de la sortie à l'entrée.
+  expect(sortie.x).toBeLessThan(entree.x);
 
   // La légende, repliée par défaut (étape I7) : un bouton discret l'ouvre, et la replie.
   const legende = page.getByRole("complementary", { name: "Légende du canevas" });
@@ -128,11 +125,30 @@ test("le bundle de référence s'affiche : zones, salle, entrées à gauche, sor
   await expect(legende.getByRole("button", { name: "Légende" })).toHaveAttribute("aria-expanded", "false");
   await expect(legende).not.toContainText("Entrée : point creux");
 
-  // Sa mise en page enregistrée a été faite pour des blocs plus petits : l'écran le dit, sans rien déplacer.
-  await expect(page.locator(".ec-conseil")).toContainText("Des blocs se recouvrent");
+  // Aucun bloc n'y recouvre un autre : l'écran n'affiche aucun avertissement.
+  await expect(page.locator(".ec-conseil")).toHaveCount(0);
   await expect(page.locator(".studio-statusbar")).toContainText("3 zones");
   await expect(page.locator(".studio-statusbar")).toContainText("1 liaison de données");
   expect(ecritures(etat.requetes)).toEqual([]);
+});
+
+test("une liaison qui revient de droite à gauche passe sous tous les blocs, jamais à travers", async ({ page }) => {
+  test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
+  await serveur(page);
+  await page.goto("/studio/bundle-a-rebours");
+  const canevas = page.getByTestId("espace-composition");
+  const chemin = canevas.locator('.react-flow__edge[data-id="lia-01"] path.react-flow__edge-path');
+  await expect(chemin).toHaveCount(1);
+  // L'application est à droite du robot : la sortie est à droite de l'entrée.
+  const entree = await canevas.locator('.react-flow__handle[data-handleid="can-01"]').boundingBox();
+  const sortie = await canevas.locator('.react-flow__handle[data-handleid="can-02"]').boundingBox();
+  if (!entree || !sortie) throw new Error("poignée introuvable");
+  expect(sortie.x).toBeGreaterThan(entree.x);
+  const basDeLaLiaison = await chemin.evaluate((element) => element.getBoundingClientRect().bottom);
+  const basDesZones = await canevas.locator(".react-flow__node-zone").evaluateAll((zones) =>
+    Math.max(...zones.map((zone) => zone.getBoundingClientRect().bottom)));
+  expect(basDeLaLiaison).toBeGreaterThan(basDesZones);
+  await expect(page.locator(".ec-conseil")).toHaveCount(0);
 });
 
 test("à 1 440 × 900, panneaux ouverts : l'ouverture et « Ajuster à l’écran » montrent tout le bundle, rien sous la légende ni la mini-carte", async ({ page }) => {

@@ -39,6 +39,14 @@ describe("le rangement automatique", () => {
     expect(Object.keys(premier.blocs).sort()).toEqual(["app-01", "sal-01", "svc-01", "svc-02", "zon-01", "zon-02", "zon-03"]);
   });
 
+  it("la mise en page de référence est celle que donne « Ranger » : aucun bloc n'y recouvre un autre", () => {
+    // Régénérée par ranger() à l'étape I7 : celle d'avant avait été écrite pour des blocs plus petits,
+    // et la zone robot recouvrait la zone serveur. Elle vient de l'API (tests/donnees/
+    // mise-en-page-reference-L1.json), puis de sa réponse (donnees-de-test/reponses-du-serveur/SOURCE.txt).
+    expect(brouillonDeReference.mise_en_page).toEqual(ranger(brouillonDeReference.modele));
+    expect(disposer(brouillonDeReference.modele, brouillonDeReference.mise_en_page, catalogue).chevauchements).toEqual([]);
+  });
+
   it("met les zones dans le sens de la donnée : la liaison va de gauche à droite", () => {
     const { noeuds } = rangeEtDispose(brouillonDeReference.modele);
     // L'application web émet vers le robot : sa zone vient d'abord ; le serveur, sans liaison, en dernier.
