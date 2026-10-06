@@ -2,7 +2,8 @@ import { MarkerType, Position } from "@xyflow/react";
 import { describe, expect, it } from "vitest";
 import { brouillonDeReference, brouillonRepris, contexteDeTest, figer } from "../../../donnees-de-test";
 import type { MiseEnPage } from "../../../feature-domain/modele/types";
-import { ID_DU_CADRE, MESURES, disposer, type NoeudDeComposant, type NoeudDeZone, type NoeudDuCanevas } from "./disposition";
+import { ID_DU_CADRE, MESURES, disposer, hauteurDUneUnite, type NoeudDeComposant, type NoeudDeZone, type NoeudDuCanevas } from "./disposition";
+import { ranger } from "./rangement";
 
 /**
  * La disposition du canevas : du modèle et de sa mise en page aux nœuds et aux
@@ -134,5 +135,31 @@ describe("la disposition du canevas", () => {
     const canaux = noeuds.flatMap((n) => (n.type === "composant" ? n.data.unites : []))
       .flatMap((u) => [...u.entrees, ...u.sorties]).map((c) => c.element.id).sort();
     expect(canaux).toEqual(["rx-commande", "rx-etat-robot", "rx-image", "tx-commande", "tx-etat", "tx-flux"]);
+  });
+
+  it("chaque unité montre ses deux colonnes ; un bus vide garde une ligne pour y poser son premier canal", () => {
+    const { noeuds } = reference();
+    const composant = (id: string) => noeud(noeuds, id) as NoeudDeComposant;
+    const [commande] = composant("svc-01").data.unites;
+    const [media] = composant("svc-02").data.unites;
+    if (!commande || !media) throw new Error("unités absentes");
+    // La commande de la base reçoit un canal, n'en émet aucun : chaque colonne a son bus.
+    expect(commande.groupesDEntrees.map((g) => [g.bus.id, g.canaux.map((c) => c.element.id)])).toEqual([["bre-01", ["can-01"]]]);
+    expect(commande.groupesDeSorties.map((g) => [g.bus.id, g.canaux.length])).toEqual([["bem-01", 0]]);
+    // Sa structure se montre en puces : traitement, interface, bande.
+    expect([commande.traitement?.id, commande.interfaceDeLUnite?.id, commande.bandes.map((b) => b.id)]).toEqual(["trt-01", "itf-01", ["bnd-01"]]);
+    // Une unité sans canal a la même hauteur qu'une unité d'un canal : la ligne vide sert au dépôt.
+    expect(hauteurDUneUnite(media)).toBe(hauteurDUneUnite(commande));
+    expect(composant("svc-01").height).toBe(MESURES.bordsDuComposant + MESURES.enTeteDuComposant + MESURES.metaDuComposant
+      + 2 * MESURES.margeDesUnites + hauteurDUneUnite(commande) + MESURES.espaceEntreUnites + MESURES.boutonAjouterUneUnite);
+  });
+
+  it("des blocs qui se recouvrent sont signalés, jamais déplacés d'eux-mêmes ; « Ranger » les remet en ordre", () => {
+    // La mise en page de référence a été faite pour des blocs plus petits : la zone robot recouvre le serveur.
+    const { chevauchements, noeuds } = reference();
+    expect([...chevauchements].sort()).toEqual(["zon-01", "zon-02"]);
+    expect(noeud(noeuds, "zon-02").position).toEqual(brouillonDeReference.mise_en_page.blocs["zon-02"]);
+    const rangee = disposer(brouillonDeReference.modele, ranger(brouillonDeReference.modele, brouillonDeReference.mise_en_page), catalogue);
+    expect(rangee.chevauchements).toEqual([]);
   });
 });

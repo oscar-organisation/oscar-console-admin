@@ -1,33 +1,49 @@
 import { Handle } from "@xyflow/react";
+import { useCanevas, useMarques } from "./contexte";
 import type { CanalAffiche } from "./disposition";
 
 /**
- * Un canal d'une unité, sur une ligne : une entrée à gauche, sa poignée sur le
- * bord gauche du bloc ; une sortie à droite, sa poignée sur le bord droit.
- * La poignée se saisit sur 24 × 24 px, même si le point dessiné est plus petit
- * (spécification 20.3) ; l'entrée est un point creux, la sortie un point plein :
- * la forme dit le sens, pas seulement la couleur.
+ * Un canal d'une unité, sur une ligne : une entrée à gauche, son point de
+ * connexion sur le bord gauche ; une sortie à droite, son point sur le bord
+ * droit. Le point se saisit sur 20 px, même s'il est dessiné plus petit ;
+ * l'entrée est verte, la sortie rose, et la forme dit aussi le sens (point
+ * creux pour une entrée, plein pour une sortie) : jamais la couleur seule.
  *
- * En lecture (étape I3 du lot L1), la poignée ne se relie pas.
+ * Pendant qu'on tire une liaison, les canaux qui l'accepteraient s'éclairent
+ * et les autres s'estompent. Un clic sur la ligne choisit le canal.
  */
 export default function LigneCanal({ canal }: { readonly canal: CanalAffiche }) {
+  const { onSelectionner, canauxReliables } = useCanevas();
+  const marques = useMarques({ sorte: "element", id: canal.element.id });
   const entree = canal.poignee === "target";
   const nom = canal.element.nom ?? canal.element.code;
+  const pendantUneLiaison = canauxReliables !== null;
+  const reliable = canauxReliables?.has(canal.element.id) ?? false;
   return (
-    <li
-      className={`ec-canal ${entree ? "ec-canal--entree" : "ec-canal--sortie"}`}
+    <div
+      className={[
+        "ec-canal", entree ? "ec-canal--entree" : "ec-canal--sortie", marques,
+        pendantUneLiaison ? (reliable ? "ec-canal--reliable" : "ec-canal--estompe") : "",
+      ].filter(Boolean).join(" ")}
       title={`${entree ? "Entrée" : "Sortie"} : ${nom}, ${canal.typeEnMots}, format ${canal.format} (${canal.element.code})`}
+      data-element-id={canal.element.id}
+      onClick={(evenement) => {
+        evenement.stopPropagation();
+        onSelectionner({ sorte: "element", id: canal.element.id });
+      }}
     >
       <Handle
         id={canal.element.id}
         type={canal.poignee}
         position={canal.cote}
-        isConnectable={false}
         className={`ec-poignee ${entree ? "ec-poignee--entree" : "ec-poignee--sortie"}`}
         aria-label={`${entree ? "Entrée" : "Sortie"} ${nom}`}
       />
-      {/* Le nom seul tient sur la ligne ; le type et le format se lisent au survol (et dans l'inspecteur, étape I4). */}
-      <span className="ec-canal__nom">{nom}</span>
-    </li>
+      <span className="ec-canal__point" aria-hidden="true" />
+      <span className="ec-canal__texte">
+        <strong>{nom}</strong>
+        <small>{canal.format}</small>
+      </span>
+    </div>
   );
 }

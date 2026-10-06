@@ -1,19 +1,23 @@
-import type { CSSProperties } from "react";
 import type { NodeProps } from "@xyflow/react";
-import { presentationDeLaFamille } from "../../familles";
+import { RadioTower } from "lucide-react";
+import { useMarques } from "./contexte";
 import type { NoeudDeSalle } from "./disposition";
 
 /** La salle temps réel : un bloc compact en haut du cadre du bundle, une seule par bundle. */
 export default function NoeudSalle({ data }: NodeProps<NoeudDeSalle>) {
-  const famille = presentationDeLaFamille("FAMILLE_PALETTE_TEMPS_REEL");
-  const Pictogramme = famille.pictogramme;
+  const marques = useMarques({ sorte: "element", id: data.element.id });
   return (
-    <section className="ec-salle" title="Une seule salle par bundle : toutes ses unités s'y retrouvent" style={{ "--ec-teinte": `var(--${famille.teinte})` } as CSSProperties}>
-      <Pictogramme size={18} aria-hidden="true" />
-      <div>
+    <section
+      className={`ec-salle ${marques}`}
+      data-cible-id={data.element.id}
+      title="Une seule salle par bundle : toutes ses unités s'y retrouvent"
+    >
+      <span className="ec-salle__icone"><RadioTower size={16} aria-hidden="true" /></span>
+      <span className="ec-salle__titre">
+        <span className="ec-surtitre">Temps réel</span>
         <strong>{data.element.nom ?? "Salle temps réel"}</strong>
-        <small>Une seule par bundle</small>
-      </div>
+      </span>
+      <small>Une par bundle</small>
     </section>
   );
 }

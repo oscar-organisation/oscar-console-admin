@@ -83,6 +83,7 @@ export type Geste =
   | { readonly operation: "regler"; readonly id: string; readonly champs: ChampsReglables }
   | { readonly operation: "reglerBundle"; readonly champs: Partial<EnTeteDuBundle> }
   | { readonly operation: "placer"; readonly id: string; readonly position: Position }
+  | { readonly operation: "mettreEnPage"; readonly blocs: Readonly<Record<string, Position>> }
   | { readonly operation: "emboiter"; readonly id: string; readonly parent: string | null; readonly rang?: number }
   | { readonly operation: "supprimer"; readonly id: string }
   | { readonly operation: "relier"; readonly source: string; readonly destination: string }
@@ -107,7 +108,7 @@ const AUCUN_CHANGEMENT: Changements = { ajoutes: [], modifies: [], retires: [], 
 export const SORTES_AVEC_POSITION: readonly Sorte[] = [SORTES.ZONE, SORTES.SALLE, SORTES.SERVICE, SORTES.APPLICATION];
 
 /** Les sortes qui citent un type du catalogue ; les autres n'en portent jamais (format). */
-const SORTES_AVEC_TYPE: readonly Sorte[] = [SORTES.ZONE, SORTES.SALLE, SORTES.SERVICE, SORTES.APPLICATION, SORTES.UNITE];
+export const SORTES_AVEC_TYPE: readonly Sorte[] = [SORTES.ZONE, SORTES.SALLE, SORTES.SERVICE, SORTES.APPLICATION, SORTES.UNITE];
 /** Les sortes qui ont des réglages ; le format les refuse aux autres. */
 const SORTES_AVEC_REGLAGES: readonly Sorte[] = [SORTES.ZONE, SORTES.CANAL_RECEPTION, SORTES.CANAL_EMISSION];
 
@@ -318,6 +319,22 @@ export function placer(etat: EtatStudio, geste: Extract<Geste, { operation: "pla
   }, { modifies: [geste.id] });
 }
 
+/**
+ * Remplacer toute la mise en page d'un coup (le bouton « Ranger ») : un seul
+ * geste, qu'on annule comme les autres. Le modèle ne change pas. Seuls les
+ * blocs qui existent et qui ont une place à eux sont gardés.
+ */
+export function mettreEnPage(etat: EtatStudio, geste: Extract<Geste, { operation: "mettreEnPage" }>): ResultatDUnGeste {
+  const places = new Set(etat.modele.elements
+    .filter((element) => SORTES_AVEC_POSITION.includes(element.sorte))
+    .map((element) => element.id));
+  const blocs = Object.fromEntries(Object.entries(geste.blocs).filter(([id]) => places.has(id)));
+  if (memeValeur(blocs, etat.miseEnPage.blocs)) return inchange(etat);
+  const modifies = [...new Set([...Object.keys(blocs), ...Object.keys(etat.miseEnPage.blocs)])]
+    .filter((id) => !memeValeur(blocs[id], etat.miseEnPage.blocs[id]));
+  return accepte({ ...etat, miseEnPage: { ...etat.miseEnPage, blocs } }, { modifies });
+}
+
 /** Les identifiants d'un élément et de tous ses descendants. */
 function sousArbre(elements: readonly Element[], id: string): Set<string> {
   const retenus = new Set([id]);
@@ -461,6 +478,7 @@ export function appliquerGeste(etat: EtatStudio, geste: Geste, contexte: Context
     case "regler": return regler(etat, geste, contexte);
     case "reglerBundle": return reglerBundle(etat, geste);
     case "placer": return placer(etat, geste);
+    case "mettreEnPage": return mettreEnPage(etat, geste);
     case "emboiter": return emboiter(etat, geste, contexte);
     case "supprimer": return supprimer(etat, geste, contexte);
     case "relier": return relier(etat, geste, contexte);

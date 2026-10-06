@@ -1,15 +1,20 @@
-/* Feuille du nouveau canevas du Studio (lot L1, étape I3).
-   Elle vit à part de studio.css, qui sert l'ancien éditeur encore en service :
-   chaque règle est préfixée par .espace-composition, et ne touche donc pas
-   l'ancien écran. L'étape I7 réécrira studio.css et y rangera ces règles.
+/* Feuille du nouveau Studio (lot L1).
+   Le nouvel éditeur reprend le dessin de l'ancien (studio.css : la barre du
+   haut, la palette, les cartes, l'inspecteur, la barre d'état, les fenêtres),
+   et ajoute ici ce que l'ancien n'avait pas : les zones qui contiennent, la
+   salle, les marques d'un glissement (parents compatibles éclairés, cible
+   encadrée), les liaisons qu'on tire, les refus près du point de dépôt,
+   l'état vide qui guide, la légende.
 
-   Les couleurs viennent des jetons de la console (--shell-...), qui suivent
-   le thème sombre (par défaut) et le thème clair. Les familles de la palette
-   ont chacune une teinte sourde, qui classe sans attirer ; l'orange de la
-   charte (--action-primary) reste la seule couleur d'action. Les hauteurs
-   des parties d'un bloc sont celles de MESURES (canevas/disposition.ts) : la
-   taille des zones se calcule sur elles. Textes : 14 px au moins, 12 px pour
-   le texte secondaire (spécification 20.3). */
+   Chaque règle est préfixée par .espace-composition : elle ne touche pas
+   l'ancien éditeur, toujours en service. Les couleurs viennent des jetons de
+   la console (--shell-...), qui suivent le thème sombre et le thème clair ;
+   l'orange de la charte (--shell-blue, nommé ainsi par la console) reste la
+   couleur de l'action et de la sélection.
+
+   Les hauteurs des parties d'un bloc sont FIXES et égales à MESURES
+   (canevas/disposition.ts) : la taille des zones se calcule sur elles. Une
+   hauteur qui change ici change aussi là-bas. */
 
 .espace-composition {
   --famille-environnements: #7fa7d9;
@@ -20,8 +25,11 @@
   --famille-stockage: #a3a38a;
   --famille-programmes: #a89584;
   --famille-services: #7fbfa6;
+  --ec-entree: var(--shell-green);
+  --ec-sortie: #ff8cb4;
+  --ec-application: #66e2ee;
   /* Les liaisons et leurs flèches : React Flow lit ces variables. */
-  --xy-edge-stroke: #9aa3ad;
+  --xy-edge-stroke: #8d98a6;
   --xy-edge-stroke-width: 2;
   --xy-background-color: var(--shell-bg);
   --xy-background-pattern-color: var(--shell-line-strong);
@@ -33,130 +41,150 @@
   --xy-controls-button-color: var(--shell-text);
   --xy-controls-button-color-hover: var(--shell-text-strong);
   --xy-controls-button-border-color: var(--shell-line);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  min-width: 1100px;
-  color: var(--shell-text);
-  background: var(--shell-bg);
-  font-family: var(--font-sans);
-  font-size: 14px;
 }
 
 :root[data-theme="light"] .espace-composition {
   --famille-environnements: #3d6aa3;
   --famille-temps-reel: #6f56a8;
-  --famille-appareils: #8a6a2a;
-  --famille-messagerie: #a04d6b;
-  --famille-reseau: #2e7f91;
-  --famille-stockage: #6b6b4f;
-  --famille-programmes: #6e5a48;
   --famille-services: #2f7d63;
+  --ec-entree: #168861;
+  --ec-sortie: #c84a74;
+  --ec-application: #078e9b;
   --xy-edge-stroke: #5b6470;
   --xy-minimap-mask-background-color: rgba(240, 240, 240, 0.6);
 }
 
-.espace-composition *,
-.espace-composition *::before,
-.espace-composition *::after { box-sizing: border-box; }
-
 .espace-composition :focus-visible {
-  outline: 2px solid var(--action-primary);
+  outline: 2px solid var(--shell-blue);
   outline-offset: 2px;
 }
 
-/* Les messages pleine page : chargement, erreur, écran trop étroit. */
-.espace-composition--message {
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  height: auto;
-  min-height: 60vh;
-  min-width: 0;
-  padding: 48px 24px;
-  text-align: center;
+.espace-composition .ec-invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
-.espace-composition--message h2 { margin: 0; font-size: 18px; }
-.espace-composition--message p { margin: 0; max-width: 520px; color: var(--shell-muted); line-height: 1.5; }
-.espace-composition a { color: var(--shell-text-strong); }
-.espace-composition .ec-actions { display: flex; align-items: center; gap: 16px; }
-.espace-composition .ec-bouton {
-  display: inline-flex;
+
+/* ------------------------------------------------------------------ *
+ *  La charpente : la barre du haut, la reprise, les trois colonnes, la
+ *  barre d'état. Chaque partie a sa rangée, quel que soit l'ordre du DOM.
+ * ------------------------------------------------------------------ */
+.espace-composition .studio-shell { grid-template-rows: 58px auto minmax(0, 1fr) 28px; }
+.espace-composition .studio-topbar { grid-row: 1; }
+.espace-composition .ec-reprise { grid-row: 2; }
+.espace-composition .studio-layout { grid-row: 3; }
+.espace-composition .studio-statusbar { grid-row: 4; font-size: 10px; }
+.espace-composition .studio-layout { grid-template-columns: 276px minmax(0, 1fr) 316px; }
+
+.espace-composition .ec-code-du-bundle {
+  overflow: hidden;
+  max-width: 280px;
+  color: var(--shell-dim);
+  font: 500 10px/1.2 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.espace-composition .ec-etat-enregistrement { white-space: nowrap; }
+.espace-composition .ec-etat-enregistrement--conflit,
+.espace-composition .ec-etat-enregistrement--echec,
+.espace-composition .ec-etat-enregistrement--refuse { color: var(--shell-amber); font-weight: 700; }
+.espace-composition .ec-point-attente { background: var(--shell-amber); box-shadow: 0 0 0 3px var(--shell-amber-soft); }
+.espace-composition .ec-pied__alerte { color: var(--shell-amber); }
+
+/* La reprise d'un bundle de l'ancienne console : une seule ligne. */
+.espace-composition .ec-reprise {
+  display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 0 14px;
-  color: #fff;
-  border: 0;
-  border-radius: 10px;
-  background: var(--action-primary);
-  font: 600 14px/1 var(--font-sans);
+  padding: 6px 15px;
+  color: var(--shell-amber);
+  border-bottom: 1px solid rgba(239, 180, 81, 0.28);
+  background: var(--shell-amber-soft);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.espace-composition .ec-reprise > svg { flex: 0 0 auto; }
+.espace-composition .ec-lien {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 4px 9px;
+  color: var(--shell-text);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 7px;
+  background: var(--shell-card);
+  font: 700 11px/1 var(--font-sans);
   cursor: pointer;
 }
-.espace-composition .ec-tourne { animation: ec-tourne 1s linear infinite; }
-@keyframes ec-tourne { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) {
-  .espace-composition .ec-tourne { animation: none; }
-}
+.espace-composition .ec-lien:hover { border-color: var(--shell-blue-border); background: var(--shell-elevated); }
 
-/* La barre du haut. */
-.espace-composition .ec-barre {
+/* ------------------------------------------------------------------ *
+ *  La palette et la structure
+ * ------------------------------------------------------------------ */
+.espace-composition .library-search input { color: var(--shell-text); }
+.espace-composition .library-search input::-webkit-search-cancel-button { cursor: pointer; }
+.espace-composition .ec-famille { margin-bottom: 4px; }
+.espace-composition .ec-famille__titre {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--shell-line);
-  background: var(--shell-surface);
+  gap: 6px;
+  margin: 10px 3px 7px;
+  color: var(--shell-dim);
+  font: 800 9px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.espace-composition .ec-retour {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.espace-composition .ec-famille__liste { margin: 0; padding: 0; list-style: none; }
+.espace-composition .palette-card { color: var(--shell-text); }
+.espace-composition .palette-card:focus-visible { outline-offset: -2px; }
+.espace-composition .palette-card--zone .palette-card__icon {
+  color: var(--famille-environnements);
+  background: color-mix(in srgb, var(--famille-environnements) 14%, transparent);
+}
+.espace-composition .palette-card--neutre .palette-card__icon { color: var(--shell-muted); background: rgba(255, 255, 255, 0.05); }
+.espace-composition .palette-card--cyan .palette-card__icon { color: var(--ec-application); }
+.espace-composition .ec-palette__vide { margin: 4px 12px 12px; color: var(--shell-muted); font-size: 11px; }
+
+.espace-composition .project-tree { padding: 12px 8px 20px; }
+.espace-composition .ec-arbre,
+.espace-composition .ec-arbre ul { margin: 0; padding: 0; list-style: none; }
+.espace-composition .ec-arbre__element { outline: none; }
+.espace-composition .ec-arbre__element:focus-visible > .ec-arbre__ligne { outline: 2px solid var(--shell-blue); outline-offset: -2px; }
+.espace-composition .ec-arbre__ligne {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding-right: 6px;
+  border-radius: 7px;
   color: var(--shell-text);
+  font-size: 11px;
+  cursor: pointer;
 }
-.espace-composition .ec-retour:hover { background: var(--shell-elevated); }
-.espace-composition .ec-titre { display: grid; gap: 2px; min-width: 0; }
-.espace-composition .ec-titre small { color: var(--shell-muted); font-size: 12px; }
-.espace-composition .ec-titre h1 { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.25; }
-.espace-composition .ec-titre code { color: var(--shell-muted); font: 12px/1.3 var(--font-mono); }
-.espace-composition .ec-lecture {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 0 auto;
-  color: var(--shell-muted);
-  font-size: 14px;
-}
+.espace-composition .ec-arbre__ligne:hover { background: var(--shell-card-hover, rgba(255, 255, 255, 0.04)); }
+.espace-composition .ec-arbre__ligne--choisie { color: var(--shell-blue-strong); background: var(--shell-blue-soft); }
+.espace-composition .ec-arbre__bascule { display: inline-grid; flex: 0 0 auto; place-items: center; width: 16px; height: 16px; color: var(--shell-dim); }
+.espace-composition .ec-arbre__nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-arbre__detail { flex: 0 0 auto; margin-left: auto; color: var(--shell-dim); font-size: 9px; }
 
-/* La reprise d'un bundle de l'ancienne console. */
-.espace-composition .ec-reprise {
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--shell-line);
-  background: var(--shell-amber-soft);
-  line-height: 1.5;
-}
-.espace-composition .ec-reprise p { margin: 0; }
-.espace-composition .ec-reprise summary { margin-top: 4px; font-weight: 600; cursor: pointer; }
-.espace-composition .ec-reprise ul { margin: 6px 0 0; padding-left: 20px; }
-
-/* Le canevas, et sa colonne de légende. */
-.espace-composition .ec-corps { display: flex; flex: 1; min-height: 0; }
-.espace-composition .ec-canevas { position: relative; flex: 1; min-width: 0; }
-.espace-composition .ec-cote {
-  flex: 0 0 auto;
-  width: 300px;
-  padding: 12px;
-  overflow: auto;
-  border-left: 1px solid var(--shell-line);
-  background: var(--shell-surface);
-}
+/* ------------------------------------------------------------------ *
+ *  Le canevas
+ * ------------------------------------------------------------------ */
+.espace-composition .ec-canevas { position: relative; width: 100%; height: 100%; }
+.espace-composition .react-flow__node { border-radius: 0; }
 .espace-composition .react-flow__minimap,
-.espace-composition .react-flow__controls {
-  overflow: hidden;
-  border: 1px solid var(--shell-line-strong);
-  border-radius: 10px;
+.espace-composition .react-flow__controls { overflow: hidden; border: 1px solid var(--shell-line-strong); border-radius: 10px; }
+.espace-composition .ec-surtitre {
+  color: var(--studio-microcopy, var(--shell-dim));
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 
 /* Le cadre du bundle. */
@@ -165,202 +193,603 @@
   width: 100%;
   height: 100%;
   border: 1px solid var(--shell-line-strong);
-  border-radius: 18px;
-  background: var(--shell-surface);
+  border-top: 3px solid var(--shell-purple);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--shell-surface) 70%, transparent);
 }
-.espace-composition .ec-cadre__titre {
-  position: absolute;
-  top: 14px;
-  right: 20px;
-  display: grid;
-  justify-items: end;
-  gap: 2px;
-}
-.espace-composition .ec-cadre__titre small { color: var(--shell-muted); font-size: 12px; }
-.espace-composition .ec-cadre__titre strong { font-size: 15px; }
+.espace-composition .ec-cadre__titre { position: absolute; top: 12px; right: 18px; display: flex; align-items: center; gap: 9px; }
+.espace-composition .ec-cadre__titre > span:last-child { display: flex; flex-direction: column; align-items: flex-end; }
+.espace-composition .ec-cadre__titre strong { margin-top: 2px; font: 700 13px/1.2 var(--font-sans); }
+.espace-composition .ec-cadre__icone { display: grid; place-items: center; width: 28px; height: 28px; color: var(--shell-purple); border-radius: 8px; background: var(--shell-purple-soft); }
 
-/* Les zones d'environnement. */
+/* Une zone d'environnement : elle contient ses blocs. */
 .espace-composition .ec-zone {
   width: 100%;
   height: 100%;
-  border: 1.5px solid color-mix(in srgb, var(--ec-teinte) 60%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--famille-environnements) 55%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--ec-teinte) 6%, transparent);
+  background: color-mix(in srgb, var(--famille-environnements) 6%, transparent);
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
 }
 .espace-composition .ec-zone--externe { border-style: dashed; }
-.espace-composition .ec-zone__entete {
+.espace-composition .ec-zone__entete { display: flex; align-items: center; gap: 9px; height: 64px; padding: 0 14px; }
+.espace-composition .ec-zone__icone {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  color: var(--famille-environnements);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--famille-environnements) 15%, transparent);
+}
+.espace-composition .ec-zone__titre { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.espace-composition .ec-zone__titre strong { overflow: hidden; margin-top: 2px; font: 700 13px/1.25 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-zone__titre code { overflow: hidden; margin-top: 2px; color: var(--shell-dim); font: 500 8px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-zone__vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin: 4px 24px 0;
+  padding: 14px;
+  color: var(--shell-muted);
+  border: 1px dashed var(--shell-line-strong);
+  border-radius: 10px;
+  font-size: 11px;
+  text-align: center;
+}
+.espace-composition .ec-zone__boutons { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.espace-composition .ec-ajouter-dans-la-zone,
+.espace-composition .ec-ajouter-unite {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 64px;
-  padding: 0 16px;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  color: var(--shell-blue-strong);
+  border: 1px dashed var(--shell-blue-border);
+  border-radius: 8px;
+  background: var(--shell-blue-soft);
+  font: 700 10px/1 var(--font-sans);
+  cursor: pointer;
 }
-.espace-composition .ec-zone__entete > svg { flex-shrink: 0; color: var(--ec-teinte); }
-.espace-composition .ec-zone__entete div { display: grid; gap: 2px; min-width: 0; }
-.espace-composition .ec-zone__entete strong { overflow: hidden; font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
-.espace-composition .ec-zone__entete small { color: var(--shell-muted); font-size: 12px; }
+.espace-composition .ec-ajouter-dans-la-zone:hover,
+.espace-composition .ec-ajouter-unite:hover { border-style: solid; background: rgba(216, 88, 16, 0.18); }
 .espace-composition .ec-marque {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
-  padding: 2px 8px;
+  padding: 3px 7px;
   border: 1px dashed var(--shell-line-strong);
-  border-radius: 999px;
+  border-radius: 6px;
   color: var(--shell-text);
-  font-size: 12px;
+  font-size: 9px;
+  font-weight: 700;
   white-space: nowrap;
 }
 .espace-composition .ec-marque--a-preciser { border-style: solid; border-color: currentColor; color: var(--shell-amber); }
-:root[data-theme="light"] .espace-composition .ec-marque--a-preciser { color: #8a5a00; }
 
 /* La salle temps réel. */
 .espace-composition .ec-salle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
   height: 100%;
-  padding: 0 14px;
-  border: 1.5px solid color-mix(in srgb, var(--ec-teinte) 60%, transparent);
-  border-radius: 12px;
-  background: var(--shell-card);
-}
-.espace-composition .ec-salle > svg { flex-shrink: 0; color: var(--ec-teinte); }
-.espace-composition .ec-salle div { display: grid; gap: 2px; min-width: 0; }
-.espace-composition .ec-salle strong { font-size: 14px; }
-.espace-composition .ec-salle small { overflow: hidden; color: var(--shell-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-
-/* Un service ou une application, ses unités et leurs canaux. */
-.espace-composition .ec-composant {
-  width: 100%;
-  height: 100%;
+  padding: 0 12px;
   border: 1px solid var(--shell-line-strong);
+  border-left: 3px solid var(--famille-temps-reel);
   border-radius: 12px;
   background: var(--shell-card);
+  box-shadow: var(--shadow-sm);
 }
-.espace-composition .ec-composant__entete {
+.espace-composition .ec-salle__icone { display: grid; flex: 0 0 auto; place-items: center; width: 28px; height: 28px; color: var(--famille-temps-reel); border-radius: 8px; background: color-mix(in srgb, var(--famille-temps-reel) 15%, transparent); }
+.espace-composition .ec-salle__titre { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.espace-composition .ec-salle__titre strong { font: 700 12px/1.25 var(--font-sans); }
+.espace-composition .ec-salle > small { color: var(--shell-dim); font-size: 9px; white-space: nowrap; }
+
+/* Un service ou une application, au dessin de l'ancien éditeur, à hauteurs fixes. */
+.espace-composition .ec-noeud {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--shell-text);
+  border: 1px solid var(--shell-line-strong);
+  border-top: 3px solid var(--shell-blue);
+  border-radius: 14px;
+  background: var(--shell-card);
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.espace-composition .ec-noeud--application { border-top-color: var(--ec-application); }
+.espace-composition .ec-noeud__entete { display: flex; align-items: center; gap: 9px; height: 52px; padding: 0 12px; }
+.espace-composition .ec-noeud__icone { display: grid; flex: 0 0 auto; place-items: center; width: 31px; height: 31px; color: var(--shell-blue-strong); border-radius: 9px; background: var(--shell-blue-soft); }
+.espace-composition .ec-noeud--application .ec-noeud__icone { color: var(--ec-application); background: color-mix(in srgb, var(--ec-application) 12%, transparent); }
+.espace-composition .ec-noeud__titre { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.espace-composition .ec-noeud__titre strong { overflow: hidden; margin-top: 2px; font: 700 12.5px/1.25 var(--font-sans); text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-etat {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  color: var(--studio-microcopy, var(--shell-muted));
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.espace-composition .ec-etat--alerte { color: var(--shell-amber); background: var(--shell-amber-soft); }
+.espace-composition .ec-noeud__meta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--shell-line);
-}
-.espace-composition .ec-composant__entete > svg { flex-shrink: 0; color: var(--ec-teinte); }
-.espace-composition .ec-composant__entete div { display: grid; gap: 1px; min-width: 0; }
-.espace-composition .ec-composant__entete strong,
-.espace-composition .ec-composant__entete small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.espace-composition .ec-composant__entete strong { font-size: 14px; }
-.espace-composition .ec-composant__entete small { color: var(--shell-muted); font-size: 12px; }
-.espace-composition .ec-composant__vide {
-  display: flex;
-  align-items: center;
-  height: 32px;
-  margin: 0;
-  padding: 0 14px;
-  color: var(--shell-muted);
-  font-size: 13px;
-}
-.espace-composition .ec-unite + .ec-unite { margin-top: 8px; }
-.espace-composition .ec-unite__entete {
-  display: flex;
-  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  height: 32px;
-  padding: 0 14px;
-  font-size: 14px;
-  font-weight: 600;
+  height: 26px;
+  padding: 0 12px;
+  border-top: 1px solid var(--shell-line-strong);
+  border-bottom: 1px solid var(--shell-line-strong);
+  background: rgba(255, 255, 255, 0.035);
 }
-.espace-composition .ec-unite__entete > svg { flex-shrink: 0; color: var(--shell-muted); }
-.espace-composition .ec-unite__entete span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.espace-composition .ec-unite__entete small { margin-left: auto; color: var(--shell-muted); font-size: 12px; font-weight: 400; }
-.espace-composition .ec-unite__canaux { display: grid; grid-template-columns: 1fr 1fr; }
-.espace-composition .ec-unite__canaux ul { margin: 0; padding: 0; list-style: none; min-width: 0; }
+.espace-composition .ec-noeud__meta code { overflow: hidden; color: var(--studio-microcopy, var(--shell-dim)); font: 500 8.5px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-noeud__meta span { flex: 0 0 auto; max-width: 45%; overflow: hidden; color: var(--studio-microcopy, var(--shell-dim)); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-noeud__description {
+  height: 24px;
+  margin: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  color: var(--studio-microcopy, var(--shell-dim));
+  font-size: 10px;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.espace-composition .ec-noeud__unites { padding: 9px; }
+
+/* Une unité : une carte, ses puces de structure, ses deux colonnes. */
+.espace-composition .ec-unite {
+  margin: 0 0 8px;
+  overflow: visible;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.028);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.espace-composition .ec-unite:hover { border-color: var(--shell-blue-border); }
+.espace-composition .ec-unite__entete { display: flex; align-items: center; gap: 7px; height: 38px; padding: 0 8px; }
+.espace-composition .ec-unite__icone { display: grid; flex: 0 0 auto; place-items: center; width: 25px; height: 25px; color: var(--shell-amber); border-radius: 7px; background: var(--shell-amber-soft); }
+.espace-composition .ec-unite__titre { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.espace-composition .ec-unite__titre strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-unite__titre code { overflow: hidden; margin-top: 2px; color: var(--studio-microcopy, var(--shell-dim)); font: 500 8px/1.2 var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-unite__structure { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; height: 26px; padding: 0 8px 7px; }
+.espace-composition .ec-unite__structure > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  color: var(--studio-microcopy, var(--shell-muted));
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.espace-composition .ec-unite__structure svg { flex: 0 0 auto; }
+.espace-composition .ec-unite__colonnes { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--shell-line-strong); }
+.espace-composition .ec-colonne { min-width: 0; padding: 7px 8px 8px; }
+.espace-composition .ec-colonne--entree { border-right: 1px solid var(--shell-line-strong); }
+.espace-composition .ec-colonne__titre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 15px;
+  margin: 0 2px 5px;
+  color: var(--studio-microcopy, var(--shell-muted));
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.espace-composition .ec-colonne__titre small {
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.065);
+  font-size: 8px;
+}
+.espace-composition .ec-bus__nom {
+  display: flex;
+  align-items: flex-end;
+  height: 31px;
+  margin-top: 4px;
+  padding: 0 2px 4px;
+  color: var(--shell-dim);
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+/* Un canal, et son point de connexion. */
 .espace-composition .ec-canal {
   position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  min-width: 0;
-  font-size: 14px;
+  height: 31px;
+  margin-top: 4px;
+  padding: 0 7px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 7px;
+  background: var(--shell-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.15s, box-shadow 0.15s;
 }
-.espace-composition .ec-canal--entree { padding: 0 6px 0 16px; }
-.espace-composition .ec-canal--sortie { justify-content: flex-end; padding: 0 16px 0 6px; }
-.espace-composition .ec-canal__nom { overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-canal:hover { border-color: var(--shell-blue-border); }
+.espace-composition .ec-canal--sortie { flex-direction: row-reverse; text-align: right; }
+.espace-composition .ec-canal__point { flex: 0 0 auto; width: 7px; height: 7px; border: 2px solid var(--ec-entree); border-radius: 50%; }
+.espace-composition .ec-canal--sortie .ec-canal__point { border-color: var(--ec-sortie); background: var(--ec-sortie); }
+.espace-composition .ec-canal__texte { display: flex; min-width: 0; flex: 1; flex-direction: column; }
+.espace-composition .ec-canal__texte strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.espace-composition .ec-canal__texte small { margin-top: 1px; color: var(--studio-microcopy, var(--shell-dim)); font-size: 8px; }
+.espace-composition .ec-canal-vide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 31px;
+  margin-top: 4px;
+  color: var(--studio-microcopy-quiet, var(--shell-dim));
+  border: 1px dashed var(--shell-line-strong);
+  border-radius: 7px;
+  background: transparent;
+  font: italic 9px/1 var(--font-sans);
+}
+.espace-composition .ec-canal-vide--bouton { font-style: normal; font-weight: 700; cursor: pointer; }
+.espace-composition .ec-canal-vide--bouton:hover { color: var(--shell-blue-strong); border-color: var(--shell-blue-border); background: var(--shell-blue-soft); }
 
-/* Les poignées : une zone de saisie de 24 × 24 px, un point de 10 px dessiné
-   au centre. L'entrée est un point creux, la sortie un point plein. */
+/* Le point de connexion : un disque de 12 px, saisi sur 20 px, posé sur le bord de l'unité. */
 .espace-composition .react-flow__handle.ec-poignee {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  min-width: 0;
+  min-height: 0;
   border: 0;
   border-radius: 50%;
   background: transparent;
 }
 .espace-composition .react-flow__handle.ec-poignee::after {
   position: absolute;
-  top: 7px;
-  left: 7px;
-  width: 10px;
-  height: 10px;
-  border: 2px solid var(--xy-edge-stroke);
+  top: 4px;
+  left: 4px;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2.5px solid var(--ec-entree);
   border-radius: 50%;
+  background: var(--shell-card);
   content: "";
+  transition: transform 0.12s ease;
 }
-.espace-composition .react-flow__handle.ec-poignee--entree::after { background: var(--shell-card); }
-.espace-composition .react-flow__handle.ec-poignee--sortie::after { background: var(--xy-edge-stroke); }
+/* React Flow centre déjà la poignée sur le bord de la ligne (translate de -50 %) : on la pousse
+   jusqu'au bord de l'unité, 9 px plus loin (la marge de la colonne et le bord de la carte). */
+.espace-composition .react-flow__handle.ec-poignee--entree { left: -9px; }
+.espace-composition .react-flow__handle.ec-poignee--sortie { right: -9px; left: auto; }
+.espace-composition .react-flow__handle.ec-poignee--sortie::after { border-color: var(--ec-sortie); background: var(--ec-sortie); }
+.espace-composition .react-flow__handle.ec-poignee:hover::after { transform: scale(1.35); }
 
-/* La légende. */
-.espace-composition .ec-legende { font-size: 13px; }
+/* Pendant qu'on tire une liaison : les canaux qui l'accepteraient s'éclairent, les autres s'estompent. */
+.espace-composition .ec-canal--reliable { border-color: var(--shell-blue); box-shadow: 0 0 0 3px var(--shell-blue-soft); }
+.espace-composition .ec-canal--reliable .react-flow__handle.ec-poignee::after { transform: scale(1.35); box-shadow: 0 0 0 4px var(--shell-blue-soft); }
+.espace-composition .ec-canal--estompe { opacity: 0.35; }
+
+/* Une liaison : au survol, elle s'éclaire en entier ; choisie, elle se retire d'un bouton. */
+.espace-composition .react-flow__edge .ec-liaison { stroke: var(--xy-edge-stroke); stroke-width: 2; transition: stroke 0.12s, stroke-width 0.12s; }
+.espace-composition .react-flow__edge:hover .ec-liaison,
+.espace-composition .react-flow__edge .ec-liaison--choisie { stroke: var(--shell-blue); stroke-width: 3; }
+.espace-composition .react-flow__edge:hover marker path,
+.espace-composition .react-flow__edge .ec-liaison--choisie + marker path { fill: var(--shell-blue); }
+/* Les étiquettes des liaisons passent au-dessus des liaisons elles-mêmes : sinon leur bande de
+   saisie, large de 24 px, recouvrirait le bouton « Retirer ». */
+.espace-composition .react-flow__edgelabel-renderer { z-index: 1100; }
+.espace-composition .ec-retirer-liaison {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  color: var(--shell-red);
+  border: 1px solid rgba(240, 111, 114, 0.4);
+  border-radius: 7px;
+  background: var(--shell-surface);
+  box-shadow: var(--shadow-md);
+  font: 700 10px/1 var(--font-sans);
+  pointer-events: all;
+  cursor: pointer;
+}
+.espace-composition .ec-retirer-liaison:hover { background: var(--shell-red-soft); }
+
+/* Les marques : sélectionné, parent compatible pendant un glissement, cible sous le pointeur. */
+.espace-composition .ec-noeud.ec-selectionne,
+.espace-composition .ec-salle.ec-selectionne { border-color: var(--shell-blue-strong); box-shadow: 0 0 0 3px var(--shell-blue-soft), var(--shadow-md); }
+.espace-composition .ec-noeud.ec-selectionne { border-top-color: var(--shell-blue); }
+/* Le cadre du bundle est sélectionné par défaut : il ne s'allume pas pour autant. */
+.espace-composition .ec-zone.ec-selectionne { border-color: var(--shell-blue); box-shadow: 0 0 0 3px var(--shell-blue-soft); }
+.espace-composition .ec-unite.ec-selectionne,
+.espace-composition .ec-canal.ec-selectionne { border-color: var(--shell-blue); box-shadow: 0 0 0 2px var(--shell-blue-soft); }
+.espace-composition .ec-compatible { border-color: var(--shell-blue-border); background-color: color-mix(in srgb, var(--shell-blue) 9%, transparent); }
+.espace-composition .ec-zone.ec-compatible { border-style: dashed; border-width: 2px; }
+.espace-composition .ec-cible { outline: 3px solid var(--shell-blue); outline-offset: 2px; }
+
+/* Un bloc qui vient d'apparaître : une entrée brève, sauf si la personne préfère moins de mouvement. */
+.espace-composition .ec-nouveau { animation: ec-apparition 0.35s ease-out; }
+@keyframes ec-apparition {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .espace-composition .ec-nouveau { animation: none; }
+  .espace-composition .ec-noeud,
+  .espace-composition .ec-zone,
+  .espace-composition .ec-canal { transition: none; }
+}
+
+/* ------------------------------------------------------------------ *
+ *  Par-dessus le canevas : l'état vide, la légende, les refus, les annonces
+ * ------------------------------------------------------------------ */
+.espace-composition .ec-depart {
+  position: absolute;
+  z-index: 6;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(440px, calc(100% - 48px));
+  padding: 22px;
+  color: var(--shell-text);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 16px;
+  background: rgba(16, 21, 27, 0.94);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+:root[data-theme="light"] .espace-composition .ec-depart { background: rgba(255, 255, 255, 0.96); }
+.espace-composition .ec-depart strong { font: 750 16px/1.3 var(--font-sans); }
+.espace-composition .ec-depart p { margin: 0; color: var(--shell-muted); font-size: 12px; line-height: 1.5; }
+.espace-composition .ec-depart small { color: var(--shell-dim); font-size: 11px; }
+.espace-composition .ec-depart__choix { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+.espace-composition .ec-legende {
+  position: absolute;
+  z-index: 5;
+  bottom: 14px;
+  left: 56px;
+  width: 206px;
+  padding: 6px 9px;
+  color: var(--shell-text);
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 9px;
+  background: rgba(16, 21, 27, 0.92);
+  box-shadow: var(--shadow-sm);
+}
+:root[data-theme="light"] .espace-composition .ec-legende { background: rgba(255, 255, 255, 0.95); }
+.espace-composition .ec-legende--repliee { width: auto; }
 .espace-composition .ec-legende__bascule {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 5px;
   width: 100%;
-  min-height: 32px;
   padding: 0;
+  color: var(--shell-muted);
   border: 0;
   background: transparent;
-  color: var(--shell-text);
-  font: 600 14px/1 var(--font-sans);
+  font: 800 8.5px/1.7 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
-.espace-composition .ec-legende__liste { display: grid; gap: 8px; margin: 6px 0 4px; padding: 0; list-style: none; }
-.espace-composition .ec-legende__liste li { display: flex; align-items: center; gap: 10px; line-height: 1.35; }
-.espace-composition .ec-legende__liste .ec-marque { margin-left: 0; }
+.espace-composition .ec-legende__liste { display: grid; gap: 4px; margin: 5px 0 2px; padding: 0; list-style: none; }
+.espace-composition .ec-legende__liste li { display: flex; align-items: center; gap: 7px; font-size: 9.5px; line-height: 1.3; }
 .espace-composition .ec-legende__entree,
-.espace-composition .ec-legende__sortie {
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--xy-edge-stroke);
-  border-radius: 50%;
-}
-.espace-composition .ec-legende__sortie { background: var(--xy-edge-stroke); }
-.espace-composition .ec-legende__fleche { flex-shrink: 0; }
+.espace-composition .ec-legende__sortie { flex: 0 0 auto; width: 10px; height: 10px; border: 2px solid var(--ec-entree); border-radius: 50%; }
+.espace-composition .ec-legende__sortie { border-color: var(--ec-sortie); background: var(--ec-sortie); }
+.espace-composition .ec-legende__fleche { flex: 0 0 auto; }
 .espace-composition .ec-legende__fleche line { stroke: var(--xy-edge-stroke); stroke-width: 2; }
 .espace-composition .ec-legende__fleche path { fill: var(--xy-edge-stroke); }
-.espace-composition .ec-legende__zone {
-  flex-shrink: 0;
-  width: 20px;
-  height: 14px;
-  border: 1.5px solid var(--famille-environnements);
-  border-radius: 4px;
-}
+.espace-composition .ec-legende__zone { flex: 0 0 auto; width: 16px; height: 11px; border: 1.5px solid var(--famille-environnements); border-radius: 3px; }
 .espace-composition .ec-legende__zone--externe { border-style: dashed; }
-.espace-composition .ec-legende__famille { display: inline-flex; color: var(--ec-teinte); }
+.espace-composition .ec-legende__liste .ec-marque { padding: 1px 5px; font-size: 8px; }
+.espace-composition .ec-legende__famille--famille-environnements svg { color: var(--famille-environnements); }
+.espace-composition .ec-legende__famille--famille-temps-reel svg { color: var(--famille-temps-reel); }
+.espace-composition .ec-legende__famille--famille-services svg { color: var(--shell-blue-strong); }
 
-/* La barre du bas : les compteurs réels. */
-.espace-composition .ec-pied {
+/* Un refus, près de l'endroit du geste ; sans point, en haut du canevas. */
+.espace-composition .ec-refus {
+  position: absolute;
+  z-index: 15;
+  top: 14px;
+  left: 50%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 380px;
+  padding: 10px 10px 10px 12px;
+  color: var(--shell-text);
+  border: 1px solid rgba(240, 111, 114, 0.45);
+  border-left: 3px solid var(--shell-red);
+  border-radius: 10px;
+  background: var(--shell-surface);
+  box-shadow: var(--shadow-md);
+  font-size: 11.5px;
+  line-height: 1.45;
+  transform: translateX(-50%);
+  animation: ec-fondu 0.18s ease-out;
+}
+@keyframes ec-fondu { from { opacity: 0; } }
+.espace-composition .ec-refus--au-point { position: fixed; transform: none; }
+.espace-composition .ec-refus p { margin: 0; }
+
+.espace-composition .ec-annonce { display: flex; align-items: center; gap: 8px; }
+.espace-composition .ec-annonce__annuler {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 4px 8px;
+  color: var(--shell-blue-strong);
+  border: 1px solid var(--shell-blue-border);
+  border-radius: 6px;
+  background: transparent;
+  font: 700 10px/1 var(--font-sans);
+  cursor: pointer;
+}
+.espace-composition .ec-panneau-problemes { z-index: 14; }
+.espace-composition .ec-panneau-problemes__groupe { margin: 4px 4px 8px; color: var(--shell-dim); font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.espace-composition .ec-panneau-problemes__element { margin: 2px 0 0; color: var(--shell-text); font-size: 9.5px; font-weight: 700; }
+.espace-composition .validation-item p { font-size: 9.5px; }
+.espace-composition .validation-item strong { font-size: 10.5px; }
+
+/* ------------------------------------------------------------------ *
+ *  L'inspecteur
+ * ------------------------------------------------------------------ */
+.espace-composition .form-field > label { margin-bottom: 5px; color: var(--shell-muted); font-size: 10.5px; font-weight: 700; }
+.espace-composition .form-field > span { font-size: 10.5px; }
+.espace-composition .form-field small { font-size: 9.5px; }
+.espace-composition .form-field input,
+.espace-composition .form-field select,
+.espace-composition .form-field textarea { font-size: 11.5px; }
+.espace-composition .form-field .technical-input { font-size: 10px; }
+.espace-composition .selection-path { flex-wrap: wrap; font-size: 9.5px; }
+.espace-composition .ec-chemin__pas { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.espace-composition .ec-lecture {
+  margin: 0;
+  padding: 8px 9px;
+  overflow: hidden;
+  color: var(--shell-text);
+  border: 1px dashed var(--shell-line-strong);
+  border-radius: 8px;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+}
+.espace-composition .ec-lecture--code { font: 500 10px/1.3 var(--font-mono); }
+.espace-composition .ec-aide-verrou { display: flex; align-items: center; gap: 4px; margin-top: 4px; color: var(--shell-dim); font-size: 9.5px; line-height: 1.4; }
+.espace-composition .ec-erreur-du-champ {
+  margin: 5px 0 0;
+  padding: 7px 9px;
+  color: var(--shell-red);
+  border: 1px solid rgba(240, 111, 114, 0.4);
+  border-radius: 7px;
+  background: var(--shell-red-soft);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.espace-composition .ec-bouton-plein { width: 100%; margin-top: 8px; }
+.espace-composition .channel-actions button:disabled { cursor: not-allowed; opacity: 0.45; }
+.espace-composition .generated-structure span { font-size: 9.5px; }
+.espace-composition .generated-structure code { font-size: 8px; }
+.espace-composition .section-label { font-size: 9px; }
+.espace-composition .field-explanation { font-size: 9.5px; }
+.espace-composition .direction-banner { font-size: 10px; }
+.espace-composition .ec-texte-discret { margin: 6px 0; color: var(--shell-dim); font-size: 10.5px; line-height: 1.5; }
+.espace-composition .ec-actions { display: flex; align-items: center; gap: 14px; }
+
+/* ------------------------------------------------------------------ *
+ *  Les fenêtres : menu « Ajouter », aperçu, confirmation
+ * ------------------------------------------------------------------ */
+.espace-composition .ec-fenetre { width: min(520px, calc(100vw - 48px)); }
+.espace-composition .ec-fenetre__corps { font-size: 12px; line-height: 1.5; }
+.espace-composition .ec-menu { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.espace-composition .ec-menu__choix {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  width: 100%;
+  padding: 10px;
+  color: var(--shell-text);
+  text-align: left;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 10px;
+  background: var(--shell-card);
+  cursor: pointer;
+}
+.espace-composition .ec-menu__choix:hover,
+.espace-composition .ec-menu__choix:focus-visible,
+.espace-composition .ec-menu__choix--vise { border-color: var(--shell-blue-border); background: var(--shell-blue-soft); }
+.espace-composition .ec-menu__choix > svg { margin-top: 2px; color: var(--shell-blue-strong); }
+.espace-composition .ec-menu__choix span { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.espace-composition .ec-menu__choix strong { font-size: 12px; }
+.espace-composition .ec-menu__choix small { color: var(--shell-muted); font-size: 10.5px; line-height: 1.4; }
+.espace-composition .ec-menu__choix code { color: var(--shell-dim); font: 500 9px/1.2 var(--font-mono); }
+.espace-composition .ec-explication-du-menu,
+.espace-composition .ec-avertissement {
+  margin: 0 0 12px;
+  padding: 9px 11px;
+  color: var(--shell-amber);
+  border: 1px solid rgba(239, 180, 81, 0.28);
+  border-radius: 9px;
+  background: var(--shell-amber-soft);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.espace-composition .ec-trajet { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 12.5px; }
+.espace-composition .ec-liste-simple { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: var(--shell-muted); }
+.espace-composition .dialog-footer .danger-button { width: auto; }
+
+/* L'ombre qui suit le pointeur pendant un glissement depuis la palette : posée hors de l'écran,
+   le temps que le navigateur la photographie. */
+.ec-ombre {
+  position: fixed;
+  top: -200px;
+  left: -400px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 200px;
+  padding: 9px 12px;
+  color: #f4f6f8;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 3px solid #d85810;
+  border-radius: 10px;
+  background: #1b222b;
+  font-family: var(--font-sans);
+}
+.ec-ombre small { color: #aeb8c2; font-size: 8px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+.ec-ombre strong { font-size: 12px; }
+.ec-ombre--zone { border-top-color: #7fa7d9; }
+.ec-ombre--cyan { border-top-color: #66e2ee; }
+.ec-ombre--amber { border-top-color: #efb451; }
+.ec-ombre--green { border-top-color: #49d49d; }
+.ec-ombre--rose { border-top-color: #ff8cb4; }
+.ec-ombre--violet { border-top-color: #a78bfa; }
+
+/* Un conseil en haut du canevas : des blocs se recouvrent, « Ranger » les remet en ordre. */
+.espace-composition .ec-conseil {
+  position: absolute;
+  z-index: 6;
+  top: 12px;
+  left: 50%;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 20px;
-  border-top: 1px solid var(--shell-line);
+  gap: 10px;
+  padding: 6px 7px 6px 12px;
+  color: var(--shell-amber);
+  border: 1px solid rgba(239, 180, 81, 0.35);
+  border-radius: 10px;
   background: var(--shell-surface);
-  color: var(--shell-muted);
-  font-size: 13px;
+  box-shadow: var(--shadow-sm);
+  font-size: 11px;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
-.espace-composition .ec-pied__alerte { display: inline-flex; align-items: center; gap: 6px; color: var(--shell-amber); }
+.espace-composition .ec-conseil .secondary-button { min-height: 28px; padding: 0 10px; }

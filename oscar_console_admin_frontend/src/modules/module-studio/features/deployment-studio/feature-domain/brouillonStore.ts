@@ -8,6 +8,7 @@ import {
   type BrouillonServeur,
 } from "../feature-data/studioApi";
 import {
+  abandonner,
   annuler as annulerDansLHistorique,
   conclure,
   creerHistorique,
@@ -217,8 +218,15 @@ export function configurerPerimetre(utilisateur: string | null, organisation: st
   for (const abonne of abonnes) abonne();
 }
 
+/**
+ * La mise en page à montrer à l'ouverture, depuis celle du serveur : l'écran
+ * la fournit (un bundle repris de l'ancienne console, ou venu sans mise en
+ * page, s'ouvre rangé). Elle n'est enregistrée qu'avec le premier geste.
+ */
+export type PreparationDeLaMiseEnPage = (brouillon: BrouillonServeur) => MiseEnPage;
+
 /** Ouvre le brouillon d'un bundle : le serveur d'abord ; une copie locale qui diffère est seulement proposée. */
-export async function ouvrir(bundleId: string): Promise<void> {
+export async function ouvrir(bundleId: string, preparer?: PreparationDeLaMiseEnPage): Promise<void> {
   reinitialiser();
   const contexteDeLOuverture = generation;
   publier({ bundleId, chargement: "CHARGEMENT" });
@@ -226,7 +234,10 @@ export async function ouvrir(bundleId: string): Promise<void> {
     const [catalogue, serveur] = await Promise.all([lireCatalogue(), lireBrouillon(bundleId)]);
     if (contexteDeLOuverture !== generation) return;
     contexte = { catalogue: indexerCatalogue(catalogue), nouvelIdentifiant: identifiantAleatoire };
-    const present: EtatStudio = { modele: serveur.modele, miseEnPage: serveur.mise_en_page };
+    const present: EtatStudio = {
+      modele: serveur.modele,
+      miseEnPage: preparer ? preparer(serveur) : serveur.mise_en_page,
+    };
     let propositionDeReprise: PropositionDeReprise | null = null;
     const copie = lireLaCopie(bundleId);
     if (copie && memeContenu({ modele: copie.modele, miseEnPage: copie.mise_en_page }, present)) {
@@ -370,6 +381,12 @@ export function previsualiser(geste: Geste): ResultatDUnGeste | null {
 export function terminerLeGeste(): void {
   if (!etat.historique?.origineDuGesteEnCours) return;
   apresUnChangement(conclure(etat.historique));
+}
+
+/** Abandonne le geste qui dure (Échap dans un champ, ou avant de jouer le geste final) : rien n'est enregistré. */
+export function abandonnerLeGeste(): void {
+  if (!etat.historique?.origineDuGesteEnCours) return;
+  publier({ historique: abandonner(etat.historique) });
 }
 
 export function annuler(): void {

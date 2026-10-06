@@ -175,6 +175,23 @@ describe("régler, placer, changer de parent", () => {
     expect(unite.accepte && unite.etat).toBe(depart);
   });
 
+  it("ranger remplace toute la mise en page en un seul geste, sans toucher au modèle", () => {
+    const depart = etatDeReference();
+    const blocs = { "zon-03": { x: 40, y: 120 }, "zon-01": { x: 480, y: 120 }, "app-01": { x: 24, y: 64 }, "inconnu": { x: 1, y: 1 },
+      // L'unité n'a pas de place à elle : elle se range seule dans son service.
+      "uni-01": { x: 5, y: 5 } };
+    const resultat = jouer(depart, { operation: "mettreEnPage", blocs });
+    const etat = accepte(resultat);
+    expect(etat.modele).toBe(depart.modele);
+    expect(etat.miseEnPage.blocs).toEqual({ "zon-03": { x: 40, y: 120 }, "zon-01": { x: 480, y: 120 }, "app-01": { x: 24, y: 64 } });
+    if (resultat.accepte) {
+      // Les blocs déplacés, et ceux qui perdent leur place (ils en recevront une calculée).
+      expect([...resultat.changements.modifies].sort()).toEqual(["sal-01", "svc-01", "svc-02", "zon-01", "zon-02", "zon-03"]);
+    }
+    // La même mise en page une seconde fois ne change rien : aucun geste de plus.
+    expect(jouer(etat, { operation: "mettreEnPage", blocs }).accepte && accepte(jouer(etat, { operation: "mettreEnPage", blocs }))).toBe(etat);
+  });
+
   it("changer de parent vers un parent incompatible est refusé sans rien changer", () => {
     const depart = etatDeReference();
     const resultat = jouer(depart, { operation: "emboiter", id: "svc-01", parent: "zon-03" });
