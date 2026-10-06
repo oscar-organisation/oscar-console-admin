@@ -11,6 +11,7 @@ from .config import settings
 from .database import Base, SessionLocal, engine
 from .routers import api_router
 from .seed import run_seed
+from .studio_modele.refus import RefusDuStudio
 
 
 def init_db() -> None:
@@ -66,6 +67,13 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.api_prefix)
+
+
+@app.exception_handler(RefusDuStudio)
+async def refus_du_studio(_request, refus: RefusDuStudio):
+    """Un refus du Studio : la phrase dans `detail`, comme partout, et à côté
+    son code et ses précisions (conception du lot L1, partie 5.1)."""
+    return JSONResponse(status_code=refus.statut, content=refus.corps())
 
 
 @app.get("/health")

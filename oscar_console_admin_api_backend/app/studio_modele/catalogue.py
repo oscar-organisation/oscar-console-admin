@@ -224,3 +224,11 @@ def synchroniser_catalogue(db: Session, dossier: Path = DOSSIER_DU_CATALOGUE) ->
                 f"({lu.code}-<version suivante>.json)."
             )
     db.commit()
+
+
+def catalogue_enregistre(db: Session) -> dict[tuple[str, str], dict]:
+    """Le catalogue en base, par (code, version) : ce que les règles du modèle lisent.
+
+    Un type retiré du catalogue y reste : un brouillon qui le cite déjà doit
+    encore se relire."""
+    return {(t.code, t.version): t.definition for t in db.execute(select(TypeCatalogue)).scalars()}

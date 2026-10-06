@@ -1,4 +1,4 @@
-"""Les fondations du Studio de L1 : le projet robotique créé d'office, et le catalogue.
+"""Les fondations du Studio de L1 : le projet créé d'office, le catalogue, le brouillon.
 
 Ce que fait la montée :
 
@@ -12,13 +12,18 @@ Ce que fait la montée :
 4. Elle crée la table `types_catalogue`, vide : le catalogue vient des
    fichiers de la console, recopiés au démarrage (app/studio_modele/catalogue.py),
    comme les droits.
+5. Elle crée la table `brouillons_bundle` : le brouillon d'un bundle au
+   nouveau format (oscar.bundle/1), un par bundle.
 
 Ce qui ne bouge pas : aucune composition n'est réécrite. `bundle_versions`,
 `bundle_deployments` et `composition_presets` restent tels quels, au caractère
 près : un robot qui lit une ancienne version la lit toujours. Aucune table de
 sauvegarde n'est donc nécessaire.
 
-La descente retire les tables et la colonne, et rend la base d'avant.
+La descente retire les tables et la colonne, et rend la base d'avant. Elle
+s'arrête, sans rien effacer, s'il existe des brouillons au nouveau format :
+les effacer sans le dire perdrait du travail. Il faut d'abord sauvegarder la
+base (sauvegarder-et-restaurer.sh), puis retirer ces brouillons.
 
 Sur SQLite (tests et poste), changer une colonne demande de reconstruire la
 table : c'est ce que fait le mode « batch » d'Alembic. PostgreSQL fait les
@@ -118,8 +123,35 @@ def upgrade() -> None:
         sa.UniqueConstraint("code", "version", name="uq_type_catalogue_code_version"),
     )
 
+    op.create_table(
+        "brouillons_bundle",
+        sa.Column("id", sa.String(32), primary_key=True),
+        sa.Column("bundle_id", sa.String(32), sa.ForeignKey("deployment_bundles.id", ondelete="CASCADE"),
+                  nullable=False),
+        sa.Column("format", sa.String(40), nullable=False),
+        sa.Column("modele", sa.JSON(), nullable=False),
+        sa.Column("mise_en_page", sa.JSON(), nullable=False),
+        sa.Column("revision", sa.Integer(), nullable=False),
+        sa.Column("empreinte_modele", sa.String(64), nullable=False),
+        sa.Column("etat", sa.String(60), nullable=False),
+        sa.Column("origine", sa.JSON(), nullable=False),
+        sa.Column("reprise", sa.JSON()),
+        sa.Column("modifie_par", sa.String(32), sa.ForeignKey("users.id", ondelete="SET NULL")),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.UniqueConstraint("bundle_id", name="uq_brouillon_bundle_bundle_id"),
+    )
+
 
 def downgrade() -> None:
+    connexion = op.get_bind()
+    if connexion.execute(sa.text("SELECT count(*) FROM brouillons_bundle")).scalar():
+        # Avant tout changement : rien n'est effacé, la base reste en 0015.
+        raise RuntimeError(
+            "Des brouillons au nouveau format existent ; sauvegardez la base (sauvegarder-et-restaurer.sh) "
+            "avant de descendre."
+        )
+    op.drop_table("brouillons_bundle")
     op.drop_table("types_catalogue")
     with op.batch_alter_table("deployment_bundles") as bundles:
         bundles.drop_constraint(CLE_DU_PROJET, type_="foreignkey")

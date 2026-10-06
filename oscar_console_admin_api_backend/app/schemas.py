@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, model_validator
 
@@ -555,6 +555,19 @@ class BundleIn(BaseModel):
     statut: str | None = None
 
 
+class DepartIn(BaseModel):
+    """Le point de départ d'un bundle composé dans le nouveau Studio."""
+
+    sorte: Literal["VIDE"]
+
+
+class BundleCreationIn(BundleIn):
+    # Avec un point de départ, le bundle naît avec son brouillon au nouveau
+    # format. Sans lui, rien ne change : l'interface d'avant crée un bundle à
+    # l'ancien format, comme aujourd'hui (décision 125).
+    depart: DepartIn | None = None
+
+
 class BundleDraftIn(BaseModel):
     """Composition en cours d'édition, telle que le Studio l'envoie."""
 
@@ -612,6 +625,54 @@ class BundleOut(BaseModel):
     # passée. Même valeur que unit_count, sous le nom que lit l'interface
     # encore en ligne.
     agent_count: int = 0
+    # « oscar.bundle/1 » si le bundle a un brouillon au nouveau format,
+    # « ancien » s'il n'a que des versions de l'ancien, null s'il n'a rien.
+    format_brouillon: str | None = None
+
+
+class BrouillonIn(BaseModel):
+    """Un enregistrement du brouillon : les deux documents entiers, et la
+    révision dont ils partent (0 pour un brouillon pas encore enregistré)."""
+
+    modele: dict
+    mise_en_page: dict
+    revision_attendue: int = Field(ge=0)
+
+
+class BrouillonOut(BaseModel):
+    bundle_id: str
+    format: str
+    modele: dict
+    mise_en_page: dict
+    revision: int
+    etat: str
+    origine: dict
+    reprise: dict | None = None
+    modifie_le: datetime | None = None
+    modifie_par: str | None = None
+
+
+class BrouillonEnregistreOut(BaseModel):
+    revision: int
+    etat: str
+    empreinte_modele: str
+    modifie_le: datetime | None = None
+
+
+class ProblemeOut(BaseModel):
+    niveau: str
+    code: str
+    titre: str
+    explication: str
+    correction: str
+    element: str | None = None
+
+
+class VerificationOut(BaseModel):
+    revision: int
+    problemes: list[ProblemeOut]
+    erreurs: int
+    avertissements: int
 
 
 class FamilleCatalogueOut(BaseModel):

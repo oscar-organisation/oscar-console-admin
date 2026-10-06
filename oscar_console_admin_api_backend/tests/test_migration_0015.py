@@ -14,7 +14,9 @@ from datetime import datetime, timezone
 
 import sqlalchemy as sa
 
-from migrations_jouees import alembic, base, forme, instantane, lire, monter_jusqu_a_0014  # noqa: F401
+from migrations_jouees import (  # noqa: F401
+    alembic, alembic_en_echec, base, forme, instantane, lire, monter_jusqu_a_0014,
+)
 from test_unites import composition_nouvelle
 
 MAINTENANT = datetime(2026, 10, 5, 22, 30, tzinfo=timezone.utc)
@@ -26,7 +28,7 @@ TABLES_D_AVANT = ("organisations", "users", "robots", "deployment_bundles", "bun
 # Ce qu'elle ne doit jamais toucher, même pendant la montée.
 TABLES_INTOUCHABLES = ("bundle_versions", "bundle_deployments", "composition_presets")
 # Ce qu'elle ajoute.
-TABLES_NOUVELLES = {"projets_robotiques", "types_catalogue"}
+TABLES_NOUVELLES = {"projets_robotiques", "types_catalogue", "brouillons_bundle"}
 
 
 def remplir_comme_aujourd_hui(moteur) -> None:
@@ -174,3 +176,34 @@ def test_une_organisation_et_ses_bundles_se_suppriment_toujours(base):
     assert [ligne[0] for ligne in restants] == ["bun-accueil", "bun-inventaire"]
     assert [ligne[0] for ligne in lire(moteur, "SELECT id FROM bundle_versions ORDER BY id")] == [
         "ver-accueil-1", "ver-accueil-2"]
+
+
+def test_la_descente_refuse_s_il_existe_des_brouillons_au_nouveau_format(base):
+    """Descendre effacerait des brouillons au nouveau format sans le dire : la
+    migration s'arrête, et dit quoi faire d'abord. Rien n'est effacé."""
+    url, moteur = base
+    monter_jusqu_a_0014(url, moteur)
+    remplir_comme_aujourd_hui(moteur)
+    alembic(url, "upgrade", "head")
+    modele = {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_OFFICINE", "nom": "Officine"},
+              "elements": [], "liaisons": []}
+    meta = sa.MetaData()
+    meta.reflect(bind=moteur, only=["brouillons_bundle"])
+    with moteur.begin() as connexion:
+        connexion.execute(sa.insert(meta.tables["brouillons_bundle"]), [dict(
+            id="brl-officine", bundle_id="bun-officine", format="oscar.bundle/1", modele=modele,
+            mise_en_page={"format": "oscar.mise-en-page/1", "blocs": {}}, revision=3, empreinte_modele="ef" * 32,
+            etat="ETAT_BROUILLON_BUNDLE_EN_EDITION", origine={"sorte": "VIDE"}, reprise=None)])
+    avant = instantane(moteur, ("brouillons_bundle", "deployment_bundles", "projets_robotiques"))
+
+    erreur = alembic_en_echec(url, "downgrade", "0014")
+    assert ("Des brouillons au nouveau format existent ; sauvegardez la base (sauvegarder-et-restaurer.sh) "
+            "avant de descendre.") in erreur
+    assert instantane(moteur, ("brouillons_bundle", "deployment_bundles", "projets_robotiques")) == avant
+    assert lire(moteur, "SELECT version_num FROM alembic_version")[0][0] == "0015"
+
+    # Une fois les brouillons partis (après sauvegarde), la descente passe.
+    with moteur.begin() as connexion:
+        connexion.execute(sa.text("DELETE FROM brouillons_bundle"))
+    alembic(url, "downgrade", "0014")
+    assert "brouillons_bundle" not in sa.inspect(moteur).get_table_names()

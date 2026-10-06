@@ -703,6 +703,8 @@ class DeploymentBundle(Base, TimestampMixin):
     versions: Mapped[list["BundleVersion"]] = relationship(
         back_populates="bundle", cascade="all, delete-orphan", order_by="BundleVersion.numero"
     )
+    # Le brouillon au nouveau format, s'il existe : il part avec le bundle.
+    brouillon: Mapped["BrouillonBundle | None"] = relationship(cascade="all, delete-orphan")
 
 
 class PerceptionLease(Base):
@@ -795,6 +797,41 @@ class BundleVersion(Base, TimestampMixin):
         # Distinct du checksum runtime : déplacer un bloc est aussi une édition.
         from .bundle_spec import empreinte
         return empreinte({"id": self.id, "statut": self.statut, "spec": self.spec, "notes": self.notes})
+
+
+class BrouillonBundle(Base, TimestampMixin):
+    """Le brouillon d'un bundle au nouveau format : le travail en cours du Studio.
+
+    Un brouillon par bundle. Il porte deux documents : le modèle
+    (oscar.bundle/1, ce que le bundle contient) et sa mise en page (où chaque
+    bloc est dessiné). Chaque enregistrement qui change l'un ou l'autre fait
+    monter `revision` de un ; un enregistrement dit de quelle révision il part,
+    ce qui permet de refuser, sans rien écraser, celui qui part d'une révision
+    dépassée (voir app/routers/studio_brouillons.py).
+
+    Le brouillon ne crée ni version ni déploiement : publier viendra plus tard,
+    séparé de l'enregistrement. Les versions de l'ancien format
+    (bundle_versions) restent telles quelles pour les robots qui les lisent.
+    """
+
+    __tablename__ = "brouillons_bundle"
+    __table_args__ = (UniqueConstraint("bundle_id", name="uq_brouillon_bundle_bundle_id"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    bundle_id: Mapped[str] = mapped_column(ForeignKey("deployment_bundles.id", ondelete="CASCADE"))
+    format: Mapped[str] = mapped_column(String(40), default="oscar.bundle/1")
+    modele: Mapped[dict] = mapped_column(JSON, default=dict)
+    mise_en_page: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    # L'empreinte du seul modèle : elle dit si un enregistrement a changé le
+    # modèle ou seulement la mise en page.
+    empreinte_modele: Mapped[str] = mapped_column(String(64), nullable=False)
+    etat: Mapped[str] = mapped_column(String(60), default="ETAT_BROUILLON_BUNDLE_EN_EDITION")
+    # D'où il vient : {"sorte": "VIDE"}, {"sorte": "PRESET", "slug": ...} ou
+    # {"sorte": "ANCIEN_FORMAT", "version_id": ..., "numero": ...}.
+    origine: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Le rapport de la reprise de l'ancien format, s'il y en a eu une.
+    reprise: Mapped[dict | None] = mapped_column(JSON)
+    modifie_par: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
 
 class BundleDeployment(Base, TimestampMixin):
