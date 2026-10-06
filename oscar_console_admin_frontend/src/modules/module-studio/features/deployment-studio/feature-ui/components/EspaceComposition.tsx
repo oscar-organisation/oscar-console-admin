@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type
 import {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   MiniMap,
   ReactFlow,
@@ -19,6 +20,7 @@ import {
 import { descendants, parentDuDepot } from "../../feature-domain/modele/possibilites";
 import { SORTES, type ModeleBundle, type Position, type Refus, type Sorte } from "../../feature-domain/modele/types";
 import { SELECTION_DU_BUNDLE, type Selection } from "../selection";
+import { CADRAGE_PAR_DEFAUT, cadrer, type Rectangle } from "./canevas/cadrage";
 import { ATTRIBUT_DE_CIBLE, ContexteDuCanevas, type EtatDuCanevas } from "./canevas/contexte";
 import { ID_DU_CADRE, MESURES, type Disposition, type NoeudDuCanevas } from "./canevas/disposition";
 import LiaisonDeDonnees from "./canevas/LiaisonDeDonnees";
@@ -151,13 +153,33 @@ const LIBELLES_DE_REACT_FLOW = {
 };
 
 /**
- * Le zoom le plus faible à l'ouverture : en dessous, les textes des blocs ne
- * se lisent plus. Un bundle qui ne tient pas entier à ce zoom s'ouvre sur son
- * coin haut gauche ; la mini-carte et « ajuster à l'écran » montrent le reste.
+ * Ce qui flotte par-dessus le canevas, et que le cadrage évite (étape I7) : la
+ * mini-carte, le zoom, la légende (repliée, ce n'est qu'un bouton), le conseil
+ * « Ranger » en haut. Le guide, les refus et les messages passagers n'en sont
+ * pas : ils se ferment, et ne doivent pas rapetisser la vue pour autant.
  */
-const ZOOM_D_OUVERTURE_MINIMAL = 0.55;
-/** La marge autour du bundle, à l'ouverture, en pixels de l'écran. */
-const MARGE_D_OUVERTURE = 20;
+const OBSTACLES_DU_CANEVAS = ".react-flow__minimap, .react-flow__controls, .ec-legende, .ec-conseil";
+
+/** Les obstacles du canevas, mesurés depuis son coin haut gauche, en pixels de l'écran. */
+function mesurerLesObstacles(conteneur: HTMLElement): Rectangle[] {
+  const origine = conteneur.getBoundingClientRect();
+  return [...conteneur.querySelectorAll<HTMLElement>(OBSTACLES_DU_CANEVAS)].map((element) => {
+    const boite = element.getBoundingClientRect();
+    return { x: boite.left - origine.left, y: boite.top - origine.top, largeur: boite.width, hauteur: boite.height };
+  });
+}
+
+/**
+ * Le pictogramme « ajuster à l'écran » de React Flow (version 12.11.6), le même
+ * dessin : la bibliothèque ne l'exporte pas, et notre bouton remplace le sien.
+ */
+function PictogrammeAjuster() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 30" aria-hidden="true">
+      <path d="M3.692 4.63c0-.53.4-.938.939-.938h5.215V0H4.708C2.13 0 0 2.054 0 4.63v5.216h3.692V4.631zM27.354 0h-5.2v3.692h5.17c.53 0 .984.4.984.939v5.215H32V4.631A4.624 4.624 0 0027.354 0zm.954 24.83c0 .532-.4.94-.939.94h-5.215v3.768h5.215c2.577 0 4.631-2.13 4.631-4.707v-5.139h-3.692v5.139zm-23.677.94c-.531 0-.939-.4-.939-.94v-5.138H0v5.139c0 2.577 2.13 4.707 4.708 4.707h5.138V25.77H4.631z" />
+    </svg>
+  );
+}
 
 /** Les sortes qui ont une place à elles sur le canevas (les autres se rangent seules dans leur bloc). */
 const SORTES_PLACEES: readonly Sorte[] = [SORTES.ZONE, SORTES.SALLE, SORTES.SERVICE, SORTES.APPLICATION];
@@ -215,25 +237,31 @@ function Canevas(proprietes: ProprietesDeLEspace) {
   const liaisons = useMemo((): Edge[] => [...disposition.liaisons], [disposition]);
   const sorteDe = useMemo(() => new Map(modele.elements.map((element) => [element.id, element.sorte])), [modele]);
 
-  // À l'ouverture : tout le bundle à l'écran s'il y tient à un zoom lisible, sans jamais grossir
-  // au-delà de sa taille réelle ; sinon, ce zoom lisible, cadré sur le coin haut gauche.
-  // Le cadre du bundle a sa taille dans la disposition : le calcul n'attend aucune mesure, et se
-  // fait une seule fois, juste après le premier affichage, avant tout geste de la personne (un
-  // cadrage qui viendrait après un geste, « ajuster à l'écran » par exemple, l'annulerait).
+  /**
+   * Montre tout le bundle dans la place que la personne voit vraiment : le
+   * canevas, déjà réduit par la palette et le panneau des propriétés, moins ce
+   * qui flotte dessus (canevas/cadrage.ts). Jamais au-delà de la taille réelle.
+   * `duree` anime le passage, en millisecondes (0 : tout de suite).
+   */
+  const cadrerLeBundle = useCallback((cadre: NoeudDuCanevas | undefined, duree: number) => {
+    const element = conteneur.current;
+    if (!element || !cadre) return;
+    const vue = cadrer(
+      { largeur: cadre.width ?? 0, hauteur: cadre.height ?? 0 },
+      { largeur: element.clientWidth, hauteur: element.clientHeight },
+      mesurerLesObstacles(element),
+    );
+    if (vue) void flux.setViewport(vue, duree > 0 ? { duration: duree } : undefined);
+  }, [flux]);
+
+  // À l'ouverture, tout le bundle se voit. Le cadre du bundle a sa taille dans la disposition :
+  // le calcul n'attend aucune mesure des blocs, et se fait une seule fois, juste après le premier
+  // affichage (la mini-carte, le zoom et la légende sont alors posés), avant tout geste de la
+  // personne : un cadrage qui viendrait après un geste l'annulerait.
   const dispositionDOuverture = useRef(disposition);
   useEffect(() => {
-    const cadre = dispositionDOuverture.current.noeuds.find((noeud) => noeud.id === ID_DU_CADRE);
-    if (!conteneur.current || !cadre) return;
-    const { clientWidth: largeur, clientHeight: hauteur } = conteneur.current;
-    const [largeurDuBundle, hauteurDuBundle] = [cadre.width ?? 0, cadre.height ?? 0];
-    if (largeurDuBundle <= 0 || hauteurDuBundle <= 0 || largeur <= 0 || hauteur <= 0) return;
-    const zoomPourTout = Math.min((largeur - 2 * MARGE_D_OUVERTURE) / largeurDuBundle, (hauteur - 2 * MARGE_D_OUVERTURE) / hauteurDuBundle);
-    const zoom = Math.min(1, Math.max(ZOOM_D_OUVERTURE_MINIMAL, zoomPourTout));
-    const placer = (place: number, taille: number) => (taille * zoom <= place - 2 * MARGE_D_OUVERTURE
-      ? (place - taille * zoom) / 2
-      : MARGE_D_OUVERTURE);
-    void flux.setViewport({ x: placer(largeur, largeurDuBundle), y: placer(hauteur, hauteurDuBundle), zoom });
-  }, [flux]);
+    cadrerLeBundle(dispositionDOuverture.current.noeuds.find((noeud) => noeud.id === ID_DU_CADRE), 0);
+  }, [cadrerLeBundle]);
 
   // « Localiser » : le canevas se centre sur le bloc demandé.
   useEffect(() => {
@@ -378,15 +406,25 @@ function Canevas(proprietes: ProprietesDeLEspace) {
           }}
           // Sans couleur imposée, la flèche prend celle de la liaison, que la feuille du canevas règle par thème.
           defaultMarkerColor={null}
-          // « Ajuster à l'écran » (le bouton du zoom) montre tout le bundle, sans le grossir au-delà de sa taille réelle.
-          fitViewOptions={{ padding: 0.06, maxZoom: 1 }}
-          minZoom={0.2}
+          // Le zoom le plus faible est celui du cadrage : « ajuster à l'écran » ne descend pas plus bas que la molette.
+          minZoom={CADRAGE_PAR_DEFAUT.zoomMinimal}
           maxZoom={1.6}
           proOptions={{ hideAttribution: true }}
           ariaLabelConfig={LIBELLES_DE_REACT_FLOW}
         >
           <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} />
-          <Controls position="bottom-left" showInteractive={false} />
+          {/* « Ajuster à l'écran » : le nôtre, qui évite ce qui flotte sur le canevas ; celui de
+              React Flow (`fitView`) passerait sous la mini-carte et la légende. */}
+          <Controls position="bottom-left" showInteractive={false} showFitView={false}>
+            <ControlButton
+              className="react-flow__controls-fitview"
+              onClick={() => cadrerLeBundle(disposition.noeuds.find((noeud) => noeud.id === ID_DU_CADRE), 250)}
+              title="Ajuster à l’écran"
+              aria-label="Ajuster à l’écran"
+            >
+              <PictogrammeAjuster />
+            </ControlButton>
+          </Controls>
           <MiniMap
             position="bottom-right"
             pannable
