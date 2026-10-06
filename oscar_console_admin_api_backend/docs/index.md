@@ -35,14 +35,15 @@ l'image publique `postgres:16.15-alpine`.
 |---|---|
 | Langage | Python 3.12 (`python:3.12-slim`), FastAPI, SQLAlchemy 2, Pydantic 2 |
 | Base | PostgreSQL 16; SQLite pour les tests seulement |
-| Schéma de la base | Alembic, 14 migrations (`alembic/versions/`, de `0001` à `0014`) |
+| Schéma de la base | Alembic, 15 migrations (`alembic/versions/`, de `0001` à `0015`) |
 | Code | `app/routers/` (une route par sujet), `app/models.py` (les tables), `app/rbac.py` (le catalogue des droits), `app/seed.py` et `app/seed_data/` (les données de départ) |
 | Tests | `tests/`, pytest, sur une base SQLite: ni PostgreSQL ni service extérieur |
 
 **Au démarrage** (`docker-entrypoint.sh`), l'API applique les migrations de la
 base (`alembic upgrade head`), puis crée les données de départ: le catalogue
-des fonctionnalités, les rôles du système, l'administrateur initial s'il
-n'existe pas, et les données de démonstration si `SEED_DEMO` vaut `true`.
+des fonctionnalités, le catalogue des types du Studio, les rôles du système,
+l'administrateur initial s'il n'existe pas, et les données de démonstration si
+`SEED_DEMO` vaut `true`.
 
 **La connexion** est celle de la console (`AUTH_MODE=legacy`): des jetons
 signés par `SECRET_KEY`. Un module Keycloak existe dans le code, mais n'est
@@ -107,6 +108,79 @@ Tout cela est à retirer par une prochaine modification de l'API, une fois
 l'interface passée (`composition_servie` dans `app/bundle_spec.py`, la clé
 `agent_count`, l'adresse `/agent-key` et la clé `agent_key`, et le fichier de
 tests `tests/test_compatibilite_decision_125.py`).
+
+## Le brouillon du Studio
+
+Le lot L1 du Studio ajoute un **brouillon au nouveau format**: le bundle n'est
+plus un dessin de blocs et de traits, mais un modèle (format `oscar.bundle/1`)
+fait de vrais objets: des zones d'environnement (robot, serveur, application
+web...), la salle temps réel, des services et des applications dans leurs
+zones, des unités avec leur traitement, leur interface, leurs bandes, leurs bus
+et leurs canaux, et des liaisons d'un canal d'émission vers un canal de
+réception. La mise en page (format `oscar.mise-en-page/1`, la position de
+chaque bloc) est un document à part: déplacer un bloc ne change pas le modèle.
+Ces routes s'ajoutent aux anciennes, qui restent pour l'interface d'avant
+(décision 125).
+
+**Le projet robotique.** Chaque organisation reçoit à sa création un projet
+`PROJET_ROBOTIQUE_PRINCIPAL`, et chaque bundle y est rangé: la liste des
+bundles sert `projet_id`. Aucune route ne gère encore les projets.
+
+**Le catalogue.** Les types que le Studio propose (les huit environnements dont
+la zone Externe, la salle, le service, l'application et l'unité, la bande, les
+bus et les canaux) sont des fichiers de `app/seed_data/catalogue_studio/`, un
+par type et par version (`<code>-<version>.json`), et les familles de la
+palette sont dans `familles.json`. Ils sont recopiés en base à chaque
+démarrage. **Une version publiée ne change plus**: si un fichier change le
+contenu d'un type déjà en base à la même version, l'API refuse de démarrer et
+nomme le fichier; on écrit la correction dans une nouvelle version.
+
+| Route | Droit | Ce qu'elle fait |
+|---|---|---|
+| `GET /api/studio/catalogue` | `api:bundle.read` | les familles de la palette dans leur ordre, et les types publiés |
+| `POST /api/studio/bundles` avec `depart` | `api:bundle.write` (création) | crée le bundle avec son brouillon, révision 1: `{"sorte": "VIDE"}`, ou `{"sorte": "PRESET", "slug": ...}` pour partir d'un préset du catalogue |
+| `GET /api/studio/bundles/{id}/brouillon` | `api:bundle.read` | le brouillon; pour un bundle de l'ancienne console, sa reprise au nouveau format, révision 0, avec son rapport |
+| `PUT /api/studio/bundles/{id}/brouillon` | `api:bundle.write` (modification) | enregistre `modele` et `mise_en_page`, s'ils partent de `revision_attendue` |
+| `POST /api/studio/bundles/{id}/brouillon/verification` | `api:bundle.read` | les problèmes du brouillon; n'écrit rien |
+
+**Enregistrer.** Chaque enregistrement envoie les deux documents entiers et la
+révision dont il part (0 pour un brouillon pas encore enregistré). Le serveur
+revérifie tout le modèle, quoi que le navigateur ait déjà vérifié. Un refus
+ne change rien, et garde sa phrase dans `detail`, avec son code à côté:
+
+| Réponse | Code | Quand |
+|---|---|---|
+| 409 | `BROUILLON_MODIFIE_AILLEURS` | quelqu'un a enregistré entre-temps; la réponse donne `revision_serveur` |
+| 422 | `FORMAT_INCONNU` | un document n'est pas au format que lit le serveur |
+| 422 | `STRUCTURE_INVALIDE` | un document est mal formé; le message dit où |
+| 422 | le code de la règle enfreinte | par exemple `SERVICE_HORS_ZONE`, `SALLE_EN_DOUBLE`, `CODE_FIGE`; la réponse donne l'élément en cause et les parents où il pourrait aller |
+
+La révision ne monte que si un document a changé. L'empreinte du modèle
+(`empreinte_modele`) ne porte que sur le modèle. Enregistrer et vérifier ne
+créent jamais ni version ni déploiement.
+
+**Les règles du modèle** (`app/studio_modele/regles.py`) sont celles de la
+conception du lot L1 (partie 3.4), chacune avec son code et son message. Le
+navigateur joue les mêmes: un fichier de cas commun, pris aux formats OSCAR
+(dépôt `oscar-tools`, étiquette `formats-oscar-v1.1.0`), dit le verdict attendu
+de chaque cas, et les tests du serveur le rendent
+(`tests/donnees/formats_oscar_v1/`, voir son `SOURCE.txt`).
+
+**Un bundle de l'ancienne console** s'ouvre par une reprise
+(`app/studio_modele/ancien_format.py`): ses blocs vont dans la zone de leur
+environnement (l'ancienne « application métier » dans une zone « à
+préciser »), la salle est posée, ses unités gagnent leur structure, ses
+liaisons de données relient les mêmes canaux. Rien n'est deviné ni perdu: ce
+qui n'a pas encore sa place (Box IA, mise en route) est gardé dans
+`donnees_reprises`, et le rapport dit le reste. Un code déjà publié est figé.
+L'ancienne version n'est jamais modifiée: un robot qui l'a reçue la lit
+toujours.
+
+**L'interface d'avant** crée, enregistre, publie et déploie toujours des
+bundles à l'ancien format. Sur un bundle passé au nouvel éditeur,
+`PUT .../draft` et `POST .../publish` répondent 409
+`BUNDLE_PASSE_AU_NOUVEL_EDITEUR`. La liste des bundles garde ses champs et
+ajoute `projet_id` et `format_brouillon` (`oscar.bundle/1`, `ancien` ou rien).
 
 ## Les réglages
 
@@ -188,3 +262,9 @@ d'abord la migration, avec l'image actuelle qui la connaît, dans le conteneur
 de l'API: `alembic downgrade 0013`. Puis on remet tout de suite l'ancienne
 image, sans redémarrer l'actuelle entre les deux: à son démarrage, elle
 referait la migration (`alembic upgrade head`).
+
+**Revenir avant la migration `0015`** (les fondations du Studio de L1): de
+même, `alembic downgrade 0014` avec l'image actuelle, puis l'ancienne image.
+La descente s'arrête sans rien effacer s'il existe des brouillons au nouveau
+format: on sauvegarde d'abord la base (`sauvegarder-et-restaurer.sh`), puis on
+retire ces brouillons.

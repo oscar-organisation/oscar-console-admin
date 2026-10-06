@@ -1,0 +1,18 @@
+{
+  "format": "oscar.bundle/1",
+  "bundle": {"code": "BUNDLE_DEPLOIEMENT_INSPECTION_ENTREPOT", "nom": "Inspection de l'entrepôt"},
+  "elements": [
+    {"id": "zon-01", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot d'inspection", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+    {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+    {"id": "svc-01", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-01", "code": "INSTANCE_SERVICE_CONFIGUREE_CAPTEURS", "nom": "Capteurs du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+    {"id": "uni-01", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-01", "code": "INSTANCE_UNITE_CONFIGUREE_BATTERIE", "nom": "Batterie", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+    {"id": "trt-01", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-01", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+    {"id": "itf-01", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-01", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+    {"id": "bnd-01", "sorte": "BANDE_DONNEES", "parent": "itf-01", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+    {"id": "bre-01", "sorte": "BUS_RECEPTION", "parent": "bnd-01", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+    {"id": "bem-01", "sorte": "BUS_EMISSION", "parent": "bnd-01", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+    {"id": "can-01", "sorte": "CANAL_EMISSION", "parent": "bem-01", "code": "CANAL_EMISSION_NIVEAU_BATTERIE", "nom": "Niveau de la batterie", "reglages": {"type": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE", "format": "BINAIRE_COMPACT"}}
+  ],
+  "liaisons": [],
+  "blocs": {"zon-01": {"x": 40, "y": 120}}
+}

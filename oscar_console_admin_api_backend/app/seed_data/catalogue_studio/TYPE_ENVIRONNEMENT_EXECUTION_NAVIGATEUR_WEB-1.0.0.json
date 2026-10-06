@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone application web",
+  "description": "Un navigateur web : ses applications servent une personne, depuis n'importe quel poste.",
+  "exemple": "La page de téléopération ouverte dans un navigateur.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 30,
+  "dans_la_palette": true
+}

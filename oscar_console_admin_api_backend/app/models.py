@@ -623,8 +623,57 @@ class AuthToken(Base):
 
 
 # --------------------------------------------------------------------------- #
-#  Studio de déploiement : bundles, versions, déploiements
+#  Studio de déploiement : projets, bundles, versions, déploiements
 # --------------------------------------------------------------------------- #
+class ProjetRobotique(Base, TimestampMixin):
+    """Le projet robotique d'une organisation : ce qui range ses bundles.
+
+    Chaque organisation en reçoit un d'office, PROJET_ROBOTIQUE_PRINCIPAL, à sa
+    création (voir app/studio_modele/projets.py), et chaque bundle y est rangé.
+    Aucun écran ne le gère encore : créer d'autres projets viendra plus tard.
+    Le poser dès maintenant évite de devoir, ce jour-là, ranger après coup des
+    bundles qui n'auraient pas de projet.
+    """
+
+    __tablename__ = "projets_robotiques"
+    __table_args__ = (UniqueConstraint("org_id", "code", name="uq_projet_robotique_org_code"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organisations.id", ondelete="CASCADE"))
+    code: Mapped[str] = mapped_column(String(80), nullable=False)
+    nom: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    statut: Mapped[str] = mapped_column(String(20), default="active")  # active|archived
+    # Vrai pour le projet que la console crée seule ; faux pour ceux qu'une
+    # personne créera.
+    cree_d_office: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class TypeCatalogue(Base, TimestampMixin):
+    """Un type du catalogue du Studio, dans une version : une zone robot, le
+    service générique, l'unité standard...
+
+    La source est un fichier versionné de la console
+    (app/seed_data/catalogue_studio/), recopié ici au démarrage par
+    app/studio_modele/catalogue.py. Un brouillon cite un type par son code et
+    sa version, sans le recopier ; c'est pourquoi une version enregistrée ne
+    change plus : `empreinte` permet de le vérifier à chaque démarrage.
+    """
+
+    __tablename__ = "types_catalogue"
+    __table_args__ = (UniqueConstraint("code", "version", name="uq_type_catalogue_code_version"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    code: Mapped[str] = mapped_column(String(120), nullable=False)
+    version: Mapped[str] = mapped_column(String(20), nullable=False)
+    sorte: Mapped[str] = mapped_column(String(60), nullable=False)
+    famille: Mapped[str] = mapped_column(String(60), nullable=False)
+    nom: Mapped[str] = mapped_column(String(160), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    # Le fichier entier, tel qu'il était au démarrage qui l'a recopié.
+    definition: Mapped[dict] = mapped_column(JSON, default=dict)
+    empreinte: Mapped[str] = mapped_column(String(64), nullable=False)
+    statut: Mapped[str] = mapped_column(String(20), default="publie")  # publie|retire
+
+
 class DeploymentBundle(Base, TimestampMixin):
     """Unité déployable composée dans le Studio.
 
@@ -644,10 +693,18 @@ class DeploymentBundle(Base, TimestampMixin):
     target: Mapped[str] = mapped_column(String(60), default="ENVIRONNEMENT_EXECUTION_ROBOT")
     statut: Mapped[str] = mapped_column(String(20), default="active")  # active|archived
     created_by: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    # Le projet où le bundle est rangé. Un projet qui a encore des bundles ne
+    # se supprime pas : on ne perd pas des bundles en effaçant leur projet.
+    projet_id: Mapped[str] = mapped_column(
+        ForeignKey("projets_robotiques.id", ondelete="RESTRICT", name="fk_deployment_bundles_projet_id"),
+        index=True,
+    )
 
     versions: Mapped[list["BundleVersion"]] = relationship(
         back_populates="bundle", cascade="all, delete-orphan", order_by="BundleVersion.numero"
     )
+    # Le brouillon au nouveau format, s'il existe : il part avec le bundle.
+    brouillon: Mapped["BrouillonBundle | None"] = relationship(cascade="all, delete-orphan")
 
 
 class PerceptionLease(Base):
@@ -740,6 +797,41 @@ class BundleVersion(Base, TimestampMixin):
         # Distinct du checksum runtime : déplacer un bloc est aussi une édition.
         from .bundle_spec import empreinte
         return empreinte({"id": self.id, "statut": self.statut, "spec": self.spec, "notes": self.notes})
+
+
+class BrouillonBundle(Base, TimestampMixin):
+    """Le brouillon d'un bundle au nouveau format : le travail en cours du Studio.
+
+    Un brouillon par bundle. Il porte deux documents : le modèle
+    (oscar.bundle/1, ce que le bundle contient) et sa mise en page (où chaque
+    bloc est dessiné). Chaque enregistrement qui change l'un ou l'autre fait
+    monter `revision` de un ; un enregistrement dit de quelle révision il part,
+    ce qui permet de refuser, sans rien écraser, celui qui part d'une révision
+    dépassée (voir app/routers/studio_brouillons.py).
+
+    Le brouillon ne crée ni version ni déploiement : publier viendra plus tard,
+    séparé de l'enregistrement. Les versions de l'ancien format
+    (bundle_versions) restent telles quelles pour les robots qui les lisent.
+    """
+
+    __tablename__ = "brouillons_bundle"
+    __table_args__ = (UniqueConstraint("bundle_id", name="uq_brouillon_bundle_bundle_id"),)
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    bundle_id: Mapped[str] = mapped_column(ForeignKey("deployment_bundles.id", ondelete="CASCADE"))
+    format: Mapped[str] = mapped_column(String(40), default="oscar.bundle/1")
+    modele: Mapped[dict] = mapped_column(JSON, default=dict)
+    mise_en_page: Mapped[dict] = mapped_column(JSON, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    # L'empreinte du seul modèle : elle dit si un enregistrement a changé le
+    # modèle ou seulement la mise en page.
+    empreinte_modele: Mapped[str] = mapped_column(String(64), nullable=False)
+    etat: Mapped[str] = mapped_column(String(60), default="ETAT_BROUILLON_BUNDLE_EN_EDITION")
+    # D'où il vient : {"sorte": "VIDE"}, {"sorte": "PRESET", "slug": ...} ou
+    # {"sorte": "ANCIEN_FORMAT", "version_id": ..., "numero": ...}.
+    origine: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Le rapport de la reprise de l'ancien format, s'il y en a eu une.
+    reprise: Mapped[dict | None] = mapped_column(JSON)
+    modifie_par: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
 
 class BundleDeployment(Base, TimestampMixin):

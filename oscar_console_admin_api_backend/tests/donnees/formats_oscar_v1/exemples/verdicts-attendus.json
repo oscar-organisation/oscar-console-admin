@@ -1,0 +1,1095 @@
+{
+  "$comment": "Le verdict attendu de chaque exemple : accepté ou refusé, le format reconnu (null si la lecture s'arrête avant), et chaque raison du refus (chemin, règle, phrase en français), dans l'ordre du chemin, puis de la règle, puis de la phrase. Les deux lecteurs doivent donner exactement ces verdicts (recettes R0.4 et R0.5).",
+  "verdicts": {
+    "bundle/invalides/bus-avec-reglages.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/7",
+          "regle": "not",
+          "raison": "À /elements/7 : seuls une zone et un canal ont des réglages : retirer « reglages »."
+        }
+      ]
+    },
+    "bundle/invalides/canal-avec-un-type.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/9",
+          "regle": "not",
+          "raison": "À /elements/9 : un traitement, une interface, une bande, un bus ou un canal n'a pas de type du catalogue : retirer « type »."
+        }
+      ]
+    },
+    "bundle/invalides/element-sans-parent.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/2",
+          "regle": "required",
+          "raison": "À /elements/2 : le champ « parent » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "bundle/invalides/identifiant-avec-une-espace.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/4/id",
+          "regle": "pattern",
+          "raison": "À /elements/4/id : la valeur « trt 01 » n'est pas un identifiant interne : lettres sans accent, chiffres, points, deux-points, tirets et tirets bas, par exemple zon-3f2a9c41d0b7."
+        }
+      ]
+    },
+    "bundle/invalides/liaison-sans-destination.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/liaisons/0",
+          "regle": "required",
+          "raison": "À /liaisons/0 : le champ « destination » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "bundle/invalides/mise-en-page-dans-le-modele.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "additionalProperties",
+          "raison": "À la racine : le champ « blocs » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        }
+      ]
+    },
+    "bundle/invalides/service-sans-type.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/2",
+          "regle": "required",
+          "raison": "À /elements/2 : le champ « type » manque : la salle, un service, une application et une unité citent leur type du catalogue, par son code et sa version (spécification 12.6)."
+        }
+      ]
+    },
+    "bundle/invalides/sorte-inconnue.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/10/sorte",
+          "regle": "enum",
+          "raison": "À /elements/10/sorte : la valeur doit être l'une de celles-ci : ZONE_ENVIRONNEMENT_EXECUTION, COMPOSANT_SALLE_TEMPS_REEL, INSTANCE_SERVICE_CONFIGUREE, INSTANCE_APPLICATION_CONFIGUREE, INSTANCE_UNITE_CONFIGUREE, TRAITEMENT_METIER_UNITE, INTERFACE_COMMUNICATION_UNITE, BANDE_DONNEES, BUS_RECEPTION, BUS_EMISSION, CANAL_RECEPTION, CANAL_EMISSION."
+        }
+      ]
+    },
+    "bundle/invalides/zone-sans-exigence.json": {
+      "accepte": false,
+      "format": "oscar.bundle/1",
+      "refus": [
+        {
+          "chemin": "/elements/0/reglages",
+          "regle": "required",
+          "raison": "À /elements/0/reglages : le champ « exigence » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "bundle/valides/bundle-reference-l1.json": {
+      "accepte": true,
+      "format": "oscar.bundle/1",
+      "refus": []
+    },
+    "bundle/valides/bundle-vide.json": {
+      "accepte": true,
+      "format": "oscar.bundle/1",
+      "refus": []
+    },
+    "bundle/valides/zone-externe-et-serveur-facultatif.json": {
+      "accepte": true,
+      "format": "oscar.bundle/1",
+      "refus": []
+    },
+    "commun/invalides/cle-complexe.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "yaml_cle_complexe",
+          "raison": "À la racine : une clé doit être un simple nom, pas une liste ni un ensemble de champs."
+        }
+      ]
+    },
+    "commun/invalides/directive-yaml.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "yaml_directive",
+          "raison": "À la racine : les directives YAML (%YAML, %TAG) ne sont pas permises : les retirer."
+        }
+      ]
+    },
+    "commun/invalides/fichier-vide.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "fichier_vide",
+          "raison": "Le fichier est vide : il doit contenir au moins le champ format."
+        }
+      ]
+    },
+    "commun/invalides/format-inconnu.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/format",
+          "regle": "format_inconnu",
+          "raison": "À /format : le format « oscar.carte/1 » est inconnu : ce lecteur connaît oscar.bundle/1, oscar.etat/1, oscar.forme/1, oscar.integration/1, oscar.machine/1, oscar.profil/1."
+        }
+      ]
+    },
+    "commun/invalides/format-mal-ecrit.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/format",
+          "regle": "format_mal_ecrit",
+          "raison": "À /format : le format « machine-v1 » est mal écrit : il s'écrit oscar.<nom>/<version>, par exemple oscar.machine/1."
+        }
+      ]
+    },
+    "commun/invalides/format-qui-n-est-pas-un-texte.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/format",
+          "regle": "format_mal_ecrit",
+          "raison": "À /format : le format « 1 » est mal écrit : il s'écrit oscar.<nom>/<version>, par exemple oscar.machine/1."
+        }
+      ]
+    },
+    "commun/invalides/format-trop-recent.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/format",
+          "regle": "format_trop_recent",
+          "raison": "À /format : le fichier est au format « oscar.machine/2 », plus récent que ce que ce lecteur sait lire (« oscar.machine/1 ») : mettre à jour le lecteur, ou demander un fichier au format oscar.machine/1."
+        }
+      ]
+    },
+    "commun/invalides/json-avec-nan.json": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "json_illisible",
+          "raison": "Le texte JSON est mal formé : vérifier les virgules, les guillemets, les crochets et les accolades."
+        }
+      ]
+    },
+    "commun/invalides/json-mal-forme.json": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "json_illisible",
+          "raison": "Le texte JSON est mal formé : vérifier les virgules, les guillemets, les crochets et les accolades."
+        }
+      ]
+    },
+    "commun/invalides/marque-d-ordre-des-octets.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "fichier_bom",
+          "raison": "Le fichier commence par une marque d'ordre des octets (BOM) : l'enregistrer en UTF-8 sans BOM."
+        }
+      ]
+    },
+    "commun/invalides/pas-en-utf8.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "fichier_non_utf8",
+          "raison": "Le fichier n'est pas écrit en UTF-8 : l'enregistrer en UTF-8."
+        }
+      ]
+    },
+    "commun/invalides/plusieurs-documents.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "yaml_plusieurs_documents",
+          "raison": "Le fichier contient plusieurs documents YAML (séparés par ---) : un fichier n'en contient qu'un."
+        }
+      ]
+    },
+    "commun/invalides/racine-en-liste.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "racine_non_objet",
+          "raison": "À la racine : le fichier doit contenir un ensemble de champs, à commencer par format, et non une liste ou une valeur seule."
+        }
+      ]
+    },
+    "commun/invalides/yaml-mal-forme.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": null,
+          "regle": "yaml_illisible",
+          "raison": "Le texte YAML est mal formé : vérifier l'indentation, les guillemets, les crochets et les accolades."
+        }
+      ]
+    },
+    "etat/invalides/conforme-sans-unites.json": {
+      "accepte": false,
+      "format": "oscar.etat/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "required",
+          "raison": "À la racine : le champ « unites » manque : un moteur qui tourne dit le profil qu'il a chargé et ses unités."
+        }
+      ]
+    },
+    "etat/invalides/en-echec-sans-cause.json": {
+      "accepte": false,
+      "format": "oscar.etat/1",
+      "refus": [
+        {
+          "chemin": "/cause",
+          "regle": "type",
+          "raison": "À /cause : un état en échec dit sa cause, en clair."
+        }
+      ]
+    },
+    "etat/invalides/etat-inconnu.json": {
+      "accepte": false,
+      "format": "oscar.etat/1",
+      "refus": [
+        {
+          "chemin": "/etat",
+          "regle": "enum",
+          "raison": "À /etat : la valeur doit être l'une de celles-ci : demarrage, degrade, conforme, en_echec, arrete."
+        }
+      ]
+    },
+    "etat/invalides/jeton-dans-l-etat.json": {
+      "accepte": false,
+      "format": "oscar.etat/1",
+      "refus": [
+        {
+          "chemin": "/unites/0",
+          "regle": "additionalProperties",
+          "raison": "À /unites/0 : le champ « jeton » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        }
+      ]
+    },
+    "etat/invalides/rejet-inconnu.json": {
+      "accepte": false,
+      "format": "oscar.etat/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/rejets",
+          "regle": "additionalProperties",
+          "raison": "À /unites/0/rejets : le champ « paquet_perdu » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        }
+      ]
+    },
+    "etat/valides/actions-robot-magasin-01-degrade.json": {
+      "accepte": true,
+      "format": "oscar.etat/1",
+      "refus": []
+    },
+    "etat/valides/actions-robot-magasin-01-refus-au-demarrage.json": {
+      "accepte": true,
+      "format": "oscar.etat/1",
+      "refus": []
+    },
+    "fichier_de_la_machine/invalides/ancre-et-alias.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/racine_runtime/adresses/console",
+          "regle": "yaml_ancre_ou_alias",
+          "raison": "À /racine_runtime/adresses/console : les ancres et les alias YAML (& et *) ne sont pas permis : écrire chaque valeur en entier."
+        },
+        {
+          "chemin": "/racine_runtime/adresses/registre",
+          "regle": "yaml_ancre_ou_alias",
+          "raison": "À /racine_runtime/adresses/registre : les ancres et les alias YAML (& et *) ne sont pas permis : écrire chaque valeur en entier."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/api-cle-en-tete-sans-nom-d-en-tete.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/extensions/api_rest/0",
+          "regle": "required",
+          "raison": "À /extensions/api_rest/0 : le champ « nom_de_l_en_tete » manque : une clé passée dans un en-tête dit le nom de cet en-tête, par exemple X-Api-Key."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/caractere-de-controle.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/identite/machine",
+          "regle": "caractere_de_controle",
+          "raison": "À /identite/machine : le texte contient un caractère de contrôle (retour à la ligne, tabulation ou autre) : l'écrire sur une seule ligne, sans tabulation."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/champ-mal-orthographie.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "additionalProperties",
+          "raison": "À la racine : le champ « revison » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        },
+        {
+          "chemin": "",
+          "regle": "required",
+          "raison": "À la racine : le champ « revision » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/cle-en-double.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "yaml_cle_en_double",
+          "raison": "À la racine : le champ « revision » est écrit deux fois au même endroit : n'en garder qu'un."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/code-machine-mal-ecrit.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/identite/machine",
+          "regle": "pattern",
+          "raison": "À /identite/machine : la valeur « IDENTITE_MACHINE_m3_jetson_01 » n'est pas un code de machine : il commence par IDENTITE_MACHINE_, en majuscules sans accent, par exemple IDENTITE_MACHINE_M3_JETSON_01."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/code-sans-guillemets.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/identite/robot",
+          "regle": "yaml_code_sans_guillemets",
+          "raison": "À /identite/robot : le code « INSTANCE_ROBOT_MAGASIN_01 » doit s'écrire entre guillemets (formalisation 3.2) : \"INSTANCE_ROBOT_MAGASIN_01\"."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/date-sans-guillemets.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/revision",
+          "regle": "yaml_date_sans_guillemets",
+          "raison": "À /revision : la date « 2026-10-05 » doit s'écrire entre guillemets (formalisation 3.2) : \"2026-10-05\"."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/etiquette-yaml.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/identite/type",
+          "regle": "yaml_etiquette",
+          "raison": "À /identite/type : les étiquettes YAML (!!str et les autres) ne sont pas permises : les retirer, et mettre le texte entre guillemets si besoin."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/identite-machine-manquante.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/identite",
+          "regle": "required",
+          "raison": "À /identite : le champ « machine » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/image-par-etiquette.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/services/0/image",
+          "regle": "pattern",
+          "raison": "À /services/0/image : la valeur « registry-container.oscar-bot.com/organisation-demonstration/serveur-detection-personnes:latest » ne désigne pas une image par son empreinte : écrire l'adresse de l'image suivie de @sha256: et des 64 chiffres de son empreinte (règle R-15 : jamais une étiquette seule, jamais latest)."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/mqtt-avec-une-securite.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/extensions/messagerie_evenements/2",
+          "regle": "not",
+          "raison": "À /extensions/messagerie_evenements/2 : une messagerie MQTT n'a qu'une « adresse », et sa sécurité se lit dans l'adresse (mqtts:// pour TLS) : ni « adresses », ni hôte virtuel, ni « securite »."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/python-sans-guillemets.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/environnement_ros2_du_fabricant/python",
+          "regle": "type",
+          "raison": "À /environnement_ros2_du_fabricant/python : la valeur doit être un texte."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/reception-http-sans-acces.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/extensions/reception_http/0",
+          "regle": "required",
+          "raison": "À /extensions/reception_http/0 : le champ « acces » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/revision-trop-grande.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/revision",
+          "regle": "nombre_trop_grand",
+          "raison": "À /revision : le nombre est trop grand pour être lu de la même façon en Python et en JavaScript : 9007199254740991 au plus, en valeur absolue."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/robot-sans-socle.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "required",
+          "raison": "À la racine : le champ « socle » manque : un robot déclare l'environnement ROS 2 de son fabricant et son socle, venus de son type d'appareil (formalisation 3.4 et 7.2)."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/secret-en-clair.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/extensions/messagerie_evenements/0/acces",
+          "regle": "pattern",
+          "raison": "À /extensions/messagerie_evenements/0/acces : la valeur « mot-de-passe-de-kafka » n'est pas le nom d'un accès : il commence par SECRET_, par exemple SECRET_MESSAGERIE_EVENEMENTS_EXPLOITATION ; un fichier ne porte jamais la valeur d'un secret."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/serveur-avec-robot.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/identite",
+          "regle": "not",
+          "raison": "À /identite : un serveur n'a pas de champ « robot » : seule la machine d'un robot le porte."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/service-paquet-et-image.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/services/0",
+          "regle": "not",
+          "raison": "À /services/0 : un service qui tourne dans l'environnement ROS 2 du fabricant reçoit son code par « paquet », jamais par « image » (formalisation 7.2)."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/service-partage-sans-affectations.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/services/0",
+          "regle": "required",
+          "raison": "À /services/0 : le champ « affectations » manque : un service partagé dit sa révision partagée et toutes les affectations qu'il sert (formalisation 3.4)."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/socle-du-fabricant-sans-repli.yaml": {
+      "accepte": false,
+      "format": "oscar.machine/1",
+      "refus": [
+        {
+          "chemin": "/socle/0",
+          "regle": "required",
+          "raison": "À /socle/0 : le champ « repli » manque : une image du fabricant, désignée par son étiquette, se reconnaît à son identifiant local et a une solution de repli, ou aucun (formalisation 7.2)."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/utilisateur-sans-guillemets.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/services/0/lancement/utilisateur",
+          "regle": "yaml_valeur_ambigue",
+          "raison": "À /services/0/lancement/utilisateur : la valeur « 0:0 » doit s'écrire entre guillemets : sans eux, deux lecteurs YAML peuvent la comprendre différemment (règle R-16). Sans guillemets, seuls sont permis les nombres, true, false, null et les mots en minuscules sans accent."
+        }
+      ]
+    },
+    "fichier_de_la_machine/invalides/valeur-yes-sans-guillemets.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/socle/1/usb",
+          "regle": "yaml_valeur_ambigue",
+          "raison": "À /socle/1/usb : la valeur « yes » doit s'écrire entre guillemets : sans eux, deux lecteurs YAML peuvent la comprendre différemment (règle R-16). Sans guillemets, seuls sont permis les nombres, true, false, null et les mots en minuscules sans accent."
+        }
+      ]
+    },
+    "fichier_de_la_machine/valides/robot-m3-magasin-01.yaml": {
+      "accepte": true,
+      "format": "oscar.machine/1",
+      "refus": []
+    },
+    "fichier_de_la_machine/valides/robot-m3-revision-minimale.yaml": {
+      "accepte": true,
+      "format": "oscar.machine/1",
+      "refus": []
+    },
+    "fichier_de_la_machine/valides/serveur-entrepot-04-connexions.yaml": {
+      "accepte": true,
+      "format": "oscar.machine/1",
+      "refus": []
+    },
+    "fichier_de_la_machine/valides/serveur-traitement-03-partage.yaml": {
+      "accepte": true,
+      "format": "oscar.machine/1",
+      "refus": []
+    },
+    "forme_de_donnee/invalides/booleen-avec-bornes.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/champs/4",
+          "regle": "not",
+          "raison": "À /champs/4 : un champ booléen vaut vrai ou faux : il n'a ni unité, ni min, ni max."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/encodage-inconnu.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/encodage",
+          "regle": "const",
+          "raison": "À /encodage : la valeur doit être « messagepack-tableau »."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/nom-de-champ-en-majuscules.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/champs/0/nom",
+          "regle": "pattern",
+          "raison": "À /champs/0/nom : la valeur « VX » n'est pas un nom technique : minuscules sans accent, chiffres et tirets bas, commençant par une lettre, par exemple manche_gauche_vertical."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/sans-format.yaml": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "format_manquant",
+          "raison": "À la racine : le champ « format » manque ; il dit quel format suit le fichier, par exemple oscar.machine/1."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/taille-au-dela-de-1000.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/taille_max_octets",
+          "regle": "maximum",
+          "raison": "À /taille_max_octets : le nombre doit valoir au plus 900."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/taille-au-dela-de-900.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/taille_max_octets",
+          "regle": "maximum",
+          "raison": "À /taille_max_octets : le nombre doit valoir au plus 900."
+        }
+      ]
+    },
+    "forme_de_donnee/invalides/type-de-champ-inconnu.yaml": {
+      "accepte": false,
+      "format": "oscar.forme/1",
+      "refus": [
+        {
+          "chemin": "/champs/2/type",
+          "regle": "enum",
+          "raison": "À /champs/2/type : la valeur doit être l'une de celles-ci : float32, booleen."
+        }
+      ]
+    },
+    "forme_de_donnee/valides/commande-de-base.yaml": {
+      "accepte": true,
+      "format": "oscar.forme/1",
+      "refus": []
+    },
+    "forme_de_donnee/valides/etat-de-commande.yaml": {
+      "accepte": true,
+      "format": "oscar.forme/1",
+      "refus": []
+    },
+    "integration/invalides/base-par-etiquette.yaml": {
+      "accepte": false,
+      "format": "oscar.integration/1",
+      "refus": [
+        {
+          "chemin": "/base",
+          "regle": "pattern",
+          "raison": "À /base : la valeur « registry-container.oscar-bot.com/oscar-runtime/moteur-des-unites-robot-ros2-humble:1.0.0 » ne désigne pas une image par son empreinte : écrire l'adresse de l'image suivie de @sha256: et des 64 chiffres de son empreinte (règle R-15 : jamais une étiquette seule, jamais latest)."
+        }
+      ]
+    },
+    "integration/invalides/sans-contrat.yaml": {
+      "accepte": false,
+      "format": "oscar.integration/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "required",
+          "raison": "À la racine : le champ « contrat » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "integration/valides/actions-robot.yaml": {
+      "accepte": true,
+      "format": "oscar.integration/1",
+      "refus": []
+    },
+    "profil_d_un_service/invalides/adresse-de-canal-zero.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/adresse",
+          "regle": "minimum",
+          "raison": "À /unites/0/correspondances/reception/0/adresse : le nombre doit valoir au moins 1."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/canal-temps-reel-sans-source.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0",
+          "regle": "required",
+          "raison": "À /unites/0/correspondances/reception/0 : le champ « source » manque : un canal qui s'abonne à la salle dit sa forme et sa source (formalisation 2.3)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/destination-unite-configuree-sans-generation.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/emission/0/destinations/0",
+          "regle": "required",
+          "raison": "À /unites/0/correspondances/emission/0/destinations/0 : le champ « generation » manque : une destination « unité configurée » donne le préfixe des identités de ses instances et la génération de l'unité visée, écrits par le compilateur (conception du lot L7, questions Q3 et Q4)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/etape-inconnue.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/parcours/1/etapes/2",
+          "regle": "enum",
+          "raison": "À /unites/0/parcours/1/etapes/2 : la valeur doit être l'une de celles-ci : lire, decoder, verifier_fraicheur, zone_morte, mettre_a_l_echelle, borner, traitement_de_base."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/generation-trop-grande.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/generation",
+          "regle": "maximum",
+          "raison": "À /unites/0/generation : le nombre doit valoir au plus 4294967295."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/identite-de-dix-sept-caracteres.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/identite",
+          "regle": "maxLength",
+          "raison": "À /unites/0/identite : le texte est trop long : 16 caractères au plus."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/identite-trop-longue.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/identite",
+          "regle": "maxLength",
+          "raison": "À /unites/0/identite : le texte est trop long : 16 caractères au plus."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/kafka-avec-une-file.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/messagerie",
+          "regle": "not",
+          "raison": "À /unites/0/correspondances/reception/0/messagerie : un canal qui lit Kafka n'a ni file, ni échange, ni clé de routage, ni qualité MQTT."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/kafka-sans-groupe.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/messagerie",
+          "regle": "required",
+          "raison": "À /unites/0/correspondances/reception/0/messagerie : le champ « groupe » manque : un canal qui lit Kafka dit son sujet et son groupe de lecteurs, que le compilateur fabrique (conception du lot L7, question Q9)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/mot-de-passe-dans-une-connexion.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/connexions/messagerie_evenements/0",
+          "regle": "additionalProperties",
+          "raison": "À /connexions/messagerie_evenements/0 : le champ « mot_de_passe » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/mqtt-sans-identifiant-de-client.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/connexions/messagerie_evenements/1",
+          "regle": "required",
+          "raison": "À /connexions/messagerie_evenements/1 : le champ « identifiant_client » manque : dans le profil d'un service, une connexion MQTT donne l'identifiant de client que le compilateur a fabriqué ; deux clients au même identifiant se chassent l'un l'autre du serveur."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/operation-sans-parametres.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/traitement/operations/0",
+          "regle": "required",
+          "raison": "À /unites/0/traitement/operations/0 : le champ « parametres » manque : la zone morte dit son seuil."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/parcours-sans-traitement-de-base.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/parcours/0/etapes",
+          "regle": "contains",
+          "raison": "À /unites/0/parcours/0/etapes : un parcours passe une fois par le traitement de base : ajouter l'étape traitement_de_base (formalisation 4.2 : le traitement de base, toujours)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/prefixe-d-identite-trop-long.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/1/source/prefixe_identite",
+          "regle": "maxLength",
+          "raison": "À /unites/0/correspondances/reception/1/source/prefixe_identite : le texte est trop long : 12 caractères au plus."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/qualite-de-service-inconnue.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/emission/0/ros2/qos/fiabilite",
+          "regle": "enum",
+          "raison": "À /unites/0/correspondances/emission/0/ros2/qos/fiabilite : la valeur doit être l'une de celles-ci : fiable, au_mieux."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/source-a-deux-unites.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/source",
+          "regle": "maxProperties",
+          "raison": "À /unites/0/correspondances/reception/0/source : une source ne nomme qu'une chose : unite_configuree, identite ou unite, jamais deux (règle R-05 : une entrée reçoit d'une seule source active)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/source-sans-prefixe.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/1/source",
+          "regle": "required",
+          "raison": "À /unites/0/correspondances/reception/1/source : le champ « prefixe_identite » manque : une source « unité configurée » donne aussi le préfixe des identités de ses instances ; le moteur n'accepte que les émetteurs dont l'identité commence par lui (conception du lot L7, question Q3)."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/sujet-ros2-sans-barre.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/emission/0/ros2/sujet",
+          "regle": "pattern",
+          "raison": "À /unites/0/correspondances/emission/0/ros2/sujet : la valeur « cmd_vel » n'est pas un sujet ROS 2 : il commence par /, par exemple /cmd_vel."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/type-de-canal-inconnu.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/type",
+          "regle": "enum",
+          "raison": "À /unites/0/correspondances/reception/0/type : la valeur doit être l'une de celles-ci : TYPE_ENTREE_ABONNEMENT_TEMPS_REEL, TYPE_ENTREE_SERVICE_LOCAL, TYPE_ENTREE_INJECTION_APPLICATION, TYPE_ENTREE_LECTURE_APPAREIL_LOCAL, TYPE_ENTREE_LECTURE_MESSAGERIE_EVENEMENTS, TYPE_ENTREE_INTERROGATION_API, TYPE_ENTREE_RECEPTION_HTTP, TYPE_ENTREE_ABONNEMENT_ROBOT_OPERATING_SYSTEM_2."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/unite-sans-generation.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0",
+          "regle": "required",
+          "raison": "À /unites/0 : le champ « generation » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "profil_d_un_service/invalides/video-sans-codec.yaml": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/medias/0/emission/0/video",
+          "regle": "required",
+          "raison": "À /medias/0/emission/0/video : le champ « codec » manque ; ce format l'exige."
+        }
+      ]
+    },
+    "profil_d_un_service/valides/actions-robot-magasin-01.yaml": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    },
+    "profil_d_un_service/valides/capteurs-serveur-mode-declaratif.yaml": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    },
+    "profil_d_un_service/valides/media-robot-magasin-01.yaml": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    },
+    "profil_d_un_service/valides/passerelle-entrepot-champs-minimaux.yaml": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    },
+    "profil_d_une_application/invalides/aucun-profil-par-defaut.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/profils_commande",
+          "regle": "contains",
+          "raison": "À /profils_commande : un seul profil de commande est marqué par défaut (par_defaut: true), ni zéro ni deux (formalisation 2.10)."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/destination-sans-generation.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/emission/0/destinations/0",
+          "regle": "required",
+          "raison": "À /unites/0/correspondances/emission/0/destinations/0 : le champ « generation » manque : une destination nomme l'unité configurée d'une application, ou bien l'identité et la génération de l'unité visée."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/deux-profils-par-defaut.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/profils_commande",
+          "regle": "contains",
+          "raison": "À /profils_commande : un seul profil de commande est marqué par défaut (par_defaut: true), ni zéro ni deux (formalisation 2.10)."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/jeton-dans-le-profil.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "",
+          "regle": "additionalProperties",
+          "raison": "À la racine : le champ « jeton » n'existe pas dans ce format ; vérifier son orthographe, ou le retirer."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/nom-de-salle-mal-ecrit.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/salle",
+          "regle": "pattern",
+          "raison": "À /salle : la valeur « Salle du magasin » n'est pas un nom de salle : il commence par salle-, en minuscules sans accent, mots séparés par des tirets, par exemple salle-r-magasin-01."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/sortie-composee-avec-source.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/profils_commande/0/appareil/sorties/5",
+          "regle": "not",
+          "raison": "À /profils_commande/0/appareil/sorties/5 : une sortie composée se calcule à partir d'autres sorties : elle n'a pas de source physique, retirer « source »."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/touche-mal-ecrite.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/profils_commande/0/appareil/sorties/0/source/touche",
+          "regle": "pattern",
+          "raison": "À /profils_commande/0/appareil/sorties/0/source/touche : la valeur « z » n'est pas une place de touche : elle s'écrit comme le navigateur la nomme, par exemple KeyW ou ArrowUp."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/zone-morte-egale-a-un.json": {
+      "accepte": false,
+      "format": "oscar.profil/1",
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/zone_morte",
+          "regle": "exclusiveMaximum",
+          "raison": "À /unites/0/correspondances/reception/0/zone_morte : le nombre doit être plus petit que 1."
+        }
+      ]
+    },
+    "profil_d_une_application/invalides/zone-morte-trop-grande-pour-un-nombre.json": {
+      "accepte": false,
+      "format": null,
+      "refus": [
+        {
+          "chemin": "/unites/0/correspondances/reception/0/zone_morte",
+          "regle": "nombre_non_fini",
+          "raison": "À /unites/0/correspondances/reception/0/zone_morte : le nombre n'est pas un nombre fini (infini ou NaN) : écrire un nombre ordinaire."
+        }
+      ]
+    },
+    "profil_d_une_application/valides/teleoperation-web-r01-op-a-deux-profils-de-commande.json": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    },
+    "profil_d_une_application/valides/teleoperation-web-r01-op-a.json": {
+      "accepte": true,
+      "format": "oscar.profil/1",
+      "refus": []
+    }
+  }
+}

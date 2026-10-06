@@ -1,0 +1,16 @@
+{
+  "code": "COMPOSANT_SALLE_TEMPS_REEL",
+  "version": "1.0.0",
+  "sorte": "COMPOSANT_SALLE_TEMPS_REEL",
+  "famille": "FAMILLE_PALETTE_TEMPS_REEL",
+  "nom": "Salle temps réel",
+  "description": "Le lieu de rendez-vous des unités du bundle : elles s'y échangent leurs données en temps réel. Une par bundle, posée seule avec la première zone.",
+  "exemple": "La salle où la commande de l'opérateur rejoint la base du robot.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [],
+  "contenu_cree": [],
+  "ordre": 10,
+  "dans_la_palette": true
+}

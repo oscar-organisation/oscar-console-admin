@@ -1,0 +1,37 @@
+Copie des formats OSCAR, prise à une étiquette fixe du dépôt qui en est la source.
+
+La console ne lit pas ces fichiers en service : ses tests les lisent, pour
+vérifier que le format du bundle (app/studio_modele/formats.py) et les règles du
+modèle (app/studio_modele/regles.py) disent la même chose que la source, cas par
+cas. Le navigateur garde sa propre copie des mêmes cas.
+
+Ne modifiez jamais ces fichiers à la main : tests/test_studio_formats.py compare
+chacun à son empreinte ci-dessous. Pour passer à une autre étiquette, clonez le
+dépôt à cette étiquette, recopiez les fichiers listés (même chemin, sous le
+dossier de la source), puis remplacez l'étiquette, le commit et les empreintes
+de ce fichier par ceux que donne, dans le dossier de la source :
+  sha256sum <les fichiers listés>
+
+depot: https://github.com/oscar-organisation/oscar-tools
+etiquette: formats-oscar-v1.1.0
+commit: 5122f7713039f4dbf5ce03d65b0faa92987d51ca
+dossier: oscar_tools_studio_generate_contract_profiles/formats_oscar_v1
+
+empreintes:
+f3c43d2ded117bbdc7af9e912842a160fe8b66000b522c3482fc77215a553eb1  schemas/bundle.schema.json
+10334c7568616cf1dd01a4126fd8109b02106129f7194aa45ea4c30f6313bd80  schemas/codes-stables.schema.json
+6666466cc0b83e1bb82d01a07310b77ef56cf9a561beb83cd699ff237640be09  schemas/types-communs.schema.json
+708160a7061f532fa7687d0f834fcc7e23837bb217d10bb4cfcab0348532e6f8  regles_du_modele/regles-du-modele.cas.json
+8939da638cc0b5d6c4244b6de8df004682dec1170d5f901c84a69293f66a0dd1  exemples/verdicts-attendus.json
+0916a86ca5dc3c26ba1adb468e55f66629e486e49f4e9a0c250d02a7a77d233e  exemples/bundle/invalides/bus-avec-reglages.json
+6c63118fda46811d457e39e726505ffb2570588dec4eca648e9ce0b4fdb3bb15  exemples/bundle/invalides/canal-avec-un-type.json
+51bb7cfc8bc60ed5f270c2d168b1ab489b920666978dda14a08d8c895e8282dc  exemples/bundle/invalides/element-sans-parent.json
+6c7c9d1d97fab208bd34aeff541f77ca369e4c30ccf28d19fcb22bd4b7916e54  exemples/bundle/invalides/identifiant-avec-une-espace.json
+891096e1253c594e86245b15e1ee2a469e8045acfb90bd94384e4b5057c1eac6  exemples/bundle/invalides/liaison-sans-destination.json
+3ff7fb4cbd45dd3e207c9c374e2bafa5bb38131b9accdad29840422a1e2671ec  exemples/bundle/invalides/mise-en-page-dans-le-modele.json
+ad7a1efdb259722d9f8c305eb214f569fc1f3636cde0064836f9c0b2d4ba3a06  exemples/bundle/invalides/service-sans-type.json
+34d740757bb988f56802e7b91a118cb2f3b588dc68d097455f483f66990c053e  exemples/bundle/invalides/sorte-inconnue.json
+134af5085b5f907fbc1e9e341dd0ac098a34069c07cbf664074c7d4abc113de6  exemples/bundle/invalides/zone-sans-exigence.json
+618f766069e9421636b5019429b744b37acba4ed547784986749b313de3a7d84  exemples/bundle/valides/bundle-reference-l1.json
+9f65a3f05535b38409da84381cb4991e5715d6c335b1cc77f4de14308f8cf3b0  exemples/bundle/valides/bundle-vide.json
+8d359e49e03855615652410953690c9a502dba0ed56a52ae953c49c57fd6e0a3  exemples/bundle/valides/zone-externe-et-serveur-facultatif.json

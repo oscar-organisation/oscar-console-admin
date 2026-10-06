@@ -1,0 +1,19 @@
+{
+  "code": "BANDE_DONNEES",
+  "version": "1.0.0",
+  "sorte": "BANDE_DONNEES",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Bande de données",
+  "description": "Un groupe de bus dans l'interface d'une unité : ses bus de réception et d'émission y sont rangés.",
+  "exemple": "La bande principale de la commande de la base.",
+  "parents_autorises": [
+    "INTERFACE_COMMUNICATION_UNITE"
+  ],
+  "recoit": [
+    "BUS_RECEPTION",
+    "BUS_EMISSION"
+  ],
+  "contenu_cree": [],
+  "ordre": 40,
+  "dans_la_palette": true
+}

@@ -1,0 +1,26 @@
+{
+  "code": "TYPE_UNITE_STANDARD",
+  "version": "1.0.0",
+  "sorte": "INSTANCE_UNITE_CONFIGUREE",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Unité",
+  "description": "Un rôle dans un service ou une application : elle reçoit des données, les traite et en émet. Elle arrive avec son traitement, son interface, une bande et ses deux bus.",
+  "exemple": "La commande de la base, qui reçoit les ordres de l'opérateur.",
+  "parents_autorises": [
+    "INSTANCE_SERVICE_CONFIGUREE",
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "recoit": [
+    "TRAITEMENT_METIER_UNITE",
+    "INTERFACE_COMMUNICATION_UNITE"
+  ],
+  "contenu_cree": [
+    "TRAITEMENT_METIER_UNITE",
+    "INTERFACE_COMMUNICATION_UNITE",
+    "BANDE_DONNEES",
+    "BUS_RECEPTION",
+    "BUS_EMISSION"
+  ],
+  "ordre": 30,
+  "dans_la_palette": true
+}

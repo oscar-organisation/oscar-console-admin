@@ -39,6 +39,8 @@ from ..models import (
     AiModelBox,
     EdgeRelease,
     AiModelBoxAssignment,
+    BrouillonBundle,
+    CompositionPreset,
     BundleDeployment,
     BundleVersion,
     DeploymentBundle,
@@ -48,6 +50,7 @@ from ..models import (
     Site,
 )
 from ..schemas import (
+    BundleCreationIn,
     BundleDraftIn,
     EdgeReleaseReportIn,
     BundleIn,
@@ -60,6 +63,13 @@ from ..schemas import (
     DeploymentOut,
     DeploymentReportIn,
 )
+from ..studio_modele.ancien_format import brouillon_depuis_ancien_format
+from ..studio_modele.brouillons import ETAT_EN_EDITION, empreinte_du_modele, modele_vide
+from ..studio_modele.catalogue import catalogue_enregistre
+from ..studio_modele.formats import FORMAT_DU_BUNDLE, mise_en_page_vide
+from ..studio_modele.projets import projet_d_office
+from ..studio_modele.refus import RefusDuStudio
+from ..studio_modele.sortes import APPLICATION, SERVICE, UNITE
 
 router = APIRouter(prefix="/studio", tags=["studio"])
 
@@ -89,13 +99,22 @@ def _organisation_active(request: Request) -> str:
     return org_id
 
 
-def _bundle_du_perimetre(db: Session, bundle_id: str, org_id: str | None) -> DeploymentBundle:
-    bundle = db.execute(
+def _bundle_du_perimetre(db: Session, bundle_id: str, org_id: str | None,
+                         verrouiller: bool = True) -> DeploymentBundle:
+    """Le bundle, s'il est dans le périmètre de l'organisation active.
+
+    Sa ligne est verrouillée jusqu'à la fin de la transaction, ce qui range
+    l'une après l'autre deux écritures simultanées sur le même bundle. Une
+    lecture n'en a pas besoin (`verrouiller=False`).
+    """
+    requete = (
         select(DeploymentBundle)
         .where(DeploymentBundle.id == bundle_id)
-        .with_for_update()
-        .options(selectinload(DeploymentBundle.versions))
-    ).scalar_one_or_none()
+        .options(selectinload(DeploymentBundle.versions), selectinload(DeploymentBundle.brouillon))
+    )
+    if verrouiller:
+        requete = requete.with_for_update()
+    bundle = db.execute(requete).scalar_one_or_none()
     if not bundle or (org_id and bundle.org_id != org_id):
         raise HTTPException(404, "Bundle introuvable")
     return bundle
@@ -178,6 +197,21 @@ def _derniere_publiee(bundle: DeploymentBundle) -> BundleVersion | None:
     return max(publiees, key=lambda v: v.numero) if publiees else None
 
 
+def _refuser_si_passe_au_nouvel_editeur(bundle: DeploymentBundle) -> None:
+    """L'interface d'avant ne peut plus écraser un brouillon au nouveau format,
+    ni publier un ancien brouillon devenu périmé (décision 125 : la route reste,
+    et refuse proprement)."""
+    if bundle.brouillon is not None:
+        raise RefusDuStudio(409, "BUNDLE_PASSE_AU_NOUVEL_EDITEUR",
+                            "Ce bundle s'édite désormais dans le nouveau Studio. Rechargez la page.")
+
+
+def _format_du_brouillon(bundle: DeploymentBundle) -> str | None:
+    if bundle.brouillon is not None:
+        return FORMAT_DU_BUNDLE
+    return "ancien" if bundle.versions else None
+
+
 def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
     publiee = _derniere_publiee(bundle)
     robots = 0
@@ -187,24 +221,33 @@ def _bundle_out(db: Session, bundle: DeploymentBundle) -> dict:
             .where(BundleDeployment.version_id.in_([v.id for v in bundle.versions]))
             .where(BundleDeployment.statut.in_(EN_COURS))
         ).scalar_one()
-    courante = _brouillon(bundle) or publiee
-    manifeste = manifeste_runtime(courante.spec) if courante else {"composants": []}
-    composants = manifeste.get("composants", [])
-    unites = sum(len(composant.get("unites", [])) for composant in composants)
+    if bundle.brouillon is not None:
+        # Les compteurs se lisent sur le brouillon au nouveau format.
+        sortes = [element.get("sorte") for element in bundle.brouillon.modele.get("elements", [])]
+        nombre_de_composants = sortes.count(SERVICE) + sortes.count(APPLICATION)
+        unites = sortes.count(UNITE)
+    else:
+        courante = _brouillon(bundle) or publiee
+        manifeste = manifeste_runtime(courante.spec) if courante else {"composants": []}
+        composants = manifeste.get("composants", [])
+        nombre_de_composants = len(composants)
+        unites = sum(len(composant.get("unites", [])) for composant in composants)
     return {
         "id": bundle.id, "org_id": bundle.org_id, "nom": bundle.nom, "slug": bundle.slug,
         "description": bundle.description, "target": bundle.target, "statut": bundle.statut,
+        "projet_id": bundle.projet_id,
         "created_at": bundle.created_at, "updated_at": bundle.updated_at,
         "draft_version": _brouillon(bundle),
         "published_version": publiee,
         "version_count": len(bundle.versions),
         "robot_count": robots,
-        "component_count": len(composants),
+        "component_count": nombre_de_composants,
         "unit_count": unites,
         # Compatibilité avec l'interface d'avant le renommage (décision 125) : à
         # retirer par une prochaine modification de l'API, une fois l'interface
         # passée.
         "agent_count": unites,
+        "format_brouillon": _format_du_brouillon(bundle),
     }
 
 
@@ -232,7 +275,8 @@ def list_bundles(request: Request, db: Session = Depends(get_db),
                  _=Depends(require("api:bundle.read"))):
     if sans_perimetre(request):
         return []
-    query = select(DeploymentBundle).options(selectinload(DeploymentBundle.versions))
+    query = select(DeploymentBundle).options(selectinload(DeploymentBundle.versions),
+                                             selectinload(DeploymentBundle.brouillon))
     org_id = request_organisation_id(request)
     if org_id:
         query = query.where(DeploymentBundle.org_id == org_id)
@@ -241,7 +285,7 @@ def list_bundles(request: Request, db: Session = Depends(get_db),
 
 
 @router.post("/bundles", response_model=BundleOut, status_code=201)
-def create_bundle(request: Request, body: BundleIn, db: Session = Depends(get_db),
+def create_bundle(request: Request, body: BundleCreationIn, db: Session = Depends(get_db),
                   user=Depends(require("api:bundle.write", "create"))):
     org_id = _organisation_active(request)
     slug = _slug(body.nom)
@@ -251,10 +295,34 @@ def create_bundle(request: Request, body: BundleIn, db: Session = Depends(get_db
     ).scalar_one_or_none()
     if existant:
         raise HTTPException(409, "Un bundle porte déjà ce nom dans cette organisation")
+    # Chaque bundle est rangé dans le projet d'office de son organisation.
+    projet = projet_d_office(db, org_id)
     bundle = DeploymentBundle(
-        org_id=org_id, nom=body.nom.strip(), slug=slug, description=body.description,
-        target=body.target, created_by=user.id,
+        org_id=org_id, projet_id=projet.id, nom=body.nom.strip(), slug=slug,
+        description=body.description, target=body.target, created_by=user.id,
     )
+    if body.depart is not None:
+        # Un point de départ : le bundle naît avec son brouillon au nouveau
+        # format, à la révision 1, dans la même transaction.
+        modele, mise_en_page, origine, reprise = (
+            modele_vide(bundle.nom, bundle.description), mise_en_page_vide(), {"sorte": "VIDE"}, None)
+        if body.depart.sorte == "PRESET":
+            preset = db.execute(select(CompositionPreset).where(
+                CompositionPreset.slug == body.depart.slug, CompositionPreset.statut == "published",
+            )).scalar_one_or_none()
+            if preset is None:
+                raise HTTPException(404, "Préset inconnu")
+            # Le préset est repris par l'adaptateur de l'ancien format ; le
+            # bundle garde son propre nom. Le préset, lui, ne change pas.
+            repris = brouillon_depuis_ancien_format(preset.spec, {}, catalogue_enregistre(db),
+                                                    entete=modele["bundle"])
+            modele, mise_en_page, reprise = repris.modele, repris.mise_en_page, repris.rapport
+            origine = {"sorte": "PRESET", "slug": preset.slug}
+        bundle.brouillon = BrouillonBundle(
+            format=FORMAT_DU_BUNDLE, modele=modele, mise_en_page=mise_en_page, revision=1,
+            empreinte_modele=empreinte_du_modele(modele), etat=ETAT_EN_EDITION,
+            origine=origine, reprise=reprise, modifie_par=user.id,
+        )
     db.add(bundle)
     db.commit()
     db.refresh(bundle)
@@ -316,6 +384,7 @@ def save_draft(request: Request, bundle_id: str, body: BundleDraftIn, db: Sessio
     autre poste.
     """
     bundle = _bundle_du_perimetre(db, bundle_id, request_organisation_id(request))
+    _refuser_si_passe_au_nouvel_editeur(bundle)
     version = _brouillon(bundle)
     actuelle = version or _derniere_publiee(bundle)
     if "expected_revision" in body.model_fields_set and body.expected_revision != (
@@ -381,6 +450,7 @@ def publish_bundle(request: Request, bundle_id: str, body: BundlePublishIn,
                    db: Session = Depends(get_db),
                    user=Depends(require("api:bundle.publish", "execute"))):
     bundle = _bundle_du_perimetre(db, bundle_id, request_organisation_id(request))
+    _refuser_si_passe_au_nouvel_editeur(bundle)
     version = _brouillon(bundle)
     if version is None:
         raise HTTPException(409, "Aucun brouillon à publier : modifiez la composition d'abord")

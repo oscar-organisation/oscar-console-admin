@@ -1,0 +1,16 @@
+{
+  "code": "CANAL_RECEPTION",
+  "version": "1.0.0",
+  "sorte": "CANAL_RECEPTION",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Canal de réception",
+  "description": "Une entrée de l'unité : ce qu'elle reçoit, et sous quel format. Il se dessine à gauche de l'unité.",
+  "exemple": "Les ordres de déplacement envoyés par l'opérateur.",
+  "parents_autorises": [
+    "BUS_RECEPTION"
+  ],
+  "recoit": [],
+  "contenu_cree": [],
+  "ordre": 70,
+  "dans_la_palette": true
+}

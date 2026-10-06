@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://formats.oscar-bot.com/v1/codes-stables.schema.json",
+  "title": "Les codes stables d'OSCAR, version 1",
+  "$comment": "Un code stable nomme une chose dans les fichiers, sans adresse ni nom affiché (règle R-09 de la formalisation). Il s'écrit en majuscules sans accent, mots séparés par un tiret bas, et commence par le préfixe de sa sorte. Chaque définition ci-dessous donne un préfixe et son motif, ou la liste fermée des codes d'une sorte (enum), ou un code seul (const) ; les autres schémas les réutilisent par $ref. Studio et la console y lisent la liste des codes qu'ils citent (conception du lot L1, partie 3.7). L'identifiant $id n'est pas une adresse à ouvrir: rien n'y est publié, il sert seulement à relier les schémas entre eux.",
+  "$defs": {
+    "code_stable": {
+      "description": "N'importe quel code stable, quand sa sorte n'a pas de préfixe fixé.",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code stable : un code s'écrit en majuscules sans accent, les mots séparés par _, par exemple BOITE_MODELES_PERSONNES."}
+    },
+    "identite_machine": {
+      "description": "Une machine enrôlée (robot ou serveur).",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^IDENTITE_MACHINE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de machine : il commence par IDENTITE_MACHINE_, en majuscules sans accent, par exemple IDENTITE_MACHINE_M3_JETSON_01."}
+    },
+    "instance_organisation": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_ORGANISATION_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code d'organisation : il commence par INSTANCE_ORGANISATION_, par exemple INSTANCE_ORGANISATION_DEMONSTRATION."}
+    },
+    "instance_robot": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_ROBOT_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de robot : il commence par INSTANCE_ROBOT_, par exemple INSTANCE_ROBOT_MAGASIN_01."}
+    },
+    "instance_service": {
+      "description": "Un service à faire tourner : propre à une affectation (RESOLUE) ou partagé entre plusieurs (PARTAGEE).",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_SERVICE_(RESOLUE|PARTAGEE)_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de service : il commence par INSTANCE_SERVICE_RESOLUE_ ou INSTANCE_SERVICE_PARTAGEE_, par exemple INSTANCE_SERVICE_RESOLUE_ACTIONS_ROBOT_MAGASIN_01."}
+    },
+    "instance_service_partagee": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_SERVICE_PARTAGEE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de service partagé : il commence par INSTANCE_SERVICE_PARTAGEE_."}
+    },
+    "instance_application_resolue": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_APPLICATION_RESOLUE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code d'application ouverte : il commence par INSTANCE_APPLICATION_RESOLUE_, par exemple INSTANCE_APPLICATION_RESOLUE_TELEOPERATION_WEB_R01_OP_A."}
+    },
+    "instance_unite_resolue": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_UNITE_RESOLUE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code d'unité : il commence par INSTANCE_UNITE_RESOLUE_, par exemple INSTANCE_UNITE_RESOLUE_COMMANDE_BASE_ROBOT_01."}
+    },
+    "instance_unite_configuree": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^INSTANCE_UNITE_CONFIGUREE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code d'unité configurée : il commence par INSTANCE_UNITE_CONFIGUREE_, par exemple INSTANCE_UNITE_CONFIGUREE_MANETTE_OPERATEUR."}
+    },
+    "affectation_deploiement": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^AFFECTATION_DEPLOIEMENT_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code d'affectation : il commence par AFFECTATION_DEPLOIEMENT_, par exemple AFFECTATION_DEPLOIEMENT_ROBOT_MAGASIN_01_004."}
+    },
+    "revision_instance_service_partagee": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^REVISION_INSTANCE_SERVICE_PARTAGEE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de révision partagée : il commence par REVISION_INSTANCE_SERVICE_PARTAGEE_."}
+    },
+    "type_service": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_SERVICE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type de service : il commence par TYPE_SERVICE_, par exemple TYPE_SERVICE_ACTIONS_ROBOT."}
+    },
+    "type_unite": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_UNITE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type d'unité : il commence par TYPE_UNITE_, par exemple TYPE_UNITE_EXECUTION_ACTIONS_ROBOT."}
+    },
+    "type_appareil": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_APPAREIL_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type d'appareil : il commence par TYPE_APPAREIL_, par exemple TYPE_APPAREIL_ROBOT_YAHBOOM_M3_PRO."}
+    },
+    "type_entree": {
+      "description": "Le type d'un canal de réception (formalisation 2.3) : une liste fermée.",
+      "enum": [
+        "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+        "TYPE_ENTREE_SERVICE_LOCAL",
+        "TYPE_ENTREE_INJECTION_APPLICATION",
+        "TYPE_ENTREE_LECTURE_APPAREIL_LOCAL",
+        "TYPE_ENTREE_LECTURE_MESSAGERIE_EVENEMENTS",
+        "TYPE_ENTREE_INTERROGATION_API",
+        "TYPE_ENTREE_RECEPTION_HTTP",
+        "TYPE_ENTREE_ABONNEMENT_ROBOT_OPERATING_SYSTEM_2"
+      ]
+    },
+    "type_sortie": {
+      "description": "Le type d'un canal d'émission (formalisation 2.3) : une liste fermée.",
+      "enum": [
+        "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+        "TYPE_SORTIE_SERVICE_LOCAL",
+        "TYPE_SORTIE_RAPPEL_APPLICATION",
+        "TYPE_SORTIE_PUBLICATION_MESSAGERIE_EVENEMENTS",
+        "TYPE_SORTIE_PUBLICATION_ROBOT_OPERATING_SYSTEM_2",
+        "TYPE_SORTIE_APPEL_API",
+        "TYPE_SORTIE_ENREGISTREMENT_LOCAL"
+      ]
+    },
+    "type_liaison": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_LIAISON_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type de liaison : il commence par TYPE_LIAISON_, par exemple TYPE_LIAISON_APPAREIL_LOCAL."}
+    },
+    "type_source_media": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_SOURCE_MEDIA_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type de source média : il commence par TYPE_SOURCE_MEDIA_, par exemple TYPE_SOURCE_MEDIA_SUJET_ROBOT_OPERATING_SYSTEM_2."}
+    },
+    "type_destination_media": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_DESTINATION_MEDIA_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type de destination média : il commence par TYPE_DESTINATION_MEDIA_, par exemple TYPE_DESTINATION_MEDIA_PUBLICATION_SALLE_TEMPS_REEL."}
+    },
+    "canal_reception": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CANAL_RECEPTION_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un canal de réception : il commence par CANAL_RECEPTION_, par exemple CANAL_RECEPTION_COMMANDE_BASE."}
+    },
+    "canal_emission": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CANAL_EMISSION_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un canal d'émission : il commence par CANAL_EMISSION_, par exemple CANAL_EMISSION_VITESSE_ROUES."}
+    },
+    "canal_reception_media": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CANAL_RECEPTION_MEDIA_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un canal de réception média : il commence par CANAL_RECEPTION_MEDIA_, par exemple CANAL_RECEPTION_MEDIA_VIDEO_AVANT."}
+    },
+    "canal_emission_media": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CANAL_EMISSION_MEDIA_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un canal d'émission média : il commence par CANAL_EMISSION_MEDIA_, par exemple CANAL_EMISSION_MEDIA_VIDEO_AVANT."}
+    },
+    "contrat_forme_donnee": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CONTRAT_FORME_DONNEE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de forme de donnée : il commence par CONTRAT_FORME_DONNEE_, par exemple CONTRAT_FORME_DONNEE_COMMANDE_BASE."}
+    },
+    "contrat_composant_versionne": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^CONTRAT_COMPOSANT_VERSIONNE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de contrat de composant : il commence par CONTRAT_COMPOSANT_VERSIONNE_, par exemple CONTRAT_COMPOSANT_VERSIONNE_ACTIONS_ROBOT_003."}
+    },
+    "composant": {
+      "description": "N'importe quel composant posé sur le canevas.",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^COMPOSANT_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un code de composant : il commence par COMPOSANT_, par exemple COMPOSANT_APPAREIL_COMMANDE_MANETTE."}
+    },
+    "composant_appareil_commande": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^COMPOSANT_APPAREIL_COMMANDE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un appareil de commande : il commence par COMPOSANT_APPAREIL_COMMANDE_, par exemple COMPOSANT_APPAREIL_COMMANDE_MANETTE."}
+    },
+    "composant_messagerie_evenements": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^COMPOSANT_MESSAGERIE_EVENEMENTS_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas une messagerie d'événements : il commence par COMPOSANT_MESSAGERIE_EVENEMENTS_, par exemple COMPOSANT_MESSAGERIE_EVENEMENTS_EXPLOITATION."}
+    },
+    "composant_api_rest": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^COMPOSANT_API_REST_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas une API REST : il commence par COMPOSANT_API_REST_, par exemple COMPOSANT_API_REST_STOCKS."}
+    },
+    "composant_reception_http": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^COMPOSANT_RECEPTION_HTTP_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas une réception HTTP : il commence par COMPOSANT_RECEPTION_HTTP_, par exemple COMPOSANT_RECEPTION_HTTP_ALERTES."}
+    },
+    "point_connexion_stockage_local": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^POINT_CONNEXION_STOCKAGE_LOCAL_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un stockage local : il commence par POINT_CONNEXION_STOCKAGE_LOCAL_, par exemple POINT_CONNEXION_STOCKAGE_LOCAL_JOURNAL_MISSIONS."}
+    },
+    "secret": {
+      "description": "Le nom d'un accès gardé par la console, jamais sa valeur (formalisation 2.12).",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^SECRET_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas le nom d'un accès : il commence par SECRET_, par exemple SECRET_MESSAGERIE_EVENEMENTS_EXPLOITATION ; un fichier ne porte jamais la valeur d'un secret."}
+    },
+    "socle": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^SOCLE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un élément du socle : il commence par SOCLE_, par exemple SOCLE_PONT_MICRO_ROS."}
+    },
+    "profil_commande": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^PROFIL_COMMANDE_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un profil de commande : il commence par PROFIL_COMMANDE_, par exemple PROFIL_COMMANDE_MANETTE."}
+    },
+    "mode_traitement_unite": {
+      "description": "Le mode de traitement d'une unité (formalisation 2.7) : une liste fermée.",
+      "enum": [
+        "MODE_TRAITEMENT_UNITE_IMPLEMENTATION_NATIVE",
+        "MODE_TRAITEMENT_UNITE_CONFIGURATION_DECLARATIVE",
+        "MODE_TRAITEMENT_UNITE_FONCTION_COMPOSANT_PARENT"
+      ]
+    },
+    "zone_environnement_execution": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^ZONE_ENVIRONNEMENT_EXECUTION_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas une zone : il commence par ZONE_ENVIRONNEMENT_EXECUTION_, par exemple ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE."}
+    },
+    "zone_environnement_execution_externe": {
+      "description": "Le code de la zone Externe, une par bundle : les serveurs qui ne sont sur aucune de nos machines (formalisation 2.9). Ajouté en 1.1.",
+      "const": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE"
+    },
+    "type_environnement_execution": {
+      "description": "Le type d'une zone : les sept environnements de la spécification (5.1), dans leur ordre, puis celui de la zone Externe. Une liste fermée. Ajouté en 1.1 (conception du lot L1, question Q3).",
+      "enum": [
+        "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT",
+        "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+        "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+        "TYPE_ENVIRONNEMENT_EXECUTION_ORDINATEUR_BUREAU",
+        "TYPE_ENVIRONNEMENT_EXECUTION_APPAREIL_MOBILE",
+        "TYPE_ENVIRONNEMENT_EXECUTION_CASQUE_REALITE_VIRTUELLE",
+        "TYPE_ENVIRONNEMENT_EXECUTION_SIMULATEUR",
+        "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE"
+      ]
+    },
+    "exigence_activation_environnement": {
+      "description": "Une zone est obligatoire, ou facultative avec une justification (spécification 5.3). Ajouté en 1.1.",
+      "enum": [
+        "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE",
+        "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE"
+      ]
+    },
+    "composant_salle_temps_reel": {
+      "description": "Le code de la salle temps réel, une par bundle, posée seule avec la première zone (formalisation 2.2). Ajouté en 1.1.",
+      "const": "COMPOSANT_SALLE_TEMPS_REEL"
+    },
+    "sorte_bundle_deploiement": {
+      "description": "La sorte du bundle lui-même : le parent des zones et de la salle (conception du lot L1, table 3.4). Ajouté en 1.1.",
+      "const": "BUNDLE_DEPLOIEMENT"
+    },
+    "sorte_d_element_du_bundle": {
+      "description": "La sorte d'un élément d'un bundle au format oscar.bundle/1 : celles de la table 3.4 de la conception du lot L1, dans l'ordre de l'emboîtement. Une liste fermée ; les lots suivants en ajoutent (composants de connexion en L2, appareils en L4). Ajouté en 1.1.",
+      "enum": [
+        "ZONE_ENVIRONNEMENT_EXECUTION",
+        "COMPOSANT_SALLE_TEMPS_REEL",
+        "INSTANCE_SERVICE_CONFIGUREE",
+        "INSTANCE_APPLICATION_CONFIGUREE",
+        "INSTANCE_UNITE_CONFIGUREE",
+        "TRAITEMENT_METIER_UNITE",
+        "INTERFACE_COMMUNICATION_UNITE",
+        "BANDE_DONNEES",
+        "BUS_RECEPTION",
+        "BUS_EMISSION",
+        "CANAL_RECEPTION",
+        "CANAL_EMISSION"
+      ]
+    },
+    "type_application": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_APPLICATION_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type d'application : il commence par TYPE_APPLICATION_, par exemple TYPE_APPLICATION_GENERIQUE."}
+    },
+    "type_composant": {
+      "description": "Le type d'un composant qui a un contrat : un service ou une application. Ajouté en 1.1.",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^TYPE_(SERVICE|APPLICATION)_[A-Z0-9]+(_[A-Z0-9]+)*$",
+      "x-raison": {"pattern": "la valeur « {valeur} » n'est pas un type de composant : il commence par TYPE_SERVICE_ ou TYPE_APPLICATION_, par exemple TYPE_SERVICE_ACTIONS_ROBOT."}
+    },
+    "type_service_generique": {
+      "description": "Le type d'un service posé avant le catalogue standard du lot L4 (conception du lot L1, question Q3). Ajouté en 1.1.",
+      "const": "TYPE_SERVICE_GENERIQUE"
+    },
+    "type_application_generique": {
+      "description": "Le type d'une application posée avant le catalogue standard du lot L4. Ajouté en 1.1.",
+      "const": "TYPE_APPLICATION_GENERIQUE"
+    },
+    "type_unite_standard": {
+      "description": "Le type d'une unité posée avant le catalogue standard du lot L4. Ajouté en 1.1.",
+      "const": "TYPE_UNITE_STANDARD"
+    },
+    "famille_palette": {
+      "description": "Les huit familles de la palette de Studio, dans l'ordre de la formalisation 2.8 : environnements, temps réel, appareils, messagerie d'événements, réseau et Internet, stockage, programmes existants, services et applications. Ajouté en 1.1.",
+      "enum": [
+        "FAMILLE_PALETTE_ENVIRONNEMENTS",
+        "FAMILLE_PALETTE_TEMPS_REEL",
+        "FAMILLE_PALETTE_APPAREILS",
+        "FAMILLE_PALETTE_MESSAGERIE_EVENEMENTS",
+        "FAMILLE_PALETTE_RESEAU_INTERNET",
+        "FAMILLE_PALETTE_STOCKAGE",
+        "FAMILLE_PALETTE_PROGRAMMES_EXISTANTS",
+        "FAMILLE_PALETTE_SERVICES_APPLICATIONS"
+      ]
+    }
+  }
+}

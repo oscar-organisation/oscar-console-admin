@@ -1,0 +1,6 @@
+{
+  "format": "oscar.bundle/1",
+  "bundle": {"code": "BUNDLE_DEPLOIEMENT_NOUVEAU", "nom": "Nouveau bundle"},
+  "elements": [],
+  "liaisons": []
+}

@@ -1,0 +1,18 @@
+{
+  "code": "BUS_EMISSION",
+  "version": "1.0.0",
+  "sorte": "BUS_EMISSION",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Bus d'émission",
+  "description": "Il range les canaux par lesquels l'unité émet des données.",
+  "exemple": "Le bus d'où part l'état de la base.",
+  "parents_autorises": [
+    "BANDE_DONNEES"
+  ],
+  "recoit": [
+    "CANAL_EMISSION"
+  ],
+  "contenu_cree": [],
+  "ordre": 60,
+  "dans_la_palette": true
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "code": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+    "nom": "Environnements",
+    "ordre": 10
+  },
+  {
+    "code": "FAMILLE_PALETTE_TEMPS_REEL",
+    "nom": "Temps réel",
+    "ordre": 20
+  },
+  {
+    "code": "FAMILLE_PALETTE_APPAREILS",
+    "nom": "Appareils",
+    "ordre": 30
+  },
+  {
+    "code": "FAMILLE_PALETTE_MESSAGERIE_EVENEMENTS",
+    "nom": "Messagerie d'événements",
+    "ordre": 40
+  },
+  {
+    "code": "FAMILLE_PALETTE_RESEAU_INTERNET",
+    "nom": "Réseau et Internet",
+    "ordre": 50
+  },
+  {
+    "code": "FAMILLE_PALETTE_STOCKAGE",
+    "nom": "Stockage",
+    "ordre": 60
+  },
+  {
+    "code": "FAMILLE_PALETTE_PROGRAMMES_EXISTANTS",
+    "nom": "Programmes existants",
+    "ordre": 70
+  },
+  {
+    "code": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+    "nom": "Services et applications",
+    "ordre": 80
+  }
+]

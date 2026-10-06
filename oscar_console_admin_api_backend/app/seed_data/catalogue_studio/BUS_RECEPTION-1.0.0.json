@@ -1,0 +1,18 @@
+{
+  "code": "BUS_RECEPTION",
+  "version": "1.0.0",
+  "sorte": "BUS_RECEPTION",
+  "famille": "FAMILLE_PALETTE_SERVICES_APPLICATIONS",
+  "nom": "Bus de réception",
+  "description": "Il range les canaux par lesquels l'unité reçoit des données.",
+  "exemple": "Le bus où arrivent les ordres de l'opérateur.",
+  "parents_autorises": [
+    "BANDE_DONNEES"
+  ],
+  "recoit": [
+    "CANAL_RECEPTION"
+  ],
+  "contenu_cree": [],
+  "ordre": 50,
+  "dans_la_palette": true
+}

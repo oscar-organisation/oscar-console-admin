@@ -1,0 +1,1235 @@
+{
+  "$comment": "Les cas des règles du modèle (conception du lot L1, parties 3.4 et 4.5) : la console les joue des deux côtés, dans le navigateur (Vitest) et sur le serveur (pytest), et les deux doivent rendre le verdict attendu. Chaque cas est un document oscar.bundle/1, valide contre son schéma (les tests de ce dépôt le vérifient) ; éventuellement un geste à appliquer à ce document ; et le verdict attendu : accepté, ou refusé avec le code de l'invariant. Sans geste, c'est le document lui-même qui est vérifié (l'enregistrement sur le serveur) ; avec un geste, c'est le document qu'il produirait (le geste dans le navigateur). Un cas refusé n'enfreint qu'un invariant ; quand un couple parent, enfant a un code propre (SERVICE_HORS_ZONE, ZONE_DANS_UNE_ZONE, UNITE_HORS_COMPOSANT, CANAL_MAUVAIS_BUS, ZONE_EXTERNE_RESERVEE, ZONE_INCOMPATIBLE), c'est ce code qui est attendu, jamais PARENT_INCOMPATIBLE. Les invariants eux-mêmes sont codés par la console, pas ici. Les cas supposent le catalogue ci-dessous, celui du lot L1 (conception, partie 3.5), et ce que chaque type de zone reçoit (table 3.4).",
+  "gestes": "Les gestes, ceux de la conception du lot L1 (partie 4.2) : ajouter {sorte, type, parent, valeurs} (la structure créée d'office naît avec l'élément, et la première zone pose la salle) ; regler {id, champs} ; emboiter {id, parent} ; supprimer {id} (avec ses enfants et ses liaisons) ; relier {source, destination} ; delier {liaison}.",
+  "catalogue": [
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ORDINATEUR_BUREAU", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_APPAREIL_MOBILE", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_CASQUE_REALITE_VIRTUELLE", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SIMULATEUR", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION"},
+    {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0", "sorte": "COMPOSANT_SALLE_TEMPS_REEL"},
+    {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0", "sorte": "INSTANCE_SERVICE_CONFIGUREE"},
+    {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0", "sorte": "INSTANCE_APPLICATION_CONFIGUREE"},
+    {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0", "sorte": "INSTANCE_UNITE_CONFIGUREE"}
+  ],
+  "invariants": [
+    {"code": "SERVICE_HORS_ZONE", "regle": "un service ou une application a une zone pour parent"},
+    {"code": "ZONE_INCOMPATIBLE", "regle": "le type de la zone accepte cet enfant"},
+    {"code": "ZONE_DANS_UNE_ZONE", "regle": "une zone et la salle ont le bundle pour parent"},
+    {"code": "SALLE_EN_DOUBLE", "regle": "au plus une salle"},
+    {"code": "SALLE_SANS_ZONE", "regle": "une salle existe si et seulement si au moins une zone existe"},
+    {"code": "ZONE_EXTERNE_EN_DOUBLE", "regle": "au plus une zone Externe"},
+    {"code": "ZONE_EXTERNE_RESERVEE", "regle": "la zone Externe ne reçoit ni service, ni application"},
+    {"code": "UNITE_HORS_COMPOSANT", "regle": "une unité a un service ou une application pour parent"},
+    {"code": "STRUCTURE_FIXE", "regle": "une unité a exactement un traitement et une interface"},
+    {"code": "CANAL_MAUVAIS_BUS", "regle": "un canal de réception dans un bus de réception, un canal d'émission dans un bus d'émission"},
+    {"code": "PARENT_INCOMPATIBLE", "regle": "tout autre couple parent, enfant hors de la table d'emboîtement"},
+    {"code": "PARENT_ABSENT", "regle": "le parent existe dans le document"},
+    {"code": "JUSTIFICATION_ABSENTE", "regle": "une zone facultative a une justification non vide"},
+    {"code": "IDENTIFIANT_EN_DOUBLE", "regle": "deux éléments, ou deux liaisons, n'ont jamais le même identifiant"},
+    {"code": "CODE_EN_DOUBLE", "regle": "un code est unique dans sa portée : le bundle pour zone, salle, service, application et unité ; l'unité pour traitement, interface, bande, bus et canal"},
+    {"code": "CODE_FIGE", "regle": "un code marqué code_fige ne change pas"},
+    {"code": "TYPE_INCONNU_DU_CATALOGUE", "regle": "le type cité, par son code et sa version, existe au catalogue"},
+    {"code": "LIAISON_SENS_INVERSE", "regle": "une liaison va d'un canal d'émission vers un canal de réception"},
+    {"code": "LIAISON_EXTREMITE_ABSENTE", "regle": "les deux extrémités d'une liaison existent"}
+  ],
+  "cas": [
+    {
+      "nom": "un service dans une zone robot", "invariant": "SERVICE_HORS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un service posé directement dans le bundle", "invariant": "SERVICE_HORS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": null, "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "SERVICE_HORS_ZONE"}
+    },
+    {
+      "nom": "une application posée directement dans le bundle", "invariant": "SERVICE_HORS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "app-a", "sorte": "INSTANCE_APPLICATION_CONFIGUREE", "parent": null, "code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION", "nom": "Téléopération", "type": {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-o", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "app-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_OPERATEUR", "nom": "Commande de l'opérateur", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-o", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-o", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-o", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-o", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-o", "sorte": "BANDE_DONNEES", "parent": "itf-o", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-o", "sorte": "BUS_RECEPTION", "parent": "bnd-o", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-o", "sorte": "BUS_EMISSION", "parent": "bnd-o", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "SERVICE_HORS_ZONE"}
+    },
+    {
+      "nom": "déposer un service hors d'une zone", "invariant": "SERVICE_HORS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "ajouter", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}, "parent": null, "valeurs": {"code": "INSTANCE_SERVICE_CONFIGUREE_MEDIA_ROBOT", "nom": "Média du robot"}},
+      "verdict": {"accepte": false, "code": "SERVICE_HORS_ZONE"}
+    },
+    {
+      "nom": "une application dans une zone navigateur web", "invariant": "ZONE_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-w", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_APPLICATION_WEB", "nom": "Application web", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "app-a", "sorte": "INSTANCE_APPLICATION_CONFIGUREE", "parent": "zon-w", "code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION", "nom": "Téléopération", "type": {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-o", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "app-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_OPERATEUR", "nom": "Commande de l'opérateur", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-o", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-o", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-o", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-o", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-o", "sorte": "BANDE_DONNEES", "parent": "itf-o", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-o", "sorte": "BUS_RECEPTION", "parent": "bnd-o", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-o", "sorte": "BUS_EMISSION", "parent": "bnd-o", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un service et une application dans une zone simulateur", "invariant": "ZONE_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_SIMULATEUR", "nom": "Simulateur", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SIMULATEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-s", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "app-a", "sorte": "INSTANCE_APPLICATION_CONFIGUREE", "parent": "zon-s", "code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION", "nom": "Téléopération", "type": {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-o", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "app-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_OPERATEUR", "nom": "Commande de l'opérateur", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-o", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-o", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-o", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-o", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-o", "sorte": "BANDE_DONNEES", "parent": "itf-o", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-o", "sorte": "BUS_RECEPTION", "parent": "bnd-o", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-o", "sorte": "BUS_EMISSION", "parent": "bnd-o", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une application dans une zone robot", "invariant": "ZONE_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "app-a", "sorte": "INSTANCE_APPLICATION_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION", "nom": "Téléopération", "type": {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-o", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "app-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_OPERATEUR", "nom": "Commande de l'opérateur", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-o", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-o", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-o", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-o", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-o", "sorte": "BANDE_DONNEES", "parent": "itf-o", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-o", "sorte": "BUS_RECEPTION", "parent": "bnd-o", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-o", "sorte": "BUS_EMISSION", "parent": "bnd-o", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "ZONE_INCOMPATIBLE"}
+    },
+    {
+      "nom": "donner le type navigateur web à une zone qui contient un service", "invariant": "ZONE_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "regler", "id": "zon-r", "champs": {"type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB", "version": "1.0.0"}}},
+      "verdict": {"accepte": false, "code": "ZONE_INCOMPATIBLE"}
+    },
+    {
+      "nom": "deux zones au premier niveau du bundle", "invariant": "ZONE_DANS_UNE_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR", "nom": "Serveur", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une zone dans une zone", "invariant": "ZONE_DANS_UNE_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": "zon-r", "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR", "nom": "Serveur", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "ZONE_DANS_UNE_ZONE"}
+    },
+    {
+      "nom": "une seule salle", "invariant": "SALLE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "deux salles", "invariant": "SALLE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "sal-02", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL_SECONDE", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "SALLE_EN_DOUBLE"}
+    },
+    {
+      "nom": "ajouter une deuxième salle", "invariant": "SALLE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "ajouter", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}, "parent": null, "valeurs": {"code": "COMPOSANT_SALLE_TEMPS_REEL_SECONDE", "nom": "Salle temps réel"}},
+      "verdict": {"accepte": false, "code": "SALLE_EN_DOUBLE"}
+    },
+    {
+      "nom": "un bundle vide, sans zone ni salle", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "ajouter la première zone pose la salle", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [],
+        "liaisons": []},
+      "geste": {"operation": "ajouter", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "parent": null, "valeurs": {"code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}}},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "la salle avec une zone Externe seule", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "supprimer la dernière zone emporte la salle", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "supprimer", "id": "zon-r"},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une salle sans zone", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "SALLE_SANS_ZONE"}
+    },
+    {
+      "nom": "une zone sans salle", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "SALLE_SANS_ZONE"}
+    },
+    {
+      "nom": "supprimer la salle quand une zone existe", "invariant": "SALLE_SANS_ZONE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "supprimer", "id": "sal-01"},
+      "verdict": {"accepte": false, "code": "SALLE_SANS_ZONE"}
+    },
+    {
+      "nom": "une zone Externe", "invariant": "ZONE_EXTERNE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "deux zones Externe", "invariant": "ZONE_EXTERNE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}},
+          {"id": "zon-x2", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE_SECONDE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "ZONE_EXTERNE_EN_DOUBLE"}
+    },
+    {
+      "nom": "une zone Externe vide, à côté d'une zone robot", "invariant": "ZONE_EXTERNE_RESERVEE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un service dans la zone Externe", "invariant": "ZONE_EXTERNE_RESERVEE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}},
+          {"id": "svc-x", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-x", "code": "INSTANCE_SERVICE_CONFIGUREE_STOCKS", "nom": "Stocks", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-x", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-x", "code": "INSTANCE_UNITE_CONFIGUREE_STOCKS", "nom": "Stocks", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-x", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-x", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-x", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-x", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-x", "sorte": "BANDE_DONNEES", "parent": "itf-x", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-x", "sorte": "BUS_RECEPTION", "parent": "bnd-x", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-x", "sorte": "BUS_EMISSION", "parent": "bnd-x", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "ZONE_EXTERNE_RESERVEE"}
+    },
+    {
+      "nom": "déposer une application dans la zone Externe", "invariant": "ZONE_EXTERNE_RESERVEE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-x", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE", "nom": "Externe : hors de nos machines", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", "version": "1.0.0"}}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "ajouter", "sorte": "INSTANCE_APPLICATION_CONFIGUREE", "type": {"code": "TYPE_APPLICATION_GENERIQUE", "version": "1.0.0"}, "parent": "zon-x", "valeurs": {"code": "INSTANCE_APPLICATION_CONFIGUREE_TELEOPERATION", "nom": "Téléopération"}},
+      "verdict": {"accepte": false, "code": "ZONE_EXTERNE_RESERVEE"}
+    },
+    {
+      "nom": "une unité dans un service", "invariant": "UNITE_HORS_COMPOSANT",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une unité posée dans une zone", "invariant": "UNITE_HORS_COMPOSANT",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "UNITE_HORS_COMPOSANT"}
+    },
+    {
+      "nom": "déplacer une unité dans une zone", "invariant": "UNITE_HORS_COMPOSANT",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "emboiter", "id": "uni-a", "parent": "zon-r"},
+      "verdict": {"accepte": false, "code": "UNITE_HORS_COMPOSANT"}
+    },
+    {
+      "nom": "une unité avec son traitement et son interface", "invariant": "STRUCTURE_FIXE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une unité sans interface", "invariant": "STRUCTURE_FIXE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "STRUCTURE_FIXE"}
+    },
+    {
+      "nom": "une unité avec deux traitements", "invariant": "STRUCTURE_FIXE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "trt-a2", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_SECOND"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "STRUCTURE_FIXE"}
+    },
+    {
+      "nom": "supprimer le traitement d'une unité", "invariant": "STRUCTURE_FIXE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "supprimer", "id": "trt-a"},
+      "verdict": {"accepte": false, "code": "STRUCTURE_FIXE"}
+    },
+    {
+      "nom": "un canal de réception dans un bus de réception", "invariant": "CANAL_MAUVAIS_BUS",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un canal de réception dans un bus d'émission", "invariant": "CANAL_MAUVAIS_BUS",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bem-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "CANAL_MAUVAIS_BUS"}
+    },
+    {
+      "nom": "déplacer un canal d'émission dans un bus de réception", "invariant": "CANAL_MAUVAIS_BUS",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-a", "code": "CANAL_EMISSION_ETAT_COMMANDE", "nom": "État de la commande"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "emboiter", "id": "can-e", "parent": "bre-a"},
+      "verdict": {"accepte": false, "code": "CANAL_MAUVAIS_BUS"}
+    },
+    {
+      "nom": "un bus dans une bande", "invariant": "PARENT_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un bus posé dans une interface", "invariant": "PARENT_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "bre-x", "sorte": "BUS_RECEPTION", "parent": "itf-a", "code": "BUS_RECEPTION_SECOND", "nom": "Réception seconde"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "PARENT_INCOMPATIBLE"}
+    },
+    {
+      "nom": "un canal posé dans une bande", "invariant": "PARENT_INCOMPATIBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bnd-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "PARENT_INCOMPATIBLE"}
+    },
+    {
+      "nom": "chaque parent existe", "invariant": "PARENT_ABSENT",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un parent qui n'existe pas", "invariant": "PARENT_ABSENT",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "bre-x", "sorte": "BUS_RECEPTION", "parent": "bnd-absente", "code": "BUS_RECEPTION_SECOND", "nom": "Réception seconde"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "PARENT_ABSENT"}
+    },
+    {
+      "nom": "une zone facultative avec sa justification", "invariant": "JUSTIFICATION_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR_TRAITEMENT", "nom": "Serveur de traitement", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE", "justification": "Le robot se pilote sans lui."}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une zone facultative sans justification", "invariant": "JUSTIFICATION_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR_TRAITEMENT", "nom": "Serveur de traitement", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE"}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "JUSTIFICATION_ABSENTE"}
+    },
+    {
+      "nom": "une zone facultative à la justification vide", "invariant": "JUSTIFICATION_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "zon-s", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR_TRAITEMENT", "nom": "Serveur de traitement", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE", "justification": ""}}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "JUSTIFICATION_ABSENTE"}
+    },
+    {
+      "nom": "rendre une zone facultative sans justification", "invariant": "JUSTIFICATION_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "regler", "id": "zon-r", "champs": {"reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_FACULTATIVE"}}},
+      "verdict": {"accepte": false, "code": "JUSTIFICATION_ABSENTE"}
+    },
+    {
+      "nom": "chaque identifiant est unique", "invariant": "IDENTIFIANT_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-r"}]},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "deux éléments au même identifiant", "invariant": "IDENTIFIANT_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_ARRET_URGENCE", "nom": "Arrêt d'urgence"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "IDENTIFIANT_EN_DOUBLE"}
+    },
+    {
+      "nom": "deux liaisons au même identifiant", "invariant": "IDENTIFIANT_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "can-r2", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_ARRET_URGENCE", "nom": "Arrêt d'urgence"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-r"}, {"id": "lia-1", "source": "can-e", "destination": "can-r2"}]},
+      "verdict": {"accepte": false, "code": "IDENTIFIANT_EN_DOUBLE"}
+    },
+    {
+      "nom": "deux unités du même type, aux mêmes codes de canaux", "invariant": "CODE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE_SECOURS", "nom": "Commande de secours", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-rb", "sorte": "CANAL_RECEPTION", "parent": "bre-b", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "deux services au même code", "invariant": "CODE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot, bis", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "CODE_EN_DOUBLE"}
+    },
+    {
+      "nom": "deux canaux au même code dans une unité", "invariant": "CODE_EN_DOUBLE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "can-r2", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base, bis"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "CODE_EN_DOUBLE"}
+    },
+    {
+      "nom": "renommer un élément au code figé", "invariant": "CODE_FIGE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}, "code_fige": true},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "regler", "id": "svc-a", "champs": {"nom": "Service des actions du robot"}},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "changer un code figé", "invariant": "CODE_FIGE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}, "code_fige": true},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "regler", "id": "svc-a", "champs": {"code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS"}},
+      "verdict": {"accepte": false, "code": "CODE_FIGE"}
+    },
+    {
+      "nom": "chaque type est au catalogue", "invariant": "TYPE_INCONNU_DU_CATALOGUE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "un type à une version absente du catalogue", "invariant": "TYPE_INCONNU_DU_CATALOGUE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "9.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "verdict": {"accepte": false, "code": "TYPE_INCONNU_DU_CATALOGUE"}
+    },
+    {
+      "nom": "ajouter un service d'un type inconnu", "invariant": "TYPE_INCONNU_DU_CATALOGUE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "ajouter", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "type": {"code": "TYPE_SERVICE_INCONNU", "version": "1.0.0"}, "parent": "zon-r", "valeurs": {"code": "INSTANCE_SERVICE_CONFIGUREE_MEDIA_ROBOT", "nom": "Média du robot"}},
+      "verdict": {"accepte": false, "code": "TYPE_INCONNU_DU_CATALOGUE"}
+    },
+    {
+      "nom": "une liaison d'une sortie vers une entrée", "invariant": "LIAISON_SENS_INVERSE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-r"}]},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "relier une sortie à une entrée", "invariant": "LIAISON_SENS_INVERSE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "relier", "source": "can-e", "destination": "can-r"},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une liaison d'une entrée vers une sortie", "invariant": "LIAISON_SENS_INVERSE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-r", "destination": "can-e"}]},
+      "verdict": {"accepte": false, "code": "LIAISON_SENS_INVERSE"}
+    },
+    {
+      "nom": "relier une entrée à une sortie", "invariant": "LIAISON_SENS_INVERSE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": []},
+      "geste": {"operation": "relier", "source": "can-r", "destination": "can-e"},
+      "verdict": {"accepte": false, "code": "LIAISON_SENS_INVERSE"}
+    },
+    {
+      "nom": "supprimer un canal retire ses liaisons", "invariant": "LIAISON_EXTREMITE_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-r"}]},
+      "geste": {"operation": "supprimer", "id": "can-r"},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "délier une liaison", "invariant": "LIAISON_EXTREMITE_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-r"}]},
+      "geste": {"operation": "delier", "liaison": "lia-1"},
+      "verdict": {"accepte": true}
+    },
+    {
+      "nom": "une liaison vers un canal qui n'existe pas", "invariant": "LIAISON_EXTREMITE_ABSENTE",
+      "document": {"format": "oscar.bundle/1", "bundle": {"code": "BUNDLE_DEPLOIEMENT_CAS_DES_REGLES", "nom": "Bundle des cas"},
+        "elements": [
+          {"id": "zon-r", "sorte": "ZONE_ENVIRONNEMENT_EXECUTION", "parent": null, "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT", "nom": "Robot", "type": {"code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT", "version": "1.0.0"}, "reglages": {"exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"}},
+          {"id": "sal-01", "sorte": "COMPOSANT_SALLE_TEMPS_REEL", "parent": null, "code": "COMPOSANT_SALLE_TEMPS_REEL", "nom": "Salle temps réel", "type": {"code": "COMPOSANT_SALLE_TEMPS_REEL", "version": "1.0.0"}},
+          {"id": "svc-a", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_ACTIONS_ROBOT", "nom": "Actions du robot", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-a", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-a", "code": "INSTANCE_UNITE_CONFIGUREE_COMMANDE_BASE", "nom": "Commande de la base", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-a", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-a", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-a", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-a", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-a", "sorte": "BANDE_DONNEES", "parent": "itf-a", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-a", "sorte": "BUS_RECEPTION", "parent": "bnd-a", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-a", "sorte": "BUS_EMISSION", "parent": "bnd-a", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-r", "sorte": "CANAL_RECEPTION", "parent": "bre-a", "code": "CANAL_RECEPTION_COMMANDE_BASE", "nom": "Commande de la base"},
+          {"id": "svc-b", "sorte": "INSTANCE_SERVICE_CONFIGUREE", "parent": "zon-r", "code": "INSTANCE_SERVICE_CONFIGUREE_PILOTE_AUTOMATIQUE", "nom": "Pilote automatique", "type": {"code": "TYPE_SERVICE_GENERIQUE", "version": "1.0.0"}},
+          {"id": "uni-b", "sorte": "INSTANCE_UNITE_CONFIGUREE", "parent": "svc-b", "code": "INSTANCE_UNITE_CONFIGUREE_PILOTE", "nom": "Pilote", "type": {"code": "TYPE_UNITE_STANDARD", "version": "1.0.0"}},
+          {"id": "trt-b", "sorte": "TRAITEMENT_METIER_UNITE", "parent": "uni-b", "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL"},
+          {"id": "itf-b", "sorte": "INTERFACE_COMMUNICATION_UNITE", "parent": "uni-b", "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE"},
+          {"id": "bnd-b", "sorte": "BANDE_DONNEES", "parent": "itf-b", "code": "BANDE_DONNEES_PRINCIPALE", "nom": "Bande principale"},
+          {"id": "bre-b", "sorte": "BUS_RECEPTION", "parent": "bnd-b", "code": "BUS_RECEPTION_PRINCIPAL", "nom": "Réception"},
+          {"id": "bem-b", "sorte": "BUS_EMISSION", "parent": "bnd-b", "code": "BUS_EMISSION_PRINCIPAL", "nom": "Émission"},
+          {"id": "can-e", "sorte": "CANAL_EMISSION", "parent": "bem-b", "code": "CANAL_EMISSION_COMMANDE_BASE", "nom": "Commande de la base"}
+        ],
+        "liaisons": [{"id": "lia-1", "source": "can-e", "destination": "can-absent"}]},
+      "verdict": {"accepte": false, "code": "LIAISON_EXTREMITE_ABSENTE"}
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "code": "TYPE_ENVIRONNEMENT_EXECUTION_ORDINATEUR_BUREAU",
+  "version": "1.0.0",
+  "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+  "famille": "FAMILLE_PALETTE_ENVIRONNEMENTS",
+  "nom": "Zone ordinateur de bureau",
+  "description": "Un ordinateur où une application s'installe, quand un navigateur ne suffit pas.",
+  "exemple": "Le poste de supervision installé à l'accueil du magasin.",
+  "parents_autorises": [
+    "BUNDLE_DEPLOIEMENT"
+  ],
+  "recoit": [
+    "INSTANCE_APPLICATION_CONFIGUREE"
+  ],
+  "contenu_cree": [],
+  "ordre": 40,
+  "dans_la_palette": true
+}
