@@ -6,15 +6,15 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
-  applyNodeChanges,
-  useNodesInitialized,
   useReactFlow,
   type Connection,
   type Edge,
   type EdgeTypes,
   type Node,
   type NodeChange,
+  type NodePositionChange,
   type NodeTypes,
+  type XYPosition,
 } from "@xyflow/react";
 import { descendants, parentDuDepot } from "../../feature-domain/modele/possibilites";
 import { SORTES, type ModeleBundle, type Position, type Refus, type Sorte } from "../../feature-domain/modele/types";
@@ -187,38 +187,53 @@ function Canevas(proprietes: ProprietesDeLEspace) {
   const [cible, setCible] = useState<string | null>(null);
   const [canauxReliables, setCanauxReliables] = useState<ReadonlySet<string> | null>(null);
 
-  // Les nœuds viennent de la disposition. Pendant un glissement, React Flow
-  // les déplace dans cette copie ; à chaque changement du modèle, la copie
-  // repart de la disposition : un bloc refusé revient ainsi à sa place.
-  const [source, setSource] = useState(disposition);
-  const [noeuds, setNoeuds] = useState<NoeudDuCanevas[]>(() => [...disposition.noeuds]);
-  if (source !== disposition) {
-    setSource(disposition);
-    setNoeuds([...disposition.noeuds]);
-  }
+  // Les nœuds viennent tout droit de la disposition : le canevas n'en garde
+  // pas de copie, qui pourrait prendre du retard sur le modèle. Seules les
+  // places d'un glissement en cours s'y superposent, le temps du glissement,
+  // et seulement pour la disposition où il a commencé : dès que le modèle
+  // change (le bloc posé, ou refusé), elles s'effacent d'elles-mêmes.
+  // Les tailles que React Flow mesure ne nous servent pas : chaque bloc a la
+  // sienne, donnée par la disposition.
+  const [glissement, setGlissement] = useState<{ readonly source: Disposition; readonly places: ReadonlyMap<string, XYPosition> } | null>(null);
+  const places = glissement?.source === disposition ? glissement.places : null;
+  const noeuds = useMemo((): NoeudDuCanevas[] => (places
+    ? disposition.noeuds.map((noeud) => {
+      const place = places.get(noeud.id);
+      return place ? { ...noeud, position: place } : noeud;
+    })
+    : [...disposition.noeuds]), [disposition, places]);
   const auChangementDesNoeuds = useCallback((changements: NodeChange<NoeudDuCanevas>[]) => {
-    setNoeuds((actuels) => applyNodeChanges(changements, actuels));
-  }, []);
+    const deplaces = changements.filter((changement): changement is NodePositionChange & { position: XYPosition } =>
+      changement.type === "position" && changement.dragging === true && changement.position !== undefined);
+    if (deplaces.length === 0) return;
+    setGlissement((avant) => {
+      const suivantes = new Map(avant?.source === disposition ? avant.places : []);
+      for (const changement of deplaces) suivantes.set(changement.id, changement.position);
+      return { source: disposition, places: suivantes };
+    });
+  }, [disposition]);
   const liaisons = useMemo((): Edge[] => [...disposition.liaisons], [disposition]);
   const sorteDe = useMemo(() => new Map(modele.elements.map((element) => [element.id, element.sorte])), [modele]);
 
   // À l'ouverture : tout le bundle à l'écran s'il y tient à un zoom lisible, sans jamais grossir
   // au-delà de sa taille réelle ; sinon, ce zoom lisible, cadré sur le coin haut gauche.
-  const noeudsPrets = useNodesInitialized();
-  const cadre = useRef(false);
+  // Le cadre du bundle a sa taille dans la disposition : le calcul n'attend aucune mesure, et se
+  // fait une seule fois, juste après le premier affichage, avant tout geste de la personne (un
+  // cadrage qui viendrait après un geste, « ajuster à l'écran » par exemple, l'annulerait).
+  const dispositionDOuverture = useRef(disposition);
   useEffect(() => {
-    if (!noeudsPrets || cadre.current || !conteneur.current) return;
-    cadre.current = true;
+    const cadre = dispositionDOuverture.current.noeuds.find((noeud) => noeud.id === ID_DU_CADRE);
+    if (!conteneur.current || !cadre) return;
     const { clientWidth: largeur, clientHeight: hauteur } = conteneur.current;
-    const bornes = flux.getNodesBounds(flux.getNodes());
-    if (bornes.width <= 0 || bornes.height <= 0) return;
-    const zoomPourTout = Math.min((largeur - 2 * MARGE_D_OUVERTURE) / bornes.width, (hauteur - 2 * MARGE_D_OUVERTURE) / bornes.height);
+    const [largeurDuBundle, hauteurDuBundle] = [cadre.width ?? 0, cadre.height ?? 0];
+    if (largeurDuBundle <= 0 || hauteurDuBundle <= 0 || largeur <= 0 || hauteur <= 0) return;
+    const zoomPourTout = Math.min((largeur - 2 * MARGE_D_OUVERTURE) / largeurDuBundle, (hauteur - 2 * MARGE_D_OUVERTURE) / hauteurDuBundle);
     const zoom = Math.min(1, Math.max(ZOOM_D_OUVERTURE_MINIMAL, zoomPourTout));
-    const placer = (place: number, taille: number, origine: number) => (taille * zoom <= place - 2 * MARGE_D_OUVERTURE
-      ? (place - taille * zoom) / 2 - origine * zoom
-      : MARGE_D_OUVERTURE - origine * zoom);
-    void flux.setViewport({ x: placer(largeur, bornes.width, bornes.x), y: placer(hauteur, bornes.height, bornes.y), zoom });
-  }, [noeudsPrets, flux]);
+    const placer = (place: number, taille: number) => (taille * zoom <= place - 2 * MARGE_D_OUVERTURE
+      ? (place - taille * zoom) / 2
+      : MARGE_D_OUVERTURE);
+    void flux.setViewport({ x: placer(largeur, largeurDuBundle), y: placer(hauteur, hauteurDuBundle), zoom });
+  }, [flux]);
 
   // « Localiser » : le canevas se centre sur le bloc demandé.
   useEffect(() => {
@@ -269,6 +284,12 @@ function Canevas(proprietes: ProprietesDeLEspace) {
         ref={conteneur}
         className={`ec-canevas${canauxReliables ? " ec-canevas--liaison-en-cours" : ""}`}
         data-testid="espace-composition"
+        // Un seul arrêt de Tab pour tout le canevas ; ses touches passent par clavier/raccourcis.ts.
+        tabIndex={0}
+        role="application"
+        aria-roledescription="canevas"
+        aria-label="Canevas du bundle : flèches pour passer d’un élément à l’autre, Entrée pour ses propriétés, A pour ajouter, Suppr pour supprimer"
+        data-zone-clavier="canevas"
         onDragOver={auSurvol}
         onDragLeave={() => setCible(null)}
         onDrop={auDepot}
@@ -282,8 +303,17 @@ function Canevas(proprietes: ProprietesDeLEspace) {
           // La sélection est celle de l'éditeur, partagée avec l'arborescence et l'inspecteur.
           elementsSelectable={false}
           nodesConnectable
+          // Le clavier de React Flow est coupé : il déplacerait les blocs aux flèches, supprimerait
+          // au Retour arrière, ferait de chaque bloc un arrêt de Tab (lecture de sa version 12.11.6,
+          // étape I5). Le Studio a ses propres touches, les mêmes que dans l'arborescence.
+          disableKeyboardA11y
+          nodesFocusable={false}
           edgesFocusable={false}
           deleteKeyCode={null}
+          selectionKeyCode={null}
+          multiSelectionKeyCode={null}
+          panActivationKeyCode={null}
+          zoomActivationKeyCode={null}
           onNodeClick={(_evenement: ClicReact, noeud: Node) => {
             onSelectionner(noeud.id === ID_DU_CADRE ? SELECTION_DU_BUNDLE : { sorte: "element", id: noeud.id });
           }}
@@ -336,12 +366,13 @@ function Canevas(proprietes: ProprietesDeLEspace) {
               const parent = parentDuDepot(pileSousLePointeur(point, descendants(modele.elements, noeud.id)), sorte, modele);
               if (parent !== actuel.parent) {
                 // Rien ne bouge avant la confirmation : le bloc revient à sa place.
-                setNoeuds([...disposition.noeuds]);
+                setGlissement(null);
                 onChangerDeParent(noeud.id, parent, point);
                 onFinDuDeplacement();
                 return;
               }
             }
+            setGlissement(null);
             if (sorte) onPlacer(noeud.id, placeDansLeParent(noeud.position, sorte));
             onFinDuDeplacement();
           }}

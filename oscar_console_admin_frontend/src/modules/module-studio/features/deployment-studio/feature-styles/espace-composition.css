@@ -87,7 +87,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.espace-composition .ec-identite-du-bundle { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.espace-composition .ec-origine { color: var(--shell-dim); font-size: 9.5px; white-space: nowrap; }
 .espace-composition .ec-etat-enregistrement { white-space: nowrap; }
+.espace-composition .ec-historique { display: flex; gap: 4px; }
+.espace-composition .ec-bouton-icone { min-width: 34px; padding: 0 8px; }
+.espace-composition .ec-bouton-icone:disabled { cursor: not-allowed; opacity: 0.4; }
+.espace-composition .topbar-actions .primary-button:disabled { cursor: progress; }
+
+/* Le canevas a le focus : un contour à l'intérieur, toujours visible, jamais la couleur seule. */
+.espace-composition .ec-canevas:focus-visible { outline: 2px solid var(--shell-blue); outline-offset: -3px; }
+.espace-composition .ec-canevas:focus-visible .ec-selectionne { box-shadow: 0 0 0 4px var(--shell-blue-soft), 0 0 0 2px var(--shell-blue); }
+
+/* Le guide de démarrage, sur le canevas en haut à gauche, comme dans l'ancien éditeur. */
+.espace-composition .ec-guide { top: 14px; left: 14px; z-index: 12; width: 280px; }
+.espace-composition .ec-guide ol { font-size: 10.5px; }
+.espace-composition .ec-guide__touches { display: grid; gap: 3px; margin: 8px 0 12px; font-size: 10px; }
+.espace-composition .ec-guide__touches div { display: flex; gap: 8px; }
+.espace-composition .ec-guide__touches dt { flex: 0 0 92px; color: var(--shell-text); font-weight: 700; }
+.espace-composition .ec-guide__touches dd { margin: 0; color: var(--shell-muted); }
 .espace-composition .ec-etat-enregistrement--conflit,
 .espace-composition .ec-etat-enregistrement--echec,
 .espace-composition .ec-etat-enregistrement--refuse { color: var(--shell-amber); font-weight: 700; }

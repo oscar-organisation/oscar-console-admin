@@ -111,14 +111,7 @@ function NouveauStudio({ bundleId }: { readonly bundleId: string }) {
   }
 
   return (
-    <EditeurDuBundle
-      etat={present}
-      catalogue={catalogue}
-      serveur={serveur}
-      enregistrement={brouillon.enregistrement}
-      messageDEnregistrement={brouillon.messageDEnregistrement}
-      prochainEssaiDans={brouillon.prochainEssaiDans}
-    />
+    <EditeurDuBundle etat={present} catalogue={catalogue} serveur={serveur} brouillon={brouillon} />
   );
 }
 

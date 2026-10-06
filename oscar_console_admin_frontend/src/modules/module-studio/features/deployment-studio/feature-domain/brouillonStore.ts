@@ -5,7 +5,9 @@ import {
   enregistrerBrouillon,
   lireBrouillon,
   lireCatalogue,
+  verifierBrouillon,
   type BrouillonServeur,
+  type VerificationDuBrouillon,
 } from "../feature-data/studioApi";
 import {
   abandonner,
@@ -92,6 +94,13 @@ export interface EtatDuBrouillon {
   /** Le prochain essai automatique, en secondes, après un échec ; null s'il n'y en a plus. */
   readonly prochainEssaiDans: number | null;
   readonly propositionDeReprise: PropositionDeReprise | null;
+  /** Les problèmes rendus par le serveur à la dernière vérification (« Vérifier »). */
+  readonly verification: VerificationDuBrouillon | null;
+  /** Vrai si le brouillon a changé depuis la dernière vérification : elle date. */
+  readonly verificationPerimee: boolean;
+  readonly verificationEnCours: boolean;
+  /** Pourquoi la vérification n'a pas pu se faire, en mots. */
+  readonly messageDeVerification: string | null;
 }
 
 /** Le délai entre le dernier geste et l'enregistrement : pas une écriture par pixel déplacé. */
@@ -111,6 +120,10 @@ const ETAT_INITIAL: EtatDuBrouillon = {
   messageDEnregistrement: null,
   prochainEssaiDans: null,
   propositionDeReprise: null,
+  verification: null,
+  verificationPerimee: false,
+  verificationEnCours: false,
+  messageDeVerification: null,
 };
 
 let etat: EtatDuBrouillon = ETAT_INITIAL;
@@ -122,6 +135,8 @@ let contexte: ContexteDesOperations | null = null;
 let minuterie: number | null = null;
 /** Un envoi est en route : le suivant attend sa réponse, pour partir de la bonne révision. */
 let enVol = false;
+/** La réponse attendue de l'envoi en route : « Vérifier » l'attend, pour vérifier ce qu'on voit. */
+let envoiEnVol: Promise<unknown> | null = null;
 let echecsDeSuite = 0;
 const abonnes = new Set<() => void>();
 
@@ -140,6 +155,7 @@ function reinitialiser(): void {
   generation += 1;
   contexte = null;
   enVol = false;
+  envoiEnVol = null;
   echecsDeSuite = 0;
   etat = ETAT_INITIAL;
 }
@@ -293,11 +309,14 @@ async function enregistrer(): Promise<void> {
   enVol = true;
   publier({ enregistrement: "EN_COURS", prochainEssaiDans: null });
   try {
-    const reponse = await enregistrerBrouillon(bundleId, {
+    const requete = enregistrerBrouillon(bundleId, {
       modele: envoye.modele,
       miseEnPage: envoye.miseEnPage,
       revisionAttendue: etat.revision,
     });
+    envoiEnVol = requete.catch(() => undefined);
+    const reponse = await requete;
+    envoiEnVol = null;
     if (contexteDeLEnvoi !== generation) return;
     enVol = false;
     echecsDeSuite = 0;
@@ -314,6 +333,7 @@ async function enregistrer(): Promise<void> {
   } catch (erreur) {
     if (contexteDeLEnvoi !== generation) return;
     enVol = false;
+    envoiEnVol = null;
     const probleme = normalizeError(erreur);
     if (probleme.status === 409) {
       // Quelqu'un a enregistré depuis : rien n'est écrasé, la personne choisit.
@@ -349,10 +369,54 @@ function apresUnChangement(historique: Historique): void {
   const suivant: EtatDEnregistrement = etat.enregistrement === "CONFLIT" || etat.enregistrement === "ECHEC"
     ? etat.enregistrement
     : "MODIFIE";
-  publier({ historique, enregistrement: suivant });
+  publier({ historique, enregistrement: suivant, verificationPerimee: etat.verification !== null });
   // Pendant un conflit, rien ne part ; après un échec, l'essai prévu emportera ce geste.
   if (suivant === "CONFLIT" || enAttenteDUnEssai) return;
   programmer(DELAI_D_ENREGISTREMENT_MS);
+}
+
+/**
+ * « Vérifier » : le serveur relit le brouillon enregistré et rend ses
+ * problèmes, sans rien écrire (recette R1.6). Ce qu'on vérifie, c'est ce
+ * qu'on voit : ce qui attend d'être enregistré part d'abord. Un brouillon
+ * jamais enregistré (la reprise d'un ancien bundle, pas encore touchée) ne
+ * s'écrit pas pour autant : l'écran le dit.
+ */
+export async function verifier(): Promise<void> {
+  const { bundleId } = etat;
+  if (!bundleId || !etat.historique) return;
+  const contexteDeLaVerification = generation;
+  publier({ verificationEnCours: true, messageDeVerification: null });
+  if (envoiEnVol) await envoiEnVol;
+  if (contexteDeLaVerification !== generation) return;
+  if (etat.enregistrement === "MODIFIE" || etat.enregistrement === "ECHEC") {
+    arreterLaMinuterie();
+    await enregistrer();
+  }
+  if (contexteDeLaVerification !== generation) return;
+  if (etat.revision === 0) {
+    publier({
+      verificationEnCours: false,
+      messageDeVerification: "Ce brouillon n’est pas encore enregistré : le serveur le vérifiera dès votre premier changement.",
+    });
+    return;
+  }
+  if (etat.enregistrement !== "ENREGISTRE") {
+    publier({
+      verificationEnCours: false,
+      messageDeVerification: "Le brouillon n’a pas pu être enregistré : la vérification porterait sur une version d’avant. "
+        + "Réessayez l’enregistrement, puis vérifiez.",
+    });
+    return;
+  }
+  try {
+    const verification = await verifierBrouillon(bundleId);
+    if (contexteDeLaVerification !== generation) return;
+    publier({ verification, verificationPerimee: false, verificationEnCours: false });
+  } catch (erreur) {
+    if (contexteDeLaVerification !== generation) return;
+    publier({ verificationEnCours: false, messageDeVerification: normalizeError(erreur).userMessage });
+  }
 }
 
 /* --------------------------------------------------------------------- *

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Map } from "lucide-react";
 import type { FamilleDuCatalogue } from "../../feature-domain/modele/types";
+import { legendeOuverte, retenirLaLegende } from "../affichage";
 import { presentationDeLaFamille } from "../familles";
 
 /**
@@ -10,25 +11,11 @@ import { presentationDeLaFamille } from "../familles";
  * Chaque marque a une forme ou un mot en plus de sa couleur (spécification
  * 10.6). Les familles présentes sur le canevas s'y lisent avec leur pictogramme.
  */
-/** Le choix de la personne (repliée ou ouverte) se garde dans ce navigateur : c'est un réglage d'affichage, pas du modèle. */
-const CLE_DE_LA_LEGENDE = "oscar.studio.affichage.v1:legende";
-
-function lireLeChoix(): boolean {
-  try {
-    return window.localStorage.getItem(CLE_DE_LA_LEGENDE) !== "repliee";
-  } catch {
-    return true;
-  }
-}
-
 export default function Legende({ familles }: { readonly familles: readonly FamilleDuCatalogue[] }) {
-  const [ouverte, setOuverte] = useState(lireLeChoix);
+  // Le choix de la personne (repliée ou ouverte) se garde dans son navigateur.
+  const [ouverte, setOuverte] = useState(legendeOuverte);
   const basculer = () => setOuverte((valeur) => {
-    try {
-      window.localStorage.setItem(CLE_DE_LA_LEGENDE, valeur ? "repliee" : "ouverte");
-    } catch {
-      // Stockage refusé : le choix vaut pour cette page seulement.
-    }
+    retenirLaLegende(!valeur);
     return !valeur;
   });
   return (

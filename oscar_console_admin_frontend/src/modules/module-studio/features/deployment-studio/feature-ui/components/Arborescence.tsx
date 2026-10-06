@@ -122,7 +122,8 @@ export default function Arborescence({ modele, selection, onSelectionner, replie
   ));
 
   return (
-    <ul className="ec-arbre" role="tree" aria-label="Structure du bundle">
+    // Les flèches, Entrée, A et Suppr y agissent (clavier/raccourcis.ts), comme dans le canevas.
+    <ul className="ec-arbre" role="tree" aria-label="Structure du bundle" data-zone-clavier="arbre">
       <Ligne
         selection={SELECTION_DU_BUNDLE}
         niveau={1}

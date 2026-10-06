@@ -50,6 +50,20 @@ describe("le rangement automatique", () => {
     expect(application.x + application.largeur).toBeLessThan(service.x);
   });
 
+  it("met les zones d'application à gauche, puis les machines, puis la zone Externe, même sans liaison", () => {
+    const sansLiaison = figer({ ...brouillonDeReference.modele, liaisons: [], elements: [
+      ...brouillonDeReference.modele.elements,
+      { id: "zon-ext", sorte: "ZONE_ENVIRONNEMENT_EXECUTION", parent: null, code: "ZONE_ENVIRONNEMENT_EXECUTION_EXTERNE",
+        nom: "Externe", type: { code: "TYPE_ENVIRONNEMENT_EXECUTION_EXTERNE", version: "1.0.0" },
+        reglages: { exigence: "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE" } },
+    ] } as ModeleBundle);
+    // L'indice met l'Externe tout à gauche et la zone web tout à droite : le groupe l'emporte sur l'indice.
+    const indice: MiseEnPage = { format: FORMAT_DE_LA_MISE_EN_PAGE, blocs: { "zon-ext": { x: 0, y: 0 }, "zon-03": { x: 5000, y: 0 } } };
+    const range = ranger(sansLiaison, indice);
+    const ordre = ["zon-01", "zon-02", "zon-03", "zon-ext"].sort((a, b) => (range.blocs[a]?.x ?? 0) - (range.blocs[b]?.x ?? 0));
+    expect(ordre).toEqual(["zon-03", "zon-01", "zon-02", "zon-ext"]);
+  });
+
   it("aligne les zones et leurs blocs sur une grille régulière, sans chevauchement", () => {
     for (const brouillon of [brouillonDeReference, brouillonRepris]) {
       const { noeuds } = rangeEtDispose(brouillon.modele, brouillon.mise_en_page);

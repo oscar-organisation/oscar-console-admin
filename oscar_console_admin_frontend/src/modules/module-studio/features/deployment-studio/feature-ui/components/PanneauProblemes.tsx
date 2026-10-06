@@ -17,27 +17,38 @@ export interface GroupeDeProblemes {
 
 export interface ProprietesDuPanneau {
   readonly groupes: readonly GroupeDeProblemes[];
+  /** Une vérification est en cours, chez le serveur. */
+  readonly enCours: boolean;
+  /** Pourquoi la vérification n'a pas pu se faire. */
+  readonly message: string | null;
+  /** Vrai si le serveur a vérifié le brouillon tel qu'on le voit. */
+  readonly verifie: boolean;
   /** Le nom de l'élément en cause, pour le dire dans la liste. */
   readonly nomDe: (id: string) => string | null;
   readonly onLocaliser: (id: string) => void;
   readonly onFermer: () => void;
 }
 
-export default function PanneauProblemes({ groupes, nomDe, onLocaliser, onFermer }: ProprietesDuPanneau) {
+export default function PanneauProblemes({ groupes, enCours, message, verifie, nomDe, onLocaliser, onFermer }: ProprietesDuPanneau) {
   const total = groupes.reduce((somme, groupe) => somme + groupe.problemes.length, 0);
   return (
     <aside className="validation-panel ec-panneau-problemes" aria-label="Problèmes du bundle">
       <header>
         <div>
           <span className="validation-panel__eyebrow">Vérification</span>
-          <strong>{total === 0 ? "Aucun problème" : `${total} point${total > 1 ? "s" : ""} à revoir`}</strong>
+          <strong>{enCours ? "Vérification en cours..." : total === 0 ? "Aucun problème" : `${total} point${total > 1 ? "s" : ""} à revoir`}</strong>
         </div>
         <button className="icon-button" type="button" aria-label="Fermer le panneau des problèmes" onClick={onFermer}>
           <X size={16} aria-hidden="true" />
         </button>
       </header>
       <div className="validation-list">
-        {total === 0 && <p className="ec-texte-discret">Le bundle ne signale rien à corriger pour l’instant.</p>}
+        {message && <p className="ec-avertissement" role="alert">{message}</p>}
+        {!enCours && total === 0 && !message && (
+          <p className="ec-texte-discret">
+            {verifie ? "Le serveur n’a rien trouvé à corriger dans ce brouillon." : "Rien à revoir pour l’instant. « Vérifier » demande au serveur de relire le brouillon."}
+          </p>
+        )}
         {groupes.filter((groupe) => groupe.problemes.length > 0).map((groupe) => (
           <section key={groupe.titre} aria-label={groupe.titre}>
             <p className="ec-panneau-problemes__groupe">{groupe.titre}</p>

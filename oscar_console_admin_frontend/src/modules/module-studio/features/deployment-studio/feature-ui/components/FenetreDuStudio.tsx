@@ -24,7 +24,7 @@ export interface ProprietesDeLaFenetre {
   readonly ton?: "action" | "danger";
   /** Un mot au-dessus du titre : « Ajouter », « Suppression »... */
   readonly surtitre?: string;
-  readonly onFermer?: () => void;
+  readonly onFermer?: (() => void) | undefined;
   /** Le sélecteur de l'élément qui reçoit le focus à l'ouverture. */
   readonly focusInitial?: string | undefined;
   readonly children: ReactNode;

@@ -1,183 +1,31 @@
-import { readFileSync } from "node:fs";
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import {
+  ajusterALEcran,
+  blocNomme,
+  deposer,
+  ecranLarge,
+  ecritures,
+  noeud,
+  REFERENCE,
+  regler,
+  sansIdentifiants,
+  serveur,
+  zoneNommee,
+} from "./outils-studio";
 
 /**
  * Le nouveau Studio (lot L1, étapes I3 et I4) : ouvrir un bundle, et le
  * composer à la souris.
  *
- * L'API est simulée avec des réponses RÉELLES du serveur, gardées dans
- * src/.../donnees-de-test/reponses-du-serveur/ (voir leur SOURCE.txt) : le
- * catalogue, le bundle de référence enregistré, et la reprise d'un bundle de
- * l'ancienne console telle que l'adaptateur du serveur la rend. Le serveur
- * simulé garde le dernier brouillon reçu : un rechargement le relit.
+ * L'API est simulée (e2e/outils-studio.ts) avec des réponses RÉELLES du
+ * serveur : le catalogue, le bundle de référence enregistré, et la reprise
+ * d'un bundle de l'ancienne console telle que l'adaptateur du serveur la rend.
  *
  * Mis à jour à l'étape I4 : l'écran n'est plus un aperçu en lecture ; il
  * reprend le dessin de l'ancien éditeur (barre d'état, blocs, légende), et la
  * reprise tient sur une ligne, ses points se lisant dans le panneau des
  * problèmes. Les scénarios de l'étape I3 suivent ces changements.
  */
-
-const DONNEES = "../src/modules/module-studio/features/deployment-studio/donnees-de-test/reponses-du-serveur/";
-const lire = (fichier: string) => JSON.parse(readFileSync(new URL(`${DONNEES}${fichier}`, import.meta.url), "utf-8"));
-const CATALOGUE = lire("catalogue.json");
-const REFERENCE = lire("brouillon-reference.json");
-const REPRISE = lire("brouillon-reprise-ancien-format.json");
-
-/** Un bundle neuf, tel que le serveur le rend juste après sa création (« Bundle vide »). */
-const NEUF = {
-  ...REFERENCE,
-  bundle_id: "bundle-neuf",
-  revision: 1,
-  origine: { sorte: "VIDE" },
-  modele: {
-    format: "oscar.bundle/1",
-    bundle: {
-      code: "BUNDLE_DEPLOIEMENT_TELEOPERATION_DU_M3",
-      nom: "Téléopération du M3",
-      description: "Piloter le M3 au clavier et à la manette, avec la vidéo.",
-    },
-    elements: [],
-    liaisons: [],
-  },
-  mise_en_page: { format: "oscar.mise-en-page/1", blocs: {} },
-};
-/** Le bundle de référence, sans mise en page : il s'ouvre rangé, ses zones côte à côte. */
-const REFERENCE_SANS_MISE_EN_PAGE = { ...REFERENCE, bundle_id: "bundle-range", mise_en_page: { format: "oscar.mise-en-page/1", blocs: {} } };
-
-const PERMISSIONS = ["ui:studio.page", "api:bundle.read", "api:bundle.write", "api:bundle.publish"];
-
-interface Serveur {
-  readonly requetes: string[];
-  readonly enregistrements: { modele: Modele; mise_en_page: unknown; revision_attendue: number }[];
-}
-
-interface Modele {
-  bundle: Record<string, unknown>;
-  elements: { id: string; parent: string | null; [cle: string]: unknown }[];
-  liaisons: { id: string; source: string; destination: string }[];
-}
-
-/** Le serveur simulé ; il note chaque requête et garde chaque brouillon reçu. */
-async function serveur(page: Page, options: { brouillonIntrouvable?: boolean } = {}): Promise<Serveur> {
-  await page.addInitScript(() => {
-    window.localStorage.setItem("oscar_access", "e2e-access");
-    window.localStorage.setItem("oscar_refresh", "e2e-refresh");
-    window.localStorage.setItem("oscar.studio.guide.dismissed", "true");
-  });
-  const etat: Serveur = { requetes: [], enregistrements: [] };
-  const brouillons = new Map<string, Record<string, unknown>>([
-    ["bundle-ancien", REPRISE], ["bundle-reference", REFERENCE], ["bundle-neuf", NEUF], ["bundle-range", REFERENCE_SANS_MISE_EN_PAGE],
-  ]);
-  await page.route("**/api/**", async (route) => {
-    const requete = route.request();
-    const chemin = new URL(requete.url()).pathname.replace(/^.*\/api/, "");
-    const methode = requete.method();
-    etat.requetes.push(`${methode} ${chemin}`);
-    if (chemin.endsWith("/auth/me")) {
-      await route.fulfill({ json: {
-        id: "user-studio", nom: "Intégratrice Studio", email: "studio@example.test", org_id: "org-e2e",
-        permissions: Object.fromEntries(PERMISSIONS.map((code) => [code, ["view", "create", "update", "delete", "execute"]])),
-      } });
-      return;
-    }
-    if (chemin === "/studio/catalogue") {
-      await route.fulfill({ json: CATALOGUE });
-      return;
-    }
-    const brouillon = /^\/studio\/bundles\/([^/]+)\/brouillon$/.exec(chemin);
-    if (brouillon && methode === "GET") {
-      const trouve = brouillons.get(brouillon[1] ?? "");
-      await route.fulfill(options.brouillonIntrouvable || !trouve
-        ? { status: 404, json: { detail: "Bundle introuvable" } }
-        : { json: trouve });
-      return;
-    }
-    if (brouillon && methode === "PUT") {
-      const corps = requete.postDataJSON();
-      etat.enregistrements.push(corps);
-      const avant = brouillons.get(brouillon[1] ?? "") ?? {};
-      const revision = Number(avant.revision ?? 0) + 1;
-      brouillons.set(brouillon[1] ?? "", { ...avant, modele: corps.modele, mise_en_page: corps.mise_en_page, revision, origine: { sorte: "VIDE" }, reprise: null });
-      await route.fulfill({ json: { revision, etat: "ETAT_BROUILLON_BUNDLE_EN_EDITION", empreinte_modele: `e-${revision}`, modifie_le: null } });
-      return;
-    }
-    if (chemin === "/studio/bundles" && methode === "GET") {
-      await route.fulfill({ json: [{
-        id: "bundle-ancien", org_id: "org-e2e", nom: "Accueil et inventaire du magasin", slug: "accueil",
-        description: "", target: "ENVIRONNEMENT_EXECUTION_ROBOT", statut: "active",
-        draft_version: null,
-        published_version: { id: "version-ancienne-publiee", bundle_id: "bundle-ancien", numero: 1, statut: "published" },
-        version_count: 1, robot_count: 0, component_count: 6, unit_count: 6,
-        projet_id: "projet-e2e", format_brouillon: "ancien",
-      }] });
-      return;
-    }
-    await route.fulfill({ json: [] });
-  });
-  return etat;
-}
-
-/** Ce qui écrirait : un enregistrement, une publication, un déploiement. */
-function ecritures(requetes: readonly string[]): string[] {
-  return requetes.filter((requete) => !requete.startsWith("GET ") && !requete.endsWith("/auth/me"));
-}
-
-const ecranLarge = (page: Page) => (page.viewportSize()?.width || 0) >= 1100;
-
-/** Un modèle dont les identifiants sont remplacés par leur rang d'apparition : on compare la composition, pas les tirages au hasard. */
-function sansIdentifiants(modele: Modele) {
-  const rangs = new Map<string, string>();
-  modele.elements.forEach((element, rang) => rangs.set(element.id, `e${rang + 1}`));
-  modele.liaisons.forEach((liaison, rang) => rangs.set(liaison.id, `l${rang + 1}`));
-  const nouveau = (id: string | null) => (id === null ? null : rangs.get(id) ?? `inconnu:${id}`);
-  return {
-    bundle: modele.bundle,
-    elements: modele.elements.map((element) => ({ ...element, id: nouveau(element.id), parent: nouveau(element.parent) })),
-    liaisons: modele.liaisons.map((liaison) => ({ id: nouveau(liaison.id), source: nouveau(liaison.source), destination: nouveau(liaison.destination) })),
-  };
-}
-
-/**
- * Lâche une carte de la palette à un point du canevas : relatif au coin haut gauche de l'élément
- * donné, ou en son centre (`"centre"`).
- */
-async function deposer(page: Page, carte: string, sur: Locator, decalage: { x: number; y: number } | "centre") {
-  const canevas = page.getByTestId("espace-composition");
-  const [cible, boite] = [await sur.boundingBox(), await canevas.boundingBox()];
-  if (!cible || !boite) throw new Error(`cible ou canevas introuvable pour ${carte}`);
-  const point = decalage === "centre" ? { x: cible.width / 2, y: cible.height / 2 } : decalage;
-  // « force » : le point visé est souvent sous un autre bloc ; c'est justement le parent sous le pointeur qui compte.
-  await page.locator(".ec-palette").getByRole("button", { name: carte, exact: true }).dragTo(canevas, {
-    force: true, targetPosition: { x: cible.x - boite.x + point.x, y: cible.y - boite.y + point.y },
-  });
-}
-
-/**
- * « Ajuster à l'écran », puis attendre que le canevas ait fini de bouger : une
- * place lue avant la fin serait fausse, et un dépôt tomberait à côté.
- */
-async function ajusterALEcran(page: Page) {
-  await page.getByRole("button", { name: "Ajuster à l’écran" }).click();
-  const vue = page.locator(".react-flow__viewport");
-  let avant = "";
-  await expect.poll(async () => {
-    const maintenant = (await vue.getAttribute("style")) ?? "";
-    const stable = maintenant === avant;
-    avant = maintenant;
-    return stable;
-  }, { intervals: [150] }).toBe(true);
-}
-
-/** Écrit dans un champ de l'inspecteur, puis le quitte : le réglage compte pour un geste. */
-async function regler(page: Page, etiquette: string, valeur: string) {
-  const champ = page.getByRole("complementary", { name: "Propriétés" }).getByLabel(etiquette, { exact: true });
-  await champ.fill(valeur);
-  await champ.press("Tab");
-}
-
-const noeud = (page: Page, id: string) => page.locator(`.react-flow__node[data-id="${id}"]`);
-const zoneNommee = (page: Page, nom: string) => page.locator(".react-flow__node-zone", { has: page.locator(".ec-zone__titre strong", { hasText: new RegExp(`^${nom}$`) }) });
-const blocNomme = (page: Page, nom: string) => page.locator(".react-flow__node-composant", { has: page.locator(".ec-noeud__titre strong", { hasText: new RegExp(`^${nom}$`) }) });
 
 test("un bundle de l'ancienne console s'ouvre par la reprise, rangé, ses points dans le panneau des problèmes", async ({ page }) => {
   test.skip(!ecranLarge(page), "Le canevas demande un écran large.");
@@ -256,6 +104,12 @@ test("le bundle de référence s'affiche : zones, salle, entrées à gauche, sor
   const chemin = liaison.locator("path.react-flow__edge-path");
   await expect(chemin).toHaveAttribute("marker-end", /url\(/);
   expect(await chemin.getAttribute("marker-start")).toBeNull();
+  // Dans cette mise en page, l'application est à droite du robot : la liaison revient de droite à
+  // gauche, et passe sous tous les blocs, jamais à travers.
+  const basDeLaLiaison = await chemin.evaluate((element) => element.getBoundingClientRect().bottom);
+  const basDesZones = await canevas.locator(".react-flow__node-zone").evaluateAll((zones) =>
+    Math.max(...zones.map((zone) => zone.getBoundingClientRect().bottom)));
+  expect(basDeLaLiaison).toBeGreaterThan(basDesZones);
 
   // La légende, ouverte par défaut, se replie et se rouvre.
   const legende = page.getByRole("complementary", { name: "Légende du canevas" });

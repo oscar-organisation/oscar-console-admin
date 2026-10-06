@@ -6,6 +6,7 @@ import {
   type ModeleBundle,
   type Position,
 } from "../../../feature-domain/modele/types";
+import { TYPE_DE_LA_ZONE_EXTERNE } from "../../../feature-domain/modele/regles";
 import { MESURES, tailleDuComposant } from "./disposition";
 
 /**
@@ -14,10 +15,12 @@ import { MESURES, tailleDuComposant } from "./disposition";
  * repris de l'ancienne console ou venu sans mise en page).
  *
  * Les règles, pour que le canevas se lise sans deviner :
- * - les zones côte à côte, dans le sens où va la donnée : une zone qui émet
- *   vers une autre est à sa gauche, pour que les liaisons aillent de gauche à
- *   droite (une sortie est à droite d'un bloc, une entrée à sa gauche) ; les
- *   zones sans liaison viennent ensuite ;
+ * - les zones côte à côte, dans le sens où va la donnée (une sortie est à
+ *   droite d'un bloc, une entrée à sa gauche) : d'abord les zones
+ *   d'application (l'opérateur, qui commande), puis les zones de robot, de
+ *   serveur, de simulateur ou à préciser, et la zone Externe à droite ; dans
+ *   chaque groupe, les zones reliées avant les autres, et la zone qui envoie
+ *   avant celle qui reçoit ;
  * - dans une zone, les services et les applications en grille, eux aussi dans
  *   le sens de la donnée, avec des espaces réguliers ;
  * - la salle en haut du cadre du bundle.
@@ -71,6 +74,23 @@ function trier(ids: readonly string[], rang: ReadonlyMap<string, number>,
   });
 }
 
+/**
+ * Les types de zone qui ne reçoivent que des applications (navigateur web,
+ * ordinateur de bureau, appareil mobile, casque) : la personne qui commande y
+ * travaille, elle se place à gauche. Ce sont les types de la partie 5.4 de la
+ * spécification, écrits comme dans le catalogue.
+ */
+const TYPES_DE_ZONE_D_APPLICATION: readonly string[] = [
+  "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+  "TYPE_ENVIRONNEMENT_EXECUTION_ORDINATEUR_BUREAU",
+  "TYPE_ENVIRONNEMENT_EXECUTION_APPAREIL_MOBILE",
+  "TYPE_ENVIRONNEMENT_EXECUTION_CASQUE_REALITE_VIRTUELLE",
+];
+
+function recoitSeulementDesApplications(zone: Element): boolean {
+  return zone.type !== undefined && TYPES_DE_ZONE_D_APPLICATION.includes(zone.type.code);
+}
+
 /** Range un bundle. `indice` est la mise en page d'avant, qui ne donne que l'ordre. */
 export function ranger(modele: ModeleBundle, indice: MiseEnPage = AUCUNE): MiseEnPage {
   const { elements } = modele;
@@ -108,11 +128,20 @@ export function ranger(modele: ModeleBundle, indice: MiseEnPage = AUCUNE): MiseE
     const position = indice.blocs[id];
     return position ? [position.x, position.y] : [];
   };
-  // Les zones reliées d'abord, dans le sens de la donnée ; les autres ensuite.
-  const ordreDesZones = [
-    ...trier(idsDesZones.filter((id) => zonesReliees.has(id)), rangDesZones, indiceDeZone),
-    ...trier(idsDesZones.filter((id) => !zonesReliees.has(id)), new Map(), indiceDeZone),
-  ];
+  // Le groupe de chaque zone, de gauche à droite : les applications, puis les machines, puis l'Externe.
+  const groupeDeLaZone = (id: string): number => {
+    const zone = parId.get(id);
+    if (zone?.type?.code === TYPE_DE_LA_ZONE_EXTERNE) return 2;
+    return zone && recoitSeulementDesApplications(zone) ? 0 : 1;
+  };
+  // Dans chaque groupe : les zones reliées d'abord, dans le sens de la donnée ; les autres ensuite.
+  const ordreDesZones = [0, 1, 2].flatMap((groupe) => {
+    const duGroupe = idsDesZones.filter((id) => groupeDeLaZone(id) === groupe);
+    return [
+      ...trier(duGroupe.filter((id) => zonesReliees.has(id)), rangDesZones, indiceDeZone),
+      ...trier(duGroupe.filter((id) => !zonesReliees.has(id)), new Map(), indiceDeZone),
+    ];
+  });
 
   let gaucheDeLaZone = MESURES.margeDuCadre;
   for (const idDeZone of ordreDesZones) {

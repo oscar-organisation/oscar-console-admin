@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Cable, Check, History, LayoutGrid, Layers3, Plus, Undo2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Cable, Check, CircleHelp, History, LayoutGrid, Layers3, LoaderCircle, Plus, Redo2, Undo2, X } from "lucide-react";
 import type { BrouillonServeur } from "../../feature-data/studioApi";
 import {
   abandonnerLeGeste,
   annuler,
   jouer,
   previsualiser,
-  type EtatDEnregistrement,
+  retablir,
+  verifier,
+  type EtatDuBrouillon,
 } from "../../feature-domain/brouillonStore";
+import { peutAnnuler, peutRetablir } from "../../feature-domain/modele/historique";
 import { identifiantAleatoire } from "../../feature-domain/modele/identifiants";
 import {
   apercuDEmboitement,
@@ -41,7 +44,11 @@ import {
   type Sorte,
   type TypeDuCatalogue,
 } from "../../feature-domain/modele/types";
+import { guideDejaVu, retenirLeGuideVu } from "../affichage";
+import { useRaccourcis, voisin, type ActionDuClavier, type ZoneDuClavier } from "../clavier/raccourcis";
 import {
+  CLE_DU_GROUPE_DES_LIAISONS,
+  cleDeLaSelection,
   SELECTION_DU_BUNDLE,
   selectionValide,
   type Selection,
@@ -50,6 +57,7 @@ import { MOTS_DE_L_ENREGISTREMENT, pluriel } from "../textes";
 import ApercuChangementParent from "./ApercuChangementParent";
 import Arborescence from "./Arborescence";
 import { ID_DU_CADRE, disposer } from "./canevas/disposition";
+import GuideDuStudio from "./GuideDuStudio";
 import { ranger } from "./canevas/rangement";
 import ConfirmationSuppression, { type CibleDeSuppression } from "./ConfirmationSuppression";
 import EspaceComposition, { type Centrage, type PointDeLEcran } from "./EspaceComposition";
@@ -100,12 +108,13 @@ export interface ProprietesDeLEditeur {
   readonly etat: EtatStudio;
   readonly catalogue: CatalogueStudio;
   readonly serveur: BrouillonServeur;
-  readonly enregistrement: EtatDEnregistrement;
-  readonly messageDEnregistrement: string | null;
-  readonly prochainEssaiDans: number | null;
+  /** Tout l'état du brouillon : l'historique (annuler, rétablir), l'enregistrement, la vérification. */
+  readonly brouillon: EtatDuBrouillon;
 }
 
-export default function EditeurDuBundle({ etat, catalogue, serveur, enregistrement, messageDEnregistrement, prochainEssaiDans }: ProprietesDeLEditeur) {
+export default function EditeurDuBundle({ etat, catalogue, serveur, brouillon }: ProprietesDeLEditeur) {
+  const { enregistrement, messageDEnregistrement, prochainEssaiDans, historique } = brouillon;
+  const racine = useRef<HTMLDivElement>(null);
   const contexte = useMemo((): ContexteDesOperations => ({
     catalogue: indexerCatalogue(catalogue),
     nouvelIdentifiant: identifiantAleatoire,
@@ -129,6 +138,7 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
   // « Localiser » (le panneau des problèmes) centre le canevas sur un bloc.
   const [centrage, setCentrage] = useState<Centrage | null>(null);
   const [panneauOuvert, setPanneauOuvert] = useState(false);
+  const [guideOuvert, setGuideOuvert] = useState(() => !guideDejaVu());
   const jetons = useRef(0);
 
   const parId = useMemo(() => new Map(modele.elements.map((element) => [element.id, element])), [modele]);
@@ -323,9 +333,12 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
 
   // Les problèmes connus : ceux de la reprise d'un ancien bundle, tant qu'il n'est pas enregistré.
   const reprise = serveur.origine.sorte === "ANCIEN_FORMAT" ? serveur.origine : null;
-  const groupesDeProblemes = useMemo((): GroupeDeProblemes[] => (serveur.reprise
-    ? [{ titre: "Reprise de l’ancienne console", problemes: serveur.reprise.problemes }]
-    : []), [serveur.reprise]);
+  const { verification, verificationPerimee, verificationEnCours, messageDeVerification } = brouillon;
+  const groupesDeProblemes = useMemo((): GroupeDeProblemes[] => [
+    ...(verification ? [{ titre: verificationPerimee ? "Vérification du serveur (avant vos derniers changements)" : "Vérification du serveur", problemes: verification.problemes }] : []),
+    // Les points de la reprise valent tant que le brouillon repris n'a pas été vérifié par le serveur.
+    ...(serveur.reprise && !verification ? [{ titre: "Reprise de l’ancienne console", problemes: serveur.reprise.problemes }] : []),
+  ], [serveur.reprise, verification, verificationPerimee]);
   // Chaque problème compte pour son élément et pour ceux qui le contiennent : le badge d'un bloc les dit tous.
   const problemesParElement = useMemo(() => {
     const comptes = new Map<string, number>();
@@ -343,6 +356,13 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
     return comptes;
   }, [groupesDeProblemes, parId]);
   const nombreDeProblemes = groupesDeProblemes.reduce((somme, groupe) => somme + groupe.problemes.length, 0);
+  const pointsDeLaReprise = serveur.reprise?.problemes.length ?? 0;
+
+  /** « Vérifier » : ce qu'on voit est enregistré, puis le serveur rend ses problèmes, dans le panneau. */
+  const lancerLaVerification = () => {
+    setPanneauOuvert(true);
+    void verifier();
+  };
 
   /** « Localiser » : l'élément est choisi, et le canevas se centre sur le bloc qui le porte. */
   const localiser = (id: string) => {
@@ -354,6 +374,86 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
     if (courant) setCentrage({ noeud: courant.id, jeton: jetons.current });
   };
 
+  /** Choisir au clavier : la sélection change, l'arborescence s'ouvre jusqu'à elle, le canevas la montre. */
+  const choisirAuClavier = (nouvelle: Selection, zone: ZoneDuClavier) => {
+    setRefus(null);
+    setSelection(nouvelle);
+    if (nouvelle.sorte === "bundle") return;
+    // Les ancêtres repliés de l'arborescence s'ouvrent : l'élément choisi doit s'y voir.
+    const ouvrir = new Set<string>(["bundle"]);
+    if (nouvelle.sorte === "liaison") ouvrir.add(CLE_DU_GROUPE_DES_LIAISONS);
+    let courant = nouvelle.sorte === "element" ? parId.get(nouvelle.id) : undefined;
+    while (courant?.parent) {
+      ouvrir.add(cleDeLaSelection({ sorte: "element", id: courant.parent }));
+      courant = parId.get(courant.parent);
+    }
+    setReplies((avant) => new Set([...avant].filter((cle) => !ouvrir.has(cle))));
+    if (zone === "arbre") {
+      // Le focus suit la sélection dans l'arborescence, une fois la ligne affichée.
+      window.requestAnimationFrame(() => racine.current
+        ?.querySelector<HTMLElement>(`[data-cle="${cleDeLaSelection(nouvelle)}"]`)?.focus());
+    } else if (nouvelle.sorte === "element") {
+      localiser(nouvelle.id);
+    }
+  };
+
+  const agirAuClavier = (action: ActionDuClavier, zone: ZoneDuClavier) => {
+    switch (action.sorte) {
+      case "annuler":
+        annuler();
+        return;
+      case "retablir":
+        retablir();
+        return;
+      case "naviguer": {
+        const suivante = voisin(modele, selection ?? SELECTION_DU_BUNDLE, action.direction);
+        if (suivante) choisirAuClavier(suivante, zone);
+        return;
+      }
+      case "ouvrir":
+        // Les propriétés de l'élément, sur leur premier champ.
+        racine.current?.querySelector<HTMLElement>(".inspector input, .inspector select, .inspector textarea, .inspector button")?.focus();
+        return;
+      case "fermer":
+        // Ce qui est ouvert se ferme d'abord ; ensuite, la sélection se libère.
+        if (refus) setRefus(null);
+        else if (panneauOuvert) setPanneauOuvert(false);
+        else if (guideOuvert) setGuideOuvert(false);
+        else setSelection(SELECTION_DU_BUNDLE);
+        return;
+      case "ajouter":
+        if (selection?.sorte !== "liaison") setMenu({ mode: "enfants", parent: selection?.sorte === "element" ? selection.id : null });
+        return;
+      case "supprimer":
+        if (selection) demanderLaSuppression(selection);
+        return;
+      case "deplacer": {
+        if (selection?.sorte !== "element") return;
+        const noeud = disposition.noeuds.find((candidat) => candidat.id === selection.id);
+        if (!noeud || noeud.type === "bundle") return;
+        jouerEtMontrer({ operation: "placer", id: selection.id, position: { x: noeud.position.x + action.dx, y: noeud.position.y + action.dy } });
+      }
+    }
+  };
+  useRaccourcis(racine, agirAuClavier);
+
+  // Ce qui est choisi se dit aussi à un lecteur d'écran.
+  const descriptionDeLaSelection = !selection || selection.sorte === "bundle"
+    ? `Bundle ${modele.bundle.nom}`
+    : selection.sorte === "liaison"
+      ? (() => {
+        const liaison = modele.liaisons.find((candidat) => candidat.id === selection.id);
+        return liaison ? `Liaison de ${nomDe(liaison.source)} vers ${nomDe(liaison.destination)}` : "";
+      })()
+      : cheminDe(modele, selection.id).slice(1).reverse().join(", dans ");
+
+  // D'où vient ce brouillon, en mots, à côté de son code.
+  const origineEnMots = serveur.origine.sorte === "ANCIEN_FORMAT"
+    ? `Repris de la version ${serveur.origine.numero}`
+    : serveur.origine.sorte === "PRESET"
+      ? `Depuis le préset ${serveur.origine.slug}`
+      : brouillon.revision > 0 ? `Brouillon, révision ${brouillon.revision}` : "Bundle neuf";
+
   const apercuOuvert = apercu ? apercuDEmboitement(etat, apercu.id, apercu.parent, contexte) : null;
   const zonesDeDepart = useMemo(() => typesDeLaPalette(catalogue).filter((type) => type.sorte === SORTES.ZONE).slice(0, 3), [catalogue]);
   const { compteurs } = disposition;
@@ -362,37 +462,17 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
     : MOTS_DE_L_ENREGISTREMENT[enregistrement];
 
   return (
-    <div className="studio-scope studio-scope--editor espace-composition">
+    <div className="studio-scope studio-scope--editor espace-composition" ref={racine}>
       <main className="studio-shell">
-        <header className="studio-topbar">
-          <Link to="/studio" className="back-button" aria-label="Revenir à la liste des bundles" title="Revenir à la liste des bundles">
-            <ArrowLeft size={18} aria-hidden="true" />
-          </Link>
-          <div className="topbar-divider" />
-          <div className="project-heading">
-            <span>Bundle</span>
-            <strong>{modele.bundle.nom}</strong>
-          </div>
-          <code className="ec-code-du-bundle">{modele.bundle.code}</code>
-          <span className={`save-state ec-etat-enregistrement ec-etat-enregistrement--${enregistrement.toLowerCase()}`} role="status" title={messageDEnregistrement ?? undefined}>
-            {enregistrement === "ENREGISTRE" && <Check size={13} aria-hidden="true" />} {motDeLEnregistrement}
-          </span>
-          <div className="topbar-actions">
-            <button className="secondary-button" type="button" onClick={rangerLeBundle} title="Ranger les zones et les blocs proprement (vous pourrez annuler)">
-              <LayoutGrid size={15} aria-hidden="true" /> Ranger
-            </button>
-          </div>
-        </header>
-
         {reprise && (
           <section className="ec-reprise" aria-label="Reprise d’un bundle de l’ancienne console">
             <History size={14} aria-hidden="true" />
             <span>
               Repris de l’ancienne console, version {reprise.numero}
-              {nombreDeProblemes > 0 ? ` : ${pluriel(nombreDeProblemes, "point")} à revoir.` : ", sans perte."}
+              {pointsDeLaReprise > 0 ? ` : ${pluriel(pointsDeLaReprise, "point")} à revoir.` : ", sans perte."}
               {" "}L’ancienne version ne change pas ; ce brouillon s’enregistre au premier changement.
             </span>
-            {nombreDeProblemes > 0 && (
+            {pointsDeLaReprise > 0 && (
               <button type="button" className="ec-lien" onClick={() => setPanneauOuvert(true)}>
                 <AlertCircle size={13} aria-hidden="true" /> Voir les points à revoir
               </button>
@@ -510,9 +590,13 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
                 </div>
               )}
               <Legende familles={famillesPresentes} />
+              {guideOuvert && <GuideDuStudio onFermer={() => { retenirLeGuideVu(); setGuideOuvert(false); }} />}
               {panneauOuvert && (
                 <PanneauProblemes
                   groupes={groupesDeProblemes}
+                  enCours={verificationEnCours}
+                  message={messageDeVerification}
+                  verifie={verification !== null && !verificationPerimee}
                   nomDe={(id) => (parId.has(id) ? nomDe(id) : null)}
                   onLocaliser={localiser}
                   onFermer={() => setPanneauOuvert(false)}
@@ -557,6 +641,56 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
           />
         </div>
 
+        {/* La barre du haut vient après les trois colonnes dans la page, et s'affiche en haut : Tab parcourt
+            ainsi la palette, l'arborescence, le canevas, les propriétés, puis la barre (conception, partie 6.5). */}
+        <header className="studio-topbar">
+          <Link to="/studio" className="back-button" aria-label="Revenir à la liste des bundles" title="Revenir à la liste des bundles">
+            <ArrowLeft size={18} aria-hidden="true" />
+          </Link>
+          <div className="topbar-divider" />
+          <div className="project-heading">
+            <span>Bundle</span>
+            <strong>{modele.bundle.nom}</strong>
+          </div>
+          <div className="ec-identite-du-bundle">
+            <code className="ec-code-du-bundle" title="Identifiant technique du bundle">{modele.bundle.code}</code>
+            <span className="ec-origine">{origineEnMots}</span>
+          </div>
+          <span className={`save-state ec-etat-enregistrement ec-etat-enregistrement--${enregistrement.toLowerCase()}`} role="status" title={messageDEnregistrement ?? undefined}>
+            {enregistrement === "ENREGISTRE" && <Check size={13} aria-hidden="true" />}
+            {enregistrement === "EN_COURS" && <LoaderCircle className="spin" size={13} aria-hidden="true" />}
+            {" "}{motDeLEnregistrement}
+          </span>
+          <div className="topbar-actions">
+            <div className="ec-historique" role="group" aria-label="Historique des gestes">
+              <button className="secondary-button ec-bouton-icone" type="button" onClick={annuler} disabled={!historique || !peutAnnuler(historique)}
+                aria-label="Annuler" title="Annuler le dernier geste (Ctrl+Z)">
+                <Undo2 size={16} aria-hidden="true" />
+              </button>
+              <button className="secondary-button ec-bouton-icone" type="button" onClick={retablir} disabled={!historique || !peutRetablir(historique)}
+                aria-label="Rétablir" title="Rétablir le geste annulé (Ctrl+Maj+Z ou Ctrl+Y)">
+                <Redo2 size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <button className="secondary-button" type="button" onClick={rangerLeBundle} title="Ranger les zones et les blocs proprement (vous pourrez annuler)">
+              <LayoutGrid size={15} aria-hidden="true" /> Ranger
+            </button>
+            <button className="secondary-button" type="button" onClick={() => setGuideOuvert((ouvert) => !ouvert)} aria-expanded={guideOuvert}>
+              <CircleHelp size={15} aria-hidden="true" /> Guide
+            </button>
+            <button
+              className={`primary-button validation-button${verification && verification.erreurs > 0 ? " has-errors" : ""}`}
+              type="button"
+              onClick={lancerLaVerification}
+              disabled={verificationEnCours}
+              title="Le serveur relit le brouillon enregistré et dit ce qu’il reste à corriger ; rien n’est publié ni déployé"
+            >
+              {verificationEnCours ? <LoaderCircle className="spin" size={15} aria-hidden="true" /> : <AlertCircle size={15} aria-hidden="true" />}
+              {" "}Vérifier {nombreDeProblemes > 0 && <b aria-label={`${nombreDeProblemes} problème${nombreDeProblemes > 1 ? "s" : ""}`}>{nombreDeProblemes}</b>}
+            </button>
+          </div>
+        </header>
+
         <footer className="studio-statusbar">
           <span><i className={`status-dot ${enregistrement === "ENREGISTRE" ? "status-dot--online" : "ec-point-attente"}`} /> {motDeLEnregistrement}</span>
           <span>{pluriel(compteurs.zones, "zone")}</span>
@@ -570,6 +704,7 @@ export default function EditeurDuBundle({ etat, catalogue, serveur, enregistreme
         </footer>
       </main>
 
+      <p className="ec-invisible" aria-live="polite">Choisi : {descriptionDeLaSelection}</p>
       {menuOuvert && (
         <MenuAjouter
           surtitre={menuOuvert.surtitre}
