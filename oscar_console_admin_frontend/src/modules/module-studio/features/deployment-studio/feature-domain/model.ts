@@ -1,4 +1,5 @@
 import type { Connection } from '@xyflow/react';
+import { libelleDuFormat } from './modele/canaux';
 import type {
   ArchitectureEdge,
   ArchitectureKind,
@@ -359,12 +360,5 @@ export function validateProject(project: OscarProject): ValidationIssue[] {
 }
 
 export function formatLabel(format: DataFormat): string {
-  return {
-    NOMBRE: 'Nombre',
-    BOOLEEN: 'Vrai / faux',
-    TEXTE: 'Texte',
-    OBJET_JSON: 'Objet structuré',
-    BINAIRE_COMPACT: 'Binaire compact',
-    IMAGE: 'Image',
-  }[format];
+  return libelleDuFormat(format);
 }

@@ -1,0 +1,973 @@
+{
+  "bundle_id": "bundle-ancien",
+  "format": "oscar.bundle/1",
+  "modele": {
+    "format": "oscar.bundle/1",
+    "bundle": {
+      "code": "BUNDLE_DEPLOIEMENT_ACCUEIL_INVENTAIRE",
+      "nom": "Accueil et inventaire du magasin",
+      "description": "Accueillir les clients le jour, compter les rayons la nuit."
+    },
+    "elements": [
+      {
+        "id": "zon-ancien-robot",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_ROBOT",
+        "nom": "Robot",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_ROBOT",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "sal-ancien",
+        "sorte": "COMPOSANT_SALLE_TEMPS_REEL",
+        "parent": null,
+        "code": "COMPOSANT_SALLE_TEMPS_REEL",
+        "nom": "Salle temps réel",
+        "type": {
+          "code": "COMPOSANT_SALLE_TEMPS_REEL",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "zon-ancien-serveur",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+        "nom": "Serveur",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_SERVEUR",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "zon-ancien-navigateur-web",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+        "nom": "Application web",
+        "type": {
+          "code": "TYPE_ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+          "version": "1.0.0"
+        },
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "zon-ancien-a-preciser",
+        "sorte": "ZONE_ENVIRONNEMENT_EXECUTION",
+        "parent": null,
+        "code": "ZONE_ENVIRONNEMENT_EXECUTION_A_PRECISER",
+        "nom": "À préciser",
+        "reglages": {
+          "exigence": "EXIGENCE_ACTIVATION_ENVIRONNEMENT_OBLIGATOIRE"
+        }
+      },
+      {
+        "id": "instance_service-1a2b3c4d",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-ancien-robot",
+        "code": "INSTANCE_SERVICE_ACTIONS_ROBOT",
+        "nom": "Service actions du robot",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "Commande la base et le bras.",
+        "code_fige": true
+      },
+      {
+        "id": "unite-11aa22bb",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_service-1a2b3c4d",
+        "code": "INSTANCE_UNITE_PILOTAGE_DEPLACEMENT",
+        "nom": "Pilotage du déplacement",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": false
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-11aa22bb",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-11aa22bb",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-11aa22bb",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-11aa22bb",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-11aa22bb",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-11aa22bb",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-11aa22bb",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-11aa22bb",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-11aa22bb",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-11aa22bb",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "rx-commande",
+        "sorte": "CANAL_RECEPTION",
+        "parent": "bre-unite-11aa22bb",
+        "code": "CANAL_RECEPTION_COMMANDE_DEPLACEMENT",
+        "nom": "Commande de déplacement",
+        "description": "Vitesse voulue, envoyée par l'opérateur.",
+        "reglages": {
+          "type": "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+          "format": "BINAIRE_COMPACT"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "tx-etat",
+        "sorte": "CANAL_EMISSION",
+        "parent": "bem-unite-11aa22bb",
+        "code": "CANAL_EMISSION_ETAT_DEPLACEMENT",
+        "nom": "État du déplacement",
+        "description": "",
+        "reglages": {
+          "type": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+          "format": "OBJET_JSON"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "unite-33cc44dd",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_service-1a2b3c4d",
+        "code": "INSTANCE_UNITE_BRAS_MANIPULATEUR",
+        "nom": "Bras manipulateur",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": false,
+          "type_ancien": "TYPE_UNITE_CONTROLE_ACTION_ROBOT"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-33cc44dd",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-33cc44dd",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-33cc44dd",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-33cc44dd",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-33cc44dd",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-33cc44dd",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-33cc44dd",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-33cc44dd",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-33cc44dd",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-33cc44dd",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "instance_service-2b3c4d5e",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-ancien-robot",
+        "code": "INSTANCE_SERVICE_MEDIA_ROBOT",
+        "nom": "Service média du robot",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "",
+        "donnees_reprises": {
+          "bringupKey": "camera",
+          "bringupOrder": 20,
+          "couleur": "#3766f5"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "unite-55ee66ff",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_service-2b3c4d5e",
+        "code": "INSTANCE_UNITE_CAMERA_AVANT",
+        "nom": "Caméra avant",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": true
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-55ee66ff",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-55ee66ff",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-55ee66ff",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-55ee66ff",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-55ee66ff",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-55ee66ff",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-55ee66ff",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-55ee66ff",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-55ee66ff",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-55ee66ff",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "tx-flux",
+        "sorte": "CANAL_EMISSION",
+        "parent": "bem-unite-55ee66ff",
+        "code": "CANAL_EMISSION_ETAT_FLUX_VIDEO",
+        "nom": "État du flux vidéo",
+        "description": "",
+        "reglages": {
+          "type": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+          "format": "OBJET_JSON"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "instance_service-3c4d5e6f",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-ancien-robot",
+        "code": "INSTANCE_SERVICE_REVEIL_CHASSIS",
+        "nom": "Réveil du châssis",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "",
+        "donnees_reprises": {
+          "bringupKey": "chassis",
+          "bringupOrder": 10
+        },
+        "code_fige": true
+      },
+      {
+        "id": "instance_service-4d5e6f7a",
+        "sorte": "INSTANCE_SERVICE_CONFIGUREE",
+        "parent": "zon-ancien-serveur",
+        "code": "INSTANCE_SERVICE_ANALYSE_RAYONS",
+        "nom": "Analyse des rayons",
+        "type": {
+          "code": "TYPE_SERVICE_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "",
+        "code_fige": true
+      },
+      {
+        "id": "unite-77aa88bb",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_service-4d5e6f7a",
+        "code": "INSTANCE_UNITE_ANALYSE_IMAGES",
+        "nom": "Analyse des images",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": false
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-77aa88bb",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-77aa88bb",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-77aa88bb",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-77aa88bb",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-77aa88bb",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-77aa88bb",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-77aa88bb",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-77aa88bb",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-77aa88bb",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-77aa88bb",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "rx-image",
+        "sorte": "CANAL_RECEPTION",
+        "parent": "bre-unite-77aa88bb",
+        "code": "CANAL_RECEPTION_IMAGE_RAYONS",
+        "nom": "Image des rayons",
+        "description": "",
+        "reglages": {
+          "type": "TYPE_ENTREE_ABONNEMENT_ROS_2",
+          "format": "IMAGE"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "instance_application-5e6f7a8b",
+        "sorte": "INSTANCE_APPLICATION_CONFIGUREE",
+        "parent": "zon-ancien-navigateur-web",
+        "code": "INSTANCE_APPLICATION_TELECOMMANDE_WEB",
+        "nom": "Télécommande opérateur web",
+        "type": {
+          "code": "TYPE_APPLICATION_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "",
+        "code_fige": true
+      },
+      {
+        "id": "unite-99887766",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_application-5e6f7a8b",
+        "code": "INSTANCE_UNITE_COMMANDES_OPERATEUR",
+        "nom": "Commandes opérateur",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": false
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-99887766",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-99887766",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-99887766",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-99887766",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-99887766",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-99887766",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-99887766",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-99887766",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-99887766",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-99887766",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "rx-etat-robot",
+        "sorte": "CANAL_RECEPTION",
+        "parent": "bre-unite-99887766",
+        "code": "CANAL_RECEPTION_ETAT_ROBOT",
+        "nom": "État du robot",
+        "description": "",
+        "reglages": {
+          "type": "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+          "format": "OBJET_JSON"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "tx-commande",
+        "sorte": "CANAL_EMISSION",
+        "parent": "bem-unite-99887766",
+        "code": "CANAL_EMISSION_COMMANDE_DEPLACEMENT",
+        "nom": "Commande de déplacement",
+        "description": "",
+        "reglages": {
+          "type": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+          "format": "BINAIRE_COMPACT"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "instance_application-6f7a8b9c",
+        "sorte": "INSTANCE_APPLICATION_CONFIGUREE",
+        "parent": "zon-ancien-a-preciser",
+        "code": "INSTANCE_APPLICATION_SUIVI_STOCKS",
+        "nom": "Suivi des stocks",
+        "type": {
+          "code": "TYPE_APPLICATION_GENERIQUE",
+          "version": "1.0.0"
+        },
+        "description": "Le tableau des ruptures, pour le responsable de rayon.",
+        "donnees_reprises": {
+          "target": "ENVIRONNEMENT_EXECUTION_APPLICATION_METIER"
+        },
+        "code_fige": true
+      },
+      {
+        "id": "unite-44dd55ee",
+        "sorte": "INSTANCE_UNITE_CONFIGUREE",
+        "parent": "instance_application-6f7a8b9c",
+        "code": "INSTANCE_UNITE_TABLEAU_RUPTURES",
+        "nom": "Tableau des ruptures",
+        "type": {
+          "code": "TYPE_UNITE_STANDARD",
+          "version": "1.0.0"
+        },
+        "donnees_reprises": {
+          "canPublishAudio": false,
+          "canPublishVideo": false
+        },
+        "code_fige": true
+      },
+      {
+        "id": "trt-unite-44dd55ee",
+        "sorte": "TRAITEMENT_METIER_UNITE",
+        "parent": "unite-44dd55ee",
+        "code": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "itf-unite-44dd55ee",
+        "sorte": "INTERFACE_COMMUNICATION_UNITE",
+        "parent": "unite-44dd55ee",
+        "code": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bnd-unite-44dd55ee",
+        "sorte": "BANDE_DONNEES",
+        "parent": "itf-unite-44dd55ee",
+        "code": "BANDE_DONNEES_PRINCIPALE",
+        "code_fige": true
+      },
+      {
+        "id": "bre-unite-44dd55ee",
+        "sorte": "BUS_RECEPTION",
+        "parent": "bnd-unite-44dd55ee",
+        "code": "BUS_RECEPTION_PRINCIPAL",
+        "code_fige": true
+      },
+      {
+        "id": "bem-unite-44dd55ee",
+        "sorte": "BUS_EMISSION",
+        "parent": "bnd-unite-44dd55ee",
+        "code": "BUS_EMISSION_PRINCIPAL",
+        "code_fige": true
+      }
+    ],
+    "liaisons": [
+      {
+        "id": "liaison-commande",
+        "source": "tx-commande",
+        "destination": "rx-commande"
+      },
+      {
+        "id": "liaison-etat",
+        "source": "tx-etat",
+        "destination": "rx-etat-robot"
+      }
+    ]
+  },
+  "mise_en_page": {
+    "format": "oscar.mise-en-page/1",
+    "blocs": {
+      "instance_service-1a2b3c4d": {
+        "x": 24,
+        "y": 64
+      },
+      "instance_service-2b3c4d5e": {
+        "x": 24,
+        "y": 494
+      },
+      "instance_service-3c4d5e6f": {
+        "x": 24,
+        "y": 784
+      },
+      "instance_service-4d5e6f7a": {
+        "x": 24,
+        "y": 64
+      },
+      "instance_application-5e6f7a8b": {
+        "x": 24,
+        "y": 64
+      },
+      "instance_application-6f7a8b9c": {
+        "x": 24,
+        "y": 64
+      }
+    }
+  },
+  "revision": 0,
+  "etat": "ETAT_BROUILLON_BUNDLE_EN_EDITION",
+  "origine": {
+    "sorte": "ANCIEN_FORMAT",
+    "version_id": "version-ancienne-publiee",
+    "numero": 1
+  },
+  "reprise": {
+    "problemes": [
+      {
+        "niveau": "AVERTISSEMENT",
+        "code": "TYPE_A_CONFIRMER",
+        "titre": "Type d'unité à confirmer",
+        "explication": "L'unité « Bras manipulateur » avait le type TYPE_UNITE_CONTROLE_ACTION_ROBOT, qui n'est pas au catalogue : elle est reprise en TYPE_UNITE_STANDARD.",
+        "correction": "Choisissez son type dans l'inspecteur.",
+        "element": "unite-33cc44dd"
+      },
+      {
+        "niveau": "ERREUR",
+        "code": "ZONE_A_PRECISER",
+        "titre": "Zone à préciser",
+        "explication": "Dites si ce qu'elle contient fonctionne dans un navigateur, sur un ordinateur, sur un mobile ou sur un serveur.",
+        "correction": "Choisissez son type dans l'inspecteur.",
+        "element": "zon-ancien-a-preciser"
+      }
+    ],
+    "non_repris": [
+      {
+        "champ": "/nodes/0/id",
+        "valeur": "bundle_deploiement-5a6b7c8d",
+        "raison": "le bundle est le cadre du canevas, pas un élément : il n'a ni identifiant d'élément, ni position, ni environnement"
+      },
+      {
+        "champ": "/nodes/0/position",
+        "valeur": {
+          "x": 40,
+          "y": 245
+        },
+        "raison": "le bundle est le cadre du canevas, pas un élément : il n'a ni identifiant d'élément, ni position, ni environnement"
+      },
+      {
+        "champ": "/nodes/0/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/0/measured",
+        "valeur": {
+          "width": 240,
+          "height": 96
+        },
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/0/selected",
+        "valeur": false,
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/0/data/target",
+        "valeur": "ENVIRONNEMENT_EXECUTION_ROBOT",
+        "raison": "le bundle est le cadre du canevas, pas un élément : il n'a ni identifiant d'élément, ni position, ni environnement"
+      },
+      {
+        "champ": "/nodes/0/data/status",
+        "valeur": "PRET",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/0/data/units",
+        "valeur": [],
+        "raison": "le bundle est le cadre du canevas, pas un élément : il n'a ni identifiant d'élément, ni position, ni environnement"
+      },
+      {
+        "champ": "/nodes/1/data/status",
+        "valeur": "PRET",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/1/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/1/measured",
+        "valeur": {
+          "width": 320,
+          "height": 280
+        },
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/1/dragging",
+        "valeur": false,
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/1/data/units/0/expanded",
+        "valeur": true,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/nodes/1/data/units/0/inputs/0/direction",
+        "valeur": "RECEPTION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/1/data/units/0/outputs/0/direction",
+        "valeur": "EMISSION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/1/data/units/1/expanded",
+        "valeur": false,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/nodes/2/data/status",
+        "valeur": "BROUILLON",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/2/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/2/data/units/0/expanded",
+        "valeur": true,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/nodes/2/data/units/0/outputs/0/direction",
+        "valeur": "EMISSION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/3/data/status",
+        "valeur": "PRET",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/3/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/4/data/status",
+        "valeur": "BROUILLON",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/4/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/4/data/units/0/expanded",
+        "valeur": true,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/nodes/4/data/units/0/inputs/0/direction",
+        "valeur": "RECEPTION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/5/data/status",
+        "valeur": "PRET",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/5/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/5/data/units/0/expanded",
+        "valeur": true,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/nodes/5/data/units/0/inputs/0/direction",
+        "valeur": "RECEPTION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/5/data/units/0/outputs/0/direction",
+        "valeur": "EMISSION",
+        "raison": "le sens d'un canal se déduit de son bus"
+      },
+      {
+        "champ": "/nodes/6/data/status",
+        "valeur": "BROUILLON",
+        "raison": "état choisi à la main dans l'ancien Studio ; le nouvel état vient de la vérification"
+      },
+      {
+        "champ": "/nodes/6/type",
+        "valeur": "architecture",
+        "raison": "état de l'ancien canevas (React Flow), recalculé par le nouvel écran"
+      },
+      {
+        "champ": "/nodes/6/data/units/0/expanded",
+        "valeur": true,
+        "raison": "affichage propre à chacun, gardé dans le navigateur"
+      },
+      {
+        "champ": "/edges/0",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-1a2b3c4d",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_service-1a2b3c4d",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/1",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-2b3c4d5e",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_service-2b3c4d5e",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/2",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-3c4d5e6f",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_service-3c4d5e6f",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/3",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-4d5e6f7a",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_service-4d5e6f7a",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/4",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_application-5e6f7a8b",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_application-5e6f7a8b",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/5",
+        "valeur": {
+          "id": "structure-bundle_deploiement-5a6b7c8d-instance_application-6f7a8b9c",
+          "source": "bundle_deploiement-5a6b7c8d",
+          "target": "instance_application-6f7a8b9c",
+          "type": "smoothstep",
+          "selectable": false,
+          "style": {
+            "stroke": "#a8b3c7",
+            "strokeDasharray": "5 6",
+            "strokeWidth": 1.5
+          },
+          "data": {
+            "edgeKind": "STRUCTURE"
+          },
+          "sourceHandle": "bundle-output",
+          "targetHandle": "component-input"
+        },
+        "raison": "le contenant les remplace : le bundle contient les zones, qui contiennent les blocs"
+      },
+      {
+        "champ": "/edges/6/type",
+        "valeur": "smoothstep",
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/6/style",
+        "valeur": {
+          "stroke": "#3766f5",
+          "strokeWidth": 2.5
+        },
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/6/animated",
+        "valeur": true,
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/7/type",
+        "valeur": "smoothstep",
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/7/style",
+        "valeur": {
+          "stroke": "#3766f5",
+          "strokeWidth": 2.5
+        },
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/7/animated",
+        "valeur": true,
+        "raison": "dessin de l'ancien trait"
+      },
+      {
+        "champ": "/edges/7/markerEnd",
+        "valeur": {
+          "type": "arrowclosed"
+        },
+        "raison": "dessin de l'ancien trait"
+      }
+    ],
+    "non_classes": []
+  },
+  "modifie_le": null,
+  "modifie_par": null
+}

@@ -1,4 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
+import type { FormatDeDonnees, TypeDEmission, TypeDeReception } from './modele/canaux';
 
 export type ProjectTarget =
   | 'ENVIRONNEMENT_EXECUTION_ROBOT'
@@ -8,22 +9,11 @@ export type ProjectTarget =
 
 export type ArchitectureKind = 'BUNDLE_DEPLOIEMENT' | 'INSTANCE_SERVICE' | 'INSTANCE_APPLICATION';
 
-export type InputChannelType =
-  | 'TYPE_ENTREE_INJECTION_APPLICATION'
-  | 'TYPE_ENTREE_ABONNEMENT_TEMPS_REEL'
-  | 'TYPE_ENTREE_SERVICE_LOCAL'
-  | 'TYPE_ENTREE_CONSOMMATION_COURTIER_MESSAGES'
-  | 'TYPE_ENTREE_ABONNEMENT_ROS_2';
-
-export type OutputChannelType =
-  | 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE'
-  | 'TYPE_SORTIE_PUBLICATION_TEMPS_REEL_PLUSIEURS_CANAUX'
-  | 'TYPE_SORTIE_RAPPEL_APPLICATION'
-  | 'TYPE_SORTIE_SERVICE_LOCAL'
-  | 'TYPE_SORTIE_PUBLICATION_COURTIER_MESSAGES'
-  | 'TYPE_SORTIE_PUBLICATION_ROS_2';
-
-export type DataFormat = 'NOMBRE' | 'BOOLEEN' | 'TEXTE' | 'OBJET_JSON' | 'BINAIRE_COMPACT' | 'IMAGE';
+// Les types de canaux et les formats sont écrits une seule fois, dans
+// modele/canaux.ts ; l'ancien éditeur les garde sous ces noms.
+export type InputChannelType = TypeDeReception;
+export type OutputChannelType = TypeDEmission;
+export type DataFormat = FormatDeDonnees;
 
 export interface ChannelConfig {
   id: string;

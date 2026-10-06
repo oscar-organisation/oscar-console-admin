@@ -1,0 +1,27 @@
+Réponses de l'API du Studio, telles que le serveur les rend, pour les tests de
+l'interface (tests unitaires et scénarios d'écran, qui simulent l'API).
+
+Elles ont été produites le 06/10/2026 par l'API de la branche test au commit
+af444f2, jouée dans un conteneur jetable avec sa base de test : un test
+temporaire, hors du dépôt, a appelé les routes et écrit les réponses. Rien n'y a
+été écrit à la main, sauf les valeurs qui changent à chaque exécution,
+remplacées par des valeurs fixes :
+- catalogue.json : GET /api/studio/catalogue, tel quel ;
+- brouillon-reprise-ancien-format.json : GET /api/studio/bundles/{id}/brouillon
+  pour un bundle de l'ancienne console (la composition
+  tests/donnees/ancien-format-complet.json de l'API, sans ses deux liaisons
+  cassées ni ses Box IA, publiée par les anciennes routes) : c'est la reprise
+  de l'adaptateur, à la révision 0. Remplacés : bundle_id (« bundle-ancien »)
+  et origine.version_id (« version-ancienne-publiee ») ;
+- brouillon-reference.json : GET /api/studio/bundles/{id}/brouillon après
+  l'enregistrement du bundle de référence (exemple de la source des formats et
+  tests/donnees/mise-en-page-reference-L1.json de l'API). Remplacés :
+  bundle_id (« bundle-reference »), modifie_le, modifie_par.
+
+Si l'API change ces réponses, les produire à nouveau de la même façon, plutôt
+que de les corriger à la main.
+
+empreintes:
+26c067bbef7b8ec608918e78f1ca4eb288722999649096cbdb1cfe68041b2dbc  catalogue.json
+6b2dfa27f6f1c84fc5789b9a5cf8c69c78bbbae20eaa3b5ea01df7a36fabbea2  brouillon-reprise-ancien-format.json
+8fc4d62daf5584e210b56a031ddf0ad312bcc7b7e68a941044a43de085176868  brouillon-reference.json
