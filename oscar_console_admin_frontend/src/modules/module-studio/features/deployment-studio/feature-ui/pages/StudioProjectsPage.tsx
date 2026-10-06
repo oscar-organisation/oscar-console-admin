@@ -10,6 +10,7 @@ import {
   Check,
   ChevronRight,
   CloudOff,
+  Eye,
   Layers3,
   LoaderCircle,
   Plus,
@@ -233,6 +234,18 @@ export default function StudioProjectsPage() {
                       </div>
                     </button>
                     <div className="project-card__actions">
+                      {project.bundleId && (
+                        // Le nouveau canevas, en lecture, s'ouvre à côté de l'ancien éditeur (lot L1).
+                        <button
+                          className="project-card__action"
+                          aria-label={`Voir le bundle ${project.name} dans le nouveau canevas`}
+                          title="Voir ce bundle dans le nouveau canevas, en lecture"
+                          onClick={() => navigate(`/studio/${project.bundleId}/composition`)}
+                          type="button"
+                        >
+                          <Eye size={15} />
+                        </button>
+                      )}
                       {project.bundleId && (
                         <button
                           className="project-card__action"
