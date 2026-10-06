@@ -40,6 +40,7 @@ from ..models import (
     EdgeRelease,
     AiModelBoxAssignment,
     BrouillonBundle,
+    CompositionPreset,
     BundleDeployment,
     BundleVersion,
     DeploymentBundle,
@@ -62,7 +63,9 @@ from ..schemas import (
     DeploymentOut,
     DeploymentReportIn,
 )
+from ..studio_modele.ancien_format import brouillon_depuis_ancien_format
 from ..studio_modele.brouillons import ETAT_EN_EDITION, empreinte_du_modele, modele_vide
+from ..studio_modele.catalogue import catalogue_enregistre
 from ..studio_modele.formats import FORMAT_DU_BUNDLE, mise_en_page_vide
 from ..studio_modele.projets import projet_d_office
 from ..studio_modele.refus import RefusDuStudio
@@ -301,11 +304,24 @@ def create_bundle(request: Request, body: BundleCreationIn, db: Session = Depend
     if body.depart is not None:
         # Un point de départ : le bundle naît avec son brouillon au nouveau
         # format, à la révision 1, dans la même transaction.
-        modele = modele_vide(bundle.nom, bundle.description)
+        modele, mise_en_page, origine, reprise = (
+            modele_vide(bundle.nom, bundle.description), mise_en_page_vide(), {"sorte": "VIDE"}, None)
+        if body.depart.sorte == "PRESET":
+            preset = db.execute(select(CompositionPreset).where(
+                CompositionPreset.slug == body.depart.slug, CompositionPreset.statut == "published",
+            )).scalar_one_or_none()
+            if preset is None:
+                raise HTTPException(404, "Préset inconnu")
+            # Le préset est repris par l'adaptateur de l'ancien format ; le
+            # bundle garde son propre nom. Le préset, lui, ne change pas.
+            repris = brouillon_depuis_ancien_format(preset.spec, {}, catalogue_enregistre(db),
+                                                    entete=modele["bundle"])
+            modele, mise_en_page, reprise = repris.modele, repris.mise_en_page, repris.rapport
+            origine = {"sorte": "PRESET", "slug": preset.slug}
         bundle.brouillon = BrouillonBundle(
-            format=FORMAT_DU_BUNDLE, modele=modele, mise_en_page=mise_en_page_vide(), revision=1,
+            format=FORMAT_DU_BUNDLE, modele=modele, mise_en_page=mise_en_page, revision=1,
             empreinte_modele=empreinte_du_modele(modele), etat=ETAT_EN_EDITION,
-            origine={"sorte": body.depart.sorte}, reprise=None, modifie_par=user.id,
+            origine=origine, reprise=reprise, modifie_par=user.id,
         )
     db.add(bundle)
     db.commit()

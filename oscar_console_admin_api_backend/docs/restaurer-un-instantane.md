@@ -40,7 +40,7 @@ service.
 - **La base doit venir d'une version du code que l'API connaît.** Au
   démarrage, l'API applique les migrations qui manquent; elle ne sait pas
   défaire celles d'une version plus récente. Les migrations de ce dépôt vont
-  de `0001` à `0013`.
+  de `0001` à `0015`.
 - **Au démarrage, l'API ajoute ses données de départ** si elles manquent:
   l'administrateur de `ADMIN_EMAIL`, et les données de démonstration si
   `SEED_DEMO` vaut `true`. Pour restaurer les données réelles d'un

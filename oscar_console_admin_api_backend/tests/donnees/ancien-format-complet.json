@@ -1,0 +1,472 @@
+{
+  "nodes": [
+    {
+      "id": "bundle_deploiement-5a6b7c8d",
+      "type": "architecture",
+      "position": {
+        "x": 40,
+        "y": 245
+      },
+      "data": {
+        "kind": "BUNDLE_DEPLOIEMENT",
+        "name": "Accueil et inventaire du magasin",
+        "technicalCode": "BUNDLE_DEPLOIEMENT_ACCUEIL_INVENTAIRE",
+        "description": "Accueillir les clients le jour, compter les rayons la nuit.",
+        "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
+        "status": "PRET",
+        "units": []
+      },
+      "measured": {
+        "width": 240,
+        "height": 96
+      },
+      "selected": false
+    },
+    {
+      "id": "instance_service-1a2b3c4d",
+      "type": "architecture",
+      "position": {
+        "x": 420,
+        "y": 40
+      },
+      "data": {
+        "kind": "INSTANCE_SERVICE",
+        "name": "Service actions du robot",
+        "technicalCode": "INSTANCE_SERVICE_ACTIONS_ROBOT",
+        "description": "Commande la base et le bras.",
+        "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
+        "status": "PRET",
+        "units": [
+          {
+            "id": "unite-11aa22bb",
+            "name": "Pilotage du déplacement",
+            "technicalCode": "INSTANCE_UNITE_PILOTAGE_DEPLACEMENT",
+            "unitType": "TYPE_UNITE_STANDARD",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [
+              {
+                "id": "rx-commande",
+                "name": "Commande de déplacement",
+                "technicalCode": "CANAL_RECEPTION_COMMANDE_DEPLACEMENT",
+                "direction": "RECEPTION",
+                "channelType": "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+                "dataFormat": "BINAIRE_COMPACT",
+                "description": "Vitesse voulue, envoyée par l'opérateur."
+              }
+            ],
+            "outputs": [
+              {
+                "id": "tx-etat",
+                "name": "État du déplacement",
+                "technicalCode": "CANAL_EMISSION_ETAT_DEPLACEMENT",
+                "direction": "EMISSION",
+                "channelType": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+                "dataFormat": "OBJET_JSON",
+                "description": ""
+              }
+            ],
+            "canPublishAudio": false,
+            "canPublishVideo": false,
+            "expanded": true
+          },
+          {
+            "id": "unite-33cc44dd",
+            "name": "Bras manipulateur",
+            "technicalCode": "INSTANCE_UNITE_BRAS_MANIPULATEUR",
+            "unitType": "TYPE_UNITE_CONTROLE_ACTION_ROBOT",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [],
+            "outputs": [],
+            "canPublishAudio": false,
+            "canPublishVideo": false,
+            "expanded": false
+          }
+        ]
+      },
+      "measured": {
+        "width": 320,
+        "height": 280
+      },
+      "dragging": false
+    },
+    {
+      "id": "instance_service-2b3c4d5e",
+      "type": "architecture",
+      "position": {
+        "x": 420,
+        "y": 470
+      },
+      "data": {
+        "kind": "INSTANCE_SERVICE",
+        "name": "Service média du robot",
+        "technicalCode": "INSTANCE_SERVICE_MEDIA_ROBOT",
+        "description": "",
+        "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
+        "status": "BROUILLON",
+        "aiBoxId": "0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+        "bringupKey": "camera",
+        "bringupOrder": 20,
+        "couleur": "#3766f5",
+        "units": [
+          {
+            "id": "unite-55ee66ff",
+            "name": "Caméra avant",
+            "technicalCode": "INSTANCE_UNITE_CAMERA_AVANT",
+            "unitType": "TYPE_UNITE_STANDARD",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [],
+            "outputs": [
+              {
+                "id": "tx-flux",
+                "name": "État du flux vidéo",
+                "technicalCode": "CANAL_EMISSION_ETAT_FLUX_VIDEO",
+                "direction": "EMISSION",
+                "channelType": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+                "dataFormat": "OBJET_JSON",
+                "description": ""
+              }
+            ],
+            "canPublishAudio": false,
+            "canPublishVideo": true,
+            "expanded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance_service-3c4d5e6f",
+      "type": "architecture",
+      "position": {
+        "x": 420,
+        "y": 760
+      },
+      "data": {
+        "kind": "INSTANCE_SERVICE",
+        "name": "Réveil du châssis",
+        "technicalCode": "INSTANCE_SERVICE_REVEIL_CHASSIS",
+        "description": "",
+        "target": "ENVIRONNEMENT_EXECUTION_ROBOT",
+        "status": "PRET",
+        "bringupKey": "chassis",
+        "bringupOrder": 10,
+        "units": []
+      }
+    },
+    {
+      "id": "instance_service-4d5e6f7a",
+      "type": "architecture",
+      "position": {
+        "x": 420,
+        "y": 1000
+      },
+      "data": {
+        "kind": "INSTANCE_SERVICE",
+        "name": "Analyse des rayons",
+        "technicalCode": "INSTANCE_SERVICE_ANALYSE_RAYONS",
+        "description": "",
+        "target": "ENVIRONNEMENT_EXECUTION_SERVEUR",
+        "status": "BROUILLON",
+        "aiBoxId": "9a8b7c6d5e4f30211203f4e5d6c7b8a9",
+        "units": [
+          {
+            "id": "unite-77aa88bb",
+            "name": "Analyse des images",
+            "technicalCode": "INSTANCE_UNITE_ANALYSE_IMAGES",
+            "unitType": "TYPE_UNITE_STANDARD",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [
+              {
+                "id": "rx-image",
+                "name": "Image des rayons",
+                "technicalCode": "CANAL_RECEPTION_IMAGE_RAYONS",
+                "direction": "RECEPTION",
+                "channelType": "TYPE_ENTREE_ABONNEMENT_ROS_2",
+                "dataFormat": "IMAGE",
+                "description": ""
+              }
+            ],
+            "outputs": [],
+            "canPublishAudio": false,
+            "canPublishVideo": false,
+            "expanded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance_application-5e6f7a8b",
+      "type": "architecture",
+      "position": {
+        "x": 930,
+        "y": 245
+      },
+      "data": {
+        "kind": "INSTANCE_APPLICATION",
+        "name": "Télécommande opérateur web",
+        "technicalCode": "INSTANCE_APPLICATION_TELECOMMANDE_WEB",
+        "description": "",
+        "target": "ENVIRONNEMENT_EXECUTION_NAVIGATEUR_WEB",
+        "status": "PRET",
+        "units": [
+          {
+            "id": "unite-99887766",
+            "name": "Commandes opérateur",
+            "technicalCode": "INSTANCE_UNITE_COMMANDES_OPERATEUR",
+            "unitType": "TYPE_UNITE_STANDARD",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [
+              {
+                "id": "rx-etat-robot",
+                "name": "État du robot",
+                "technicalCode": "CANAL_RECEPTION_ETAT_ROBOT",
+                "direction": "RECEPTION",
+                "channelType": "TYPE_ENTREE_ABONNEMENT_TEMPS_REEL",
+                "dataFormat": "OBJET_JSON",
+                "description": ""
+              }
+            ],
+            "outputs": [
+              {
+                "id": "tx-commande",
+                "name": "Commande de déplacement",
+                "technicalCode": "CANAL_EMISSION_COMMANDE_DEPLACEMENT",
+                "direction": "EMISSION",
+                "channelType": "TYPE_SORTIE_PUBLICATION_TEMPS_REEL_CANAL_UNITE",
+                "dataFormat": "BINAIRE_COMPACT",
+                "description": ""
+              }
+            ],
+            "canPublishAudio": false,
+            "canPublishVideo": false,
+            "expanded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance_application-6f7a8b9c",
+      "type": "architecture",
+      "position": {
+        "x": 930,
+        "y": 600
+      },
+      "data": {
+        "kind": "INSTANCE_APPLICATION",
+        "name": "Suivi des stocks",
+        "technicalCode": "INSTANCE_APPLICATION_SUIVI_STOCKS",
+        "description": "Le tableau des ruptures, pour le responsable de rayon.",
+        "target": "ENVIRONNEMENT_EXECUTION_APPLICATION_METIER",
+        "status": "BROUILLON",
+        "units": [
+          {
+            "id": "unite-44dd55ee",
+            "name": "Tableau des ruptures",
+            "technicalCode": "INSTANCE_UNITE_TABLEAU_RUPTURES",
+            "unitType": "TYPE_UNITE_STANDARD",
+            "processingName": "TRAITEMENT_METIER_UNITE_PRINCIPAL",
+            "interfaceName": "INTERFACE_COMMUNICATION_UNITE_PRINCIPALE",
+            "dataBandName": "BANDE_DONNEES_PRINCIPALE",
+            "receiveBusName": "BUS_RECEPTION_PRINCIPAL",
+            "sendBusName": "BUS_EMISSION_PRINCIPAL",
+            "inputs": [],
+            "outputs": [],
+            "canPublishAudio": false,
+            "canPublishVideo": false,
+            "expanded": true
+          }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-1a2b3c4d",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_service-1a2b3c4d",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-2b3c4d5e",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_service-2b3c4d5e",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-3c4d5e6f",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_service-3c4d5e6f",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_service-4d5e6f7a",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_service-4d5e6f7a",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_application-5e6f7a8b",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_application-5e6f7a8b",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "structure-bundle_deploiement-5a6b7c8d-instance_application-6f7a8b9c",
+      "source": "bundle_deploiement-5a6b7c8d",
+      "target": "instance_application-6f7a8b9c",
+      "type": "smoothstep",
+      "selectable": false,
+      "style": {
+        "stroke": "#a8b3c7",
+        "strokeDasharray": "5 6",
+        "strokeWidth": 1.5
+      },
+      "data": {
+        "edgeKind": "STRUCTURE"
+      },
+      "sourceHandle": "bundle-output",
+      "targetHandle": "component-input"
+    },
+    {
+      "id": "liaison-commande",
+      "source": "instance_application-5e6f7a8b",
+      "sourceHandle": "out:unite-99887766:tx-commande",
+      "target": "instance_service-1a2b3c4d",
+      "targetHandle": "in:unite-11aa22bb:rx-commande",
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#3766f5",
+        "strokeWidth": 2.5
+      },
+      "data": {
+        "edgeKind": "DONNEES"
+      }
+    },
+    {
+      "id": "liaison-etat",
+      "source": "instance_service-1a2b3c4d",
+      "sourceHandle": "out:unite-11aa22bb:tx-etat",
+      "target": "instance_application-5e6f7a8b",
+      "targetHandle": "in:unite-99887766:rx-etat-robot",
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#3766f5",
+        "strokeWidth": 2.5
+      },
+      "data": {
+        "edgeKind": "DONNEES"
+      },
+      "markerEnd": {
+        "type": "arrowclosed"
+      }
+    },
+    {
+      "id": "liaison-perdue",
+      "source": "instance_service-2b3c4d5e",
+      "sourceHandle": "out:unite-55ee66ff:tx-flux",
+      "target": "instance_service-4d5e6f7a",
+      "targetHandle": "in:unite-77aa88bb:rx-disparu",
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#3766f5",
+        "strokeWidth": 2.5
+      },
+      "data": {
+        "edgeKind": "DONNEES"
+      }
+    },
+    {
+      "id": "liaison-a-l-envers",
+      "source": "instance_service-4d5e6f7a",
+      "sourceHandle": "in:unite-77aa88bb:rx-image",
+      "target": "instance_service-2b3c4d5e",
+      "targetHandle": "out:unite-55ee66ff:tx-flux",
+      "type": "smoothstep",
+      "animated": true,
+      "style": {
+        "stroke": "#3766f5",
+        "strokeWidth": 2.5
+      },
+      "data": {
+        "edgeKind": "DONNEES"
+      }
+    }
+  ]
+}

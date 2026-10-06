@@ -16,8 +16,9 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import request_organisation_id, require
-from ..models import BrouillonBundle, DeploymentBundle, TypeCatalogue
+from ..models import BrouillonBundle, BundleVersion, DeploymentBundle, TypeCatalogue
 from ..schemas import BrouillonEnregistreOut, BrouillonIn, BrouillonOut, CatalogueOut, VerificationOut
+from ..studio_modele.ancien_format import brouillon_depuis_ancien_format
 from ..studio_modele.brouillons import ETAT_EN_EDITION, codes_publies, empreinte_du_modele, modele_vide
 from ..studio_modele.catalogue import catalogue_enregistre, familles
 from ..studio_modele.formats import (
@@ -55,12 +56,24 @@ def lire_catalogue(db: Session = Depends(get_db), _=Depends(require("api:bundle.
 # --------------------------------------------------------------------------- #
 #  Le brouillon
 # --------------------------------------------------------------------------- #
-def _brouillon_servi(bundle: DeploymentBundle) -> dict:
+def _composition_a_reprendre(bundle: DeploymentBundle) -> BundleVersion | None:
+    """La composition de l'ancien format à reprendre : le brouillon ancien s'il
+    existe, sinon la dernière version publiée, sinon la plus récente."""
+    versions = sorted(bundle.versions, key=lambda v: v.numero)
+    for statut in ("draft", "published"):
+        trouvees = [v for v in versions if v.statut == statut]
+        if trouvees:
+            return trouvees[-1]
+    return versions[-1] if versions else None
+
+
+def _brouillon_servi(bundle: DeploymentBundle, catalogue: dict) -> dict:
     """Le brouillon tel que le Studio l'ouvre.
 
-    Un bundle qui n'a pas encore de brouillon au nouveau format s'ouvre sur un
-    modèle vide, à la révision 0, que rien n'enregistre tant que le Studio ne
-    l'envoie pas.
+    Un bundle qui n'a pas encore de brouillon au nouveau format s'ouvre à la
+    révision 0, que rien n'enregistre tant que le Studio ne l'envoie pas : un
+    bundle de l'ancienne console, par la reprise de l'adaptateur (avec son
+    rapport) ; un bundle qui n'a rien, sur un modèle vide.
     """
     brouillon = bundle.brouillon
     if brouillon is not None:
@@ -69,6 +82,15 @@ def _brouillon_servi(bundle: DeploymentBundle) -> dict:
             "mise_en_page": brouillon.mise_en_page, "revision": brouillon.revision, "etat": brouillon.etat,
             "origine": brouillon.origine, "reprise": brouillon.reprise, "modifie_le": brouillon.updated_at,
             "modifie_par": brouillon.modifie_par,
+        }
+    ancienne = _composition_a_reprendre(bundle)
+    if ancienne is not None:
+        reprise = brouillon_depuis_ancien_format(ancienne.spec, codes_publies(bundle.versions), catalogue)
+        return {
+            "bundle_id": bundle.id, "format": FORMAT_DU_BUNDLE, "modele": reprise.modele,
+            "mise_en_page": reprise.mise_en_page, "revision": 0, "etat": ETAT_EN_EDITION,
+            "origine": {"sorte": "ANCIEN_FORMAT", "version_id": ancienne.id, "numero": ancienne.numero},
+            "reprise": reprise.rapport, "modifie_le": None, "modifie_par": None,
         }
     return {
         "bundle_id": bundle.id, "format": FORMAT_DU_BUNDLE, "modele": modele_vide(bundle.nom, bundle.description),
@@ -108,7 +130,7 @@ def _lire_les_documents(corps: BrouillonIn) -> tuple[ModeleBundle, MiseEnPage]:
 def lire_brouillon(request: Request, bundle_id: str, db: Session = Depends(get_db),
                    _=Depends(require("api:bundle.read"))):
     bundle = _bundle_du_perimetre(db, bundle_id, request_organisation_id(request), verrouiller=False)
-    return _brouillon_servi(bundle)
+    return _brouillon_servi(bundle, catalogue_enregistre(db))
 
 
 @router.put("/bundles/{bundle_id}/brouillon", response_model=BrouillonEnregistreOut)
@@ -124,14 +146,17 @@ def enregistrer_brouillon(request: Request, bundle_id: str, corps: BrouillonIn, 
     # La ligne du bundle est verrouillée : deux enregistrements simultanés
     # passent l'un après l'autre, et le second voit la révision du premier.
     bundle = _bundle_du_perimetre(db, bundle_id, request_organisation_id(request))
-    servi = _brouillon_servi(bundle)
+    catalogue = catalogue_enregistre(db)
+    # Ce que le Studio a ouvert : le brouillon enregistré, ou la reprise d'un
+    # bundle ancien. Ses codes figés ne doivent pas changer.
+    servi = _brouillon_servi(bundle, catalogue)
     if corps.revision_attendue != servi["revision"]:
         raise RefusDuStudio(409, "BROUILLON_MODIFIE_AILLEURS",
                             f"Ce brouillon a été modifié depuis un autre poste (révision {servi['revision']}). "
                             "Rechargez-le pour voir ces changements ; vos modifications restent proposées à côté.",
                             revision_serveur=servi["revision"])
     modele, mise_en_page = _lire_les_documents(corps)
-    refus = verifier_modele(modele, catalogue_enregistre(db), avant=ModeleBundle.model_validate(servi["modele"]),
+    refus = verifier_modele(modele, catalogue, avant=ModeleBundle.model_validate(servi["modele"]),
                             publications=codes_publies(bundle.versions))
     if refus:
         premier = refus[0]

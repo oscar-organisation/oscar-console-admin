@@ -556,9 +556,17 @@ class BundleIn(BaseModel):
 
 
 class DepartIn(BaseModel):
-    """Le point de départ d'un bundle composé dans le nouveau Studio."""
+    """Le point de départ d'un bundle composé dans le nouveau Studio : vide,
+    ou un préset du catalogue (par son slug), repris au nouveau format."""
 
-    sorte: Literal["VIDE"]
+    sorte: Literal["VIDE", "PRESET"]
+    slug: str | None = None
+
+    @model_validator(mode="after")
+    def _slug_du_preset(self) -> "DepartIn":
+        if self.sorte == "PRESET" and not self.slug:
+            raise ValueError("un départ depuis un préset nomme ce préset par son slug")
+        return self
 
 
 class BundleCreationIn(BundleIn):

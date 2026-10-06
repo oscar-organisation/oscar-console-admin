@@ -54,10 +54,16 @@ TITRES = {
     "COMPOSANT_SANS_UNITE": ("Composant sans unité", "Ajoutez-lui une unité, ou retirez-le."),
     "CANAL_NON_RELIE": ("Canal temps réel non relié", "Reliez-le à un canal d'une autre unité, ou retirez-le."),
     "FORMATS_DIFFERENTS": ("Formats différents aux deux bouts", "Donnez le même format aux deux canaux."),
+    # Ce que dit le rapport de la reprise d'un bundle de l'ancien Studio.
+    "PLUSIEURS_BUNDLES": ("Plusieurs blocs « bundle »", "Recopiez ce qui vous manque depuis le rapport."),
+    "SORTE_INCONNUE": ("Bloc d'une sorte inconnue", "Recréez-le avec la palette si vous en avez besoin."),
+    "TYPE_A_CONFIRMER": ("Type d'unité à confirmer", "Choisissez son type dans l'inspecteur."),
+    "LIAISON_A_RECONSTRUIRE": ("Liaison à refaire", "Reliez de nouveau la sortie et l'entrée voulues."),
+    "COMPOSANT_A_PLACER": ("Composant à placer", "Déplacez-le dans la zone qui lui convient."),
 }
 
 
-def _probleme(niveau: str, code: str, explication: str, element: str | None) -> dict:
+def probleme(niveau: str, code: str, explication: str, element: str | None) -> dict:
     titre, correction = TITRES[code]
     return {"niveau": niveau, "code": code, "titre": titre, "explication": explication,
             "correction": correction, "element": element}
@@ -69,12 +75,12 @@ def _nom(element: Element) -> str:
 
 def verifier_brouillon(modele: ModeleBundle, catalogue: Mapping[tuple[str, str], dict]) -> list[dict]:
     """Les problèmes du brouillon, des erreurs aux avertissements."""
-    problemes = [_probleme(ERREUR, r.code, r.message, r.element) for r in verifier_modele(modele, catalogue)]
+    problemes = [probleme(ERREUR, r.code, r.message, r.element) for r in verifier_modele(modele, catalogue)]
     elements = modele.elements
     par_id = {e.id: e for e in elements}
 
     for zone in (e for e in elements if e.sorte == ZONE and e.type is None):
-        problemes.append(_probleme(ERREUR, "ZONE_A_PRECISER",
+        problemes.append(probleme(ERREUR, "ZONE_A_PRECISER",
                                    f"La zone « {_nom(zone)} » n'a pas encore de type : dites si ce qu'elle contient "
                                    "fonctionne dans un navigateur, sur un ordinateur, sur un mobile, sur un robot ou "
                                    "sur un serveur.", zone.id))
@@ -88,7 +94,7 @@ def verifier_brouillon(modele: ModeleBundle, catalogue: Mapping[tuple[str, str],
         if not a_une_unite and not met_en_route:
             effet = ("il ne fera rien une fois déployé" if composant.sorte == SERVICE
                      else "elle ne fera rien une fois déployée")
-            problemes.append(_probleme(AVERTISSEMENT, "COMPOSANT_SANS_UNITE",
+            problemes.append(probleme(AVERTISSEMENT, "COMPOSANT_SANS_UNITE",
                                        f"« {_nom(composant)} » ne contient aucune unité : {effet}.", composant.id))
 
     relies = {lien.source for lien in modele.liaisons} | {lien.destination for lien in modele.liaisons}
@@ -96,7 +102,7 @@ def verifier_brouillon(modele: ModeleBundle, catalogue: Mapping[tuple[str, str],
         if (canal.reglages or {}).get("type") in CANAUX_TEMPS_REEL and canal.id not in relies:
             effet = ("rien ne lui arrivera" if canal.sorte == CANAL_RECEPTION
                      else "personne ne recevra ce qu'il émet")
-            problemes.append(_probleme(AVERTISSEMENT, "CANAL_NON_RELIE",
+            problemes.append(probleme(AVERTISSEMENT, "CANAL_NON_RELIE",
                                        f"Le canal « {_nom(canal)} » échange en temps réel, mais aucune liaison ne "
                                        f"le relie : {effet}.", canal.id))
 
@@ -106,7 +112,7 @@ def verifier_brouillon(modele: ModeleBundle, catalogue: Mapping[tuple[str, str],
             continue
         emis, attendu = (source.reglages or {}).get("format"), (destination.reglages or {}).get("format")
         if emis and attendu and emis != attendu:
-            problemes.append(_probleme(ERREUR, "FORMATS_DIFFERENTS",
+            problemes.append(probleme(ERREUR, "FORMATS_DIFFERENTS",
                                        f"« {_nom(source)} » émet {emis}, « {_nom(destination)} » attend {attendu}.",
                                        lien.id))
     return problemes
