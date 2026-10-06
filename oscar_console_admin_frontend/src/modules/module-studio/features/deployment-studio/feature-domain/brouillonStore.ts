@@ -5,9 +5,12 @@ import {
   enregistrerBrouillon,
   lireBrouillon,
   lireCatalogue,
+  verifierBrouillon,
   type BrouillonServeur,
+  type VerificationDuBrouillon,
 } from "../feature-data/studioApi";
 import {
+  abandonner,
   annuler as annulerDansLHistorique,
   conclure,
   creerHistorique,
@@ -91,6 +94,21 @@ export interface EtatDuBrouillon {
   /** Le prochain essai automatique, en secondes, après un échec ; null s'il n'y en a plus. */
   readonly prochainEssaiDans: number | null;
   readonly propositionDeReprise: PropositionDeReprise | null;
+  /**
+   * Le dernier état que le serveur a confirmé (lu à l'ouverture, ou accepté à
+   * un enregistrement) : c'est de lui que partent « mes changements » et
+   * « ceux de l'autre poste » dans la fenêtre de conflit.
+   */
+  readonly base: EtatStudio | null;
+  /** Pendant un conflit : la version que le serveur a maintenant, relue pour la montrer. */
+  readonly versionEnConflit: BrouillonServeur | null;
+  /** Les problèmes rendus par le serveur à la dernière vérification (« Vérifier »). */
+  readonly verification: VerificationDuBrouillon | null;
+  /** Vrai si le brouillon a changé depuis la dernière vérification : elle date. */
+  readonly verificationPerimee: boolean;
+  readonly verificationEnCours: boolean;
+  /** Pourquoi la vérification n'a pas pu se faire, en mots. */
+  readonly messageDeVerification: string | null;
 }
 
 /** Le délai entre le dernier geste et l'enregistrement : pas une écriture par pixel déplacé. */
@@ -110,6 +128,12 @@ const ETAT_INITIAL: EtatDuBrouillon = {
   messageDEnregistrement: null,
   prochainEssaiDans: null,
   propositionDeReprise: null,
+  base: null,
+  versionEnConflit: null,
+  verification: null,
+  verificationPerimee: false,
+  verificationEnCours: false,
+  messageDeVerification: null,
 };
 
 let etat: EtatDuBrouillon = ETAT_INITIAL;
@@ -121,6 +145,8 @@ let contexte: ContexteDesOperations | null = null;
 let minuterie: number | null = null;
 /** Un envoi est en route : le suivant attend sa réponse, pour partir de la bonne révision. */
 let enVol = false;
+/** La réponse attendue de l'envoi en route : « Vérifier » l'attend, pour vérifier ce qu'on voit. */
+let envoiEnVol: Promise<unknown> | null = null;
 let echecsDeSuite = 0;
 const abonnes = new Set<() => void>();
 
@@ -139,6 +165,7 @@ function reinitialiser(): void {
   generation += 1;
   contexte = null;
   enVol = false;
+  envoiEnVol = null;
   echecsDeSuite = 0;
   etat = ETAT_INITIAL;
 }
@@ -217,16 +244,30 @@ export function configurerPerimetre(utilisateur: string | null, organisation: st
   for (const abonne of abonnes) abonne();
 }
 
+/**
+ * La mise en page à montrer à l'ouverture, depuis celle du serveur : l'écran
+ * la fournit (un bundle repris de l'ancienne console, ou venu sans mise en
+ * page, s'ouvre rangé). Elle n'est enregistrée qu'avec le premier geste.
+ */
+export type PreparationDeLaMiseEnPage = (brouillon: BrouillonServeur) => MiseEnPage;
+
+/** La préparation donnée à la dernière ouverture : une réouverture (après un conflit) la reprend. */
+let preparationDeLOuverture: PreparationDeLaMiseEnPage | null = null;
+
 /** Ouvre le brouillon d'un bundle : le serveur d'abord ; une copie locale qui diffère est seulement proposée. */
-export async function ouvrir(bundleId: string): Promise<void> {
+export async function ouvrir(bundleId: string, preparer?: PreparationDeLaMiseEnPage): Promise<void> {
   reinitialiser();
+  preparationDeLOuverture = preparer ?? null;
   const contexteDeLOuverture = generation;
   publier({ bundleId, chargement: "CHARGEMENT" });
   try {
     const [catalogue, serveur] = await Promise.all([lireCatalogue(), lireBrouillon(bundleId)]);
     if (contexteDeLOuverture !== generation) return;
     contexte = { catalogue: indexerCatalogue(catalogue), nouvelIdentifiant: identifiantAleatoire };
-    const present: EtatStudio = { modele: serveur.modele, miseEnPage: serveur.mise_en_page };
+    const present: EtatStudio = {
+      modele: serveur.modele,
+      miseEnPage: preparer ? preparer(serveur) : serveur.mise_en_page,
+    };
     let propositionDeReprise: PropositionDeReprise | null = null;
     const copie = lireLaCopie(bundleId);
     if (copie && memeContenu({ modele: copie.modele, miseEnPage: copie.mise_en_page }, present)) {
@@ -241,6 +282,7 @@ export async function ouvrir(bundleId: string): Promise<void> {
       chargement: "PRET",
       catalogue,
       serveur,
+      base: { modele: serveur.modele, miseEnPage: serveur.mise_en_page },
       revision: serveur.revision,
       historique: creerHistorique(present),
       enregistrement: serveur.revision === 0 ? "JAMAIS_ENREGISTRE" : "ENREGISTRE",
@@ -282,11 +324,14 @@ async function enregistrer(): Promise<void> {
   enVol = true;
   publier({ enregistrement: "EN_COURS", prochainEssaiDans: null });
   try {
-    const reponse = await enregistrerBrouillon(bundleId, {
+    const requete = enregistrerBrouillon(bundleId, {
       modele: envoye.modele,
       miseEnPage: envoye.miseEnPage,
       revisionAttendue: etat.revision,
     });
+    envoiEnVol = requete.catch(() => undefined);
+    const reponse = await requete;
+    envoiEnVol = null;
     if (contexteDeLEnvoi !== generation) return;
     enVol = false;
     echecsDeSuite = 0;
@@ -295,6 +340,7 @@ async function enregistrer(): Promise<void> {
     else if (etat.historique) ecrireLaCopie(bundleId, etat.historique.present, reponse.revision);
     publier({
       revision: reponse.revision,
+      base: envoye,
       enregistrement: aJour ? "ENREGISTRE" : "MODIFIE",
       messageDEnregistrement: null,
     });
@@ -303,10 +349,18 @@ async function enregistrer(): Promise<void> {
   } catch (erreur) {
     if (contexteDeLEnvoi !== generation) return;
     enVol = false;
+    envoiEnVol = null;
     const probleme = normalizeError(erreur);
     if (probleme.status === 409) {
-      // Quelqu'un a enregistré depuis : rien n'est écrasé, la personne choisit.
+      // Quelqu'un a enregistré depuis : rien n'est écrasé, la personne choisit. La version du
+      // serveur se relit, pour montrer ce qui diffère de chaque côté.
       publier({ enregistrement: "CONFLIT", messageDEnregistrement: probleme.userMessage, prochainEssaiDans: null });
+      try {
+        const versionEnConflit = await lireBrouillon(bundleId);
+        if (contexteDeLEnvoi === generation && etat.enregistrement === "CONFLIT") publier({ versionEnConflit });
+      } catch {
+        // Sans elle, la fenêtre de conflit propose les mêmes choix, sans le détail de l'autre poste.
+      }
       return;
     }
     if (!probleme.retryable) {
@@ -338,10 +392,54 @@ function apresUnChangement(historique: Historique): void {
   const suivant: EtatDEnregistrement = etat.enregistrement === "CONFLIT" || etat.enregistrement === "ECHEC"
     ? etat.enregistrement
     : "MODIFIE";
-  publier({ historique, enregistrement: suivant });
+  publier({ historique, enregistrement: suivant, verificationPerimee: etat.verification !== null });
   // Pendant un conflit, rien ne part ; après un échec, l'essai prévu emportera ce geste.
   if (suivant === "CONFLIT" || enAttenteDUnEssai) return;
   programmer(DELAI_D_ENREGISTREMENT_MS);
+}
+
+/**
+ * « Vérifier » : le serveur relit le brouillon enregistré et rend ses
+ * problèmes, sans rien écrire (recette R1.6). Ce qu'on vérifie, c'est ce
+ * qu'on voit : ce qui attend d'être enregistré part d'abord. Un brouillon
+ * jamais enregistré (la reprise d'un ancien bundle, pas encore touchée) ne
+ * s'écrit pas pour autant : l'écran le dit.
+ */
+export async function verifier(): Promise<void> {
+  const { bundleId } = etat;
+  if (!bundleId || !etat.historique) return;
+  const contexteDeLaVerification = generation;
+  publier({ verificationEnCours: true, messageDeVerification: null });
+  if (envoiEnVol) await envoiEnVol;
+  if (contexteDeLaVerification !== generation) return;
+  if (etat.enregistrement === "MODIFIE" || etat.enregistrement === "ECHEC") {
+    arreterLaMinuterie();
+    await enregistrer();
+  }
+  if (contexteDeLaVerification !== generation) return;
+  if (etat.revision === 0) {
+    publier({
+      verificationEnCours: false,
+      messageDeVerification: "Ce brouillon n’est pas encore enregistré : le serveur le vérifiera dès votre premier changement.",
+    });
+    return;
+  }
+  if (etat.enregistrement !== "ENREGISTRE") {
+    publier({
+      verificationEnCours: false,
+      messageDeVerification: "Le brouillon n’a pas pu être enregistré : la vérification porterait sur une version d’avant. "
+        + "Réessayez l’enregistrement, puis vérifiez.",
+    });
+    return;
+  }
+  try {
+    const verification = await verifierBrouillon(bundleId);
+    if (contexteDeLaVerification !== generation) return;
+    publier({ verification, verificationPerimee: false, verificationEnCours: false });
+  } catch (erreur) {
+    if (contexteDeLaVerification !== generation) return;
+    publier({ verificationEnCours: false, messageDeVerification: normalizeError(erreur).userMessage });
+  }
 }
 
 /* --------------------------------------------------------------------- *
@@ -370,6 +468,12 @@ export function previsualiser(geste: Geste): ResultatDUnGeste | null {
 export function terminerLeGeste(): void {
   if (!etat.historique?.origineDuGesteEnCours) return;
   apresUnChangement(conclure(etat.historique));
+}
+
+/** Abandonne le geste qui dure (Échap dans un champ, ou avant de jouer le geste final) : rien n'est enregistré. */
+export function abandonnerLeGeste(): void {
+  if (!etat.historique?.origineDuGesteEnCours) return;
+  publier({ historique: abandonner(etat.historique) });
 }
 
 export function annuler(): void {
@@ -431,6 +535,8 @@ export async function remplacerLaVersionDuServeur(): Promise<void> {
       historique: present,
       revision: serveur.revision,
       serveur,
+      base: { modele: serveur.modele, miseEnPage: serveur.mise_en_page },
+      versionEnConflit: null,
       propositionDeReprise: null,
       enregistrement: "MODIFIE",
       messageDEnregistrement: null,
@@ -447,7 +553,7 @@ export async function ouvrirLaVersionDuServeur(): Promise<void> {
   const { bundleId } = etat;
   if (!bundleId) return;
   effacerLaCopie(bundleId);
-  await ouvrir(bundleId);
+  await ouvrir(bundleId, preparationDeLOuverture ?? undefined);
 }
 
 /* --------------------------------------------------------------------- *

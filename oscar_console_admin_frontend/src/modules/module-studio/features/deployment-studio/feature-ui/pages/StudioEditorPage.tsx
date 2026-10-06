@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Eye, LoaderCircle, MonitorSmartphone, RotateCw, Trash2, X } from "lucide-react";
+import { AlertTriangle, LoaderCircle, MonitorSmartphone, RotateCw, Trash2, X } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 import { useAuth } from "@/auth/AuthContext.jsx";
 import { ouvrir, useBrouillon, useBrouillonPerimetre } from "../../feature-domain/brouillonStore";
-import { indexerCatalogue } from "../../feature-domain/modele/regles";
 import {
   archiverProjet,
   chargerComposition,
@@ -18,8 +17,8 @@ import {
 import { DEPLOYMENT_STUDIO_PERMISSIONS } from "../../feature-permissions/deploymentStudio.permissions";
 import PresetVersementDialog from "../components/PresetVersementDialog";
 import StudioCanvas from "../components/StudioCanvas";
-import EspaceComposition from "../components/EspaceComposition";
-import { disposer } from "../components/canevas/disposition";
+import EditeurDuBundle from "../components/EditeurDuBundle";
+import { miseEnPageALOuverture } from "../components/canevas/rangement";
 import { listerPresetsTous } from "../../feature-data/studioApi";
 import "../../feature-styles/studio.css";
 import "../../feature-styles/espace-composition.css";
@@ -40,20 +39,20 @@ function useEcranSuffisant(): boolean {
 }
 
 /**
- * L'éditeur d'un bundle. Deux écrans y vivent le temps du passage au nouveau
- * Studio (on ajoute avant de retirer, décision 125) :
- * - `/studio/:projectId` : l'ancien éditeur, toujours en service ;
- * - `/studio/:bundleId/composition` : le nouveau canevas, qui affiche un
- *   bundle au nouveau format, en lecture à cette étape (I3 du lot L1).
- * Le nom du paramètre de la route dit lequel ouvrir. L'ancien partira à
- * l'étape I6, et le nouveau prendra alors l'adresse `/studio/:bundleId`.
+ * L'éditeur d'un bundle (lot L1). Deux écrans y vivent le temps que Joel
+ * valide le nouveau (on ajoute avant de retirer, décision 125) :
+ * - `/studio/:bundleId` : le nouveau Studio, qui remplace l'ancien ;
+ * - `/studio/:projectId/ancien` : l'ancien éditeur, gardé à part, joignable
+ *   par le menu du bundle (« Ancien éditeur »). Il ne peut plus enregistrer
+ *   un bundle passé au nouveau Studio (le serveur le refuse).
+ * Le nom du paramètre de la route dit lequel ouvrir.
  */
 export default function StudioEditorPage() {
   const { bundleId } = useParams();
   return bundleId ? <NouveauStudio bundleId={bundleId} /> : <AncienEditeur />;
 }
 
-/** Le nouveau canevas : le brouillon du serveur, ou la reprise d'un ancien bundle, affiché en lecture. */
+/** Le nouveau Studio : le brouillon du serveur, ou la reprise d'un ancien bundle, qu'on compose ici. */
 function NouveauStudio({ bundleId }: { readonly bundleId: string }) {
   const perimetre = useBrouillonPerimetre();
   const brouillon = useBrouillon();
@@ -62,112 +61,61 @@ function NouveauStudio({ bundleId }: { readonly bundleId: string }) {
   const present = historique?.present ?? null;
 
   useEffect(() => {
-    if (ecranSuffisant) void ouvrir(bundleId);
+    // Un bundle repris de l'ancienne console, ou sans mise en page, s'ouvre rangé.
+    if (ecranSuffisant) void ouvrir(bundleId, miseEnPageALOuverture);
   }, [bundleId, perimetre, ecranSuffisant]);
-
-  const disposition = useMemo(
-    () => (present && catalogue ? disposer(present.modele, present.miseEnPage, indexerCatalogue(catalogue)) : null),
-    [present, catalogue],
-  );
 
   if (!ecranSuffisant) {
     return (
-      <div className="espace-composition espace-composition--message">
-        <MonitorSmartphone size={28} aria-hidden="true" />
-        <h2>Canevas du bundle</h2>
-        <p>
-          Le canevas demande un écran d’au moins {LARGEUR_MINIMALE} px.
-          Ouvrez ce bundle depuis un poste de travail pour le voir.
-        </p>
-        <Link to="/studio">Revenir à la liste</Link>
-      </div>
-    );
-  }
-
-  if (brouillon.chargement === "ERREUR") {
-    return (
-      <div className="espace-composition espace-composition--message" role="alert">
-        <AlertTriangle size={28} aria-hidden="true" />
-        <h2>Ce bundle n’a pas pu s’ouvrir</h2>
-        <p>{brouillon.erreurDeChargement}</p>
-        <div className="ec-actions">
-          <button className="ec-bouton" type="button" onClick={() => void ouvrir(bundleId)}>
-            <RotateCw size={15} aria-hidden="true" /> Réessayer
-          </button>
+      <div className="studio-scope">
+        <div className="studio-projects studio-trop-etroit">
+          <MonitorSmartphone size={28} aria-hidden="true" />
+          <h2>Composition du bundle</h2>
+          <p>
+            Le plan de composition demande un écran d’au moins {LARGEUR_MINIMALE} px.
+            Ouvrez ce bundle depuis un poste de travail pour le composer.
+          </p>
           <Link to="/studio">Revenir à la liste</Link>
         </div>
       </div>
     );
   }
 
-  if (brouillon.chargement !== "PRET" || !present || !catalogue || !disposition || !serveur) {
+  if (brouillon.chargement === "ERREUR") {
     return (
-      <div className="espace-composition espace-composition--message" role="status">
-        <LoaderCircle className="ec-tourne" size={24} aria-hidden="true" />
-        <p>Chargement du bundle...</p>
+      <div className="studio-scope">
+        <div className="studio-projects studio-trop-etroit" role="alert">
+          <AlertTriangle size={28} aria-hidden="true" />
+          <h2>Ce bundle n’a pas pu s’ouvrir</h2>
+          <p>{brouillon.erreurDeChargement}</p>
+          <div className="ec-actions">
+            <button className="primary-button" type="button" onClick={() => void ouvrir(bundleId, miseEnPageALOuverture)}>
+              <RotateCw size={15} aria-hidden="true" /> Réessayer
+            </button>
+            <Link to="/studio">Revenir à la liste</Link>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const reprise = serveur.origine.sorte === "ANCIEN_FORMAT" ? serveur.origine : null;
-  const problemes = serveur.reprise?.problemes ?? [];
-  const { compteurs } = disposition;
-  const pluriel = (nombre: number, mot: string) => `${nombre} ${mot}${nombre > 1 ? "s" : ""}`;
-  return (
-    <div className="espace-composition">
-      <header className="ec-barre">
-        <Link to="/studio" className="ec-retour" aria-label="Revenir à la liste des bundles">
-          <ArrowLeft size={18} aria-hidden="true" />
-        </Link>
-        <div className="ec-titre">
-          <small>Bundle</small>
-          <h1>{present.modele.bundle.nom}</h1>
-          <code>{present.modele.bundle.code}</code>
+  if (brouillon.chargement !== "PRET" || !present || !catalogue || !serveur) {
+    return (
+      <div className="studio-scope">
+        <div className="studio-projects studio-trop-etroit" role="status">
+          <LoaderCircle className="spin" size={24} aria-hidden="true" />
+          <p>Chargement du bundle...</p>
         </div>
-        <p className="ec-lecture"><Eye size={16} aria-hidden="true" /> Aperçu en lecture : rien ne se modifie ni ne s’enregistre ici.</p>
-      </header>
+      </div>
+    );
+  }
 
-      {reprise && (
-        <section className="ec-reprise" aria-label="Reprise d’un bundle de l’ancienne console">
-          <p>
-            Ce bundle vient de l’ancienne console (version {reprise.numero}). Il s’ouvre ici par la reprise,
-            sans rien changer à l’ancienne version.
-          </p>
-          {problemes.length > 0 && (
-            <details open>
-              <summary>La reprise signale {pluriel(problemes.length, "point")} à revoir</summary>
-              <ul>
-                {problemes.map((probleme) => (
-                  <li key={`${probleme.code}-${probleme.element ?? ""}`}>
-                    <strong>{probleme.niveau === "ERREUR" ? "À corriger" : "À vérifier"} : {probleme.titre}.</strong>{" "}
-                    {probleme.explication} {probleme.correction}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </section>
-      )}
-
-      <EspaceComposition disposition={disposition} familles={catalogue.familles} />
-
-      <footer className="ec-pied">
-        <span>{pluriel(compteurs.zones, "zone")}</span>
-        <span>{pluriel(compteurs.composants, "composant")}</span>
-        <span>{pluriel(compteurs.unites, "unité")}</span>
-        <span>{pluriel(compteurs.liaisons, "liaison")}</span>
-        {disposition.nonAffiches.length > 0 && (
-          <span className="ec-pied__alerte">
-            <AlertTriangle size={14} aria-hidden="true" /> {pluriel(disposition.nonAffiches.length, "élément")} hors de sa place,
-            non dessiné
-          </span>
-        )}
-      </footer>
-    </div>
+  return (
+    <EditeurDuBundle etat={present} catalogue={catalogue} serveur={serveur} brouillon={brouillon} />
   );
 }
 
-/** L'ancien éditeur, inchangé : il reste en service jusqu'à l'étape I6. */
+/** L'ancien éditeur, gardé tel quel (ses mots seuls disent « bundle ») jusqu'à la validation du nouveau. */
 function AncienEditeur() {
   const perimetre = useStudioPerimetre();
   const { projectId } = useParams();
@@ -207,9 +155,9 @@ function AncienEditeur() {
     return (
       <div className="studio-scope">
         <div className="studio-projects">
-          <h2>Projet introuvable</h2>
-          <p>Ce projet n’est ni sur le serveur ni dans ce navigateur.</p>
-          <Link to="/studio">Revenir aux projets</Link>
+          <h2>Bundle introuvable</h2>
+          <p>Ce bundle n’est ni sur le serveur ni dans ce navigateur.</p>
+          <Link to="/studio">Revenir aux bundles</Link>
         </div>
       </div>
     );
@@ -226,9 +174,9 @@ function AncienEditeur() {
           <h2>{project.name}</h2>
           <p>
             Le plan de composition demande un écran d’au moins {LARGEUR_MINIMALE} px.
-            Ouvrez ce projet depuis un poste de travail pour le modifier.
+            Ouvrez ce bundle depuis un poste de travail pour le modifier.
           </p>
-          <Link to="/studio">Revenir aux projets</Link>
+          <Link to="/studio">Revenir aux bundles</Link>
         </div>
       </div>
     );
@@ -269,14 +217,14 @@ function AncienEditeur() {
               <div className="dialog-icon dialog-icon--danger"><Trash2 size={20} /></div>
               <div>
                 <span>Suppression</span>
-                <h2 id="supprimer-projet-titre">Supprimer ce projet ?</h2>
+                <h2 id="supprimer-projet-titre">Supprimer ce bundle ?</h2>
               </div>
               <button className="icon-button" disabled={suppression} type="button"
                       onClick={() => setASupprimer(false)}><X size={18} /></button>
             </header>
             <div className="project-delete-dialog__body">
               <strong>{project.name}</strong>
-              <p>Le projet et ses versions non déployées seront supprimés. Cette action est définitive.</p>
+              <p>Le bundle et ses versions non déployées seront supprimés. Cette action est définitive.</p>
               <small>
                 <AlertTriangle size={14} /> S’il a déjà été déployé, son historique le protège :
                 le serveur refusera, et l’archivage reste la bonne sortie.
@@ -296,14 +244,14 @@ function AncienEditeur() {
                         } catch (erreur) {
                           setPanne(erreur instanceof Error
                             ? erreur.message
-                            : "Le projet n’a pas pu être supprimé.");
+                            : "Le bundle n’a pas pu être supprimé.");
                         } finally {
                           setSuppression(false);
                         }
                       }}>
                 {suppression
                   ? <><LoaderCircle className="spin" size={15} /> Suppression...</>
-                  : <><Trash2 size={15} /> Supprimer le projet</>}
+                  : <><Trash2 size={15} /> Supprimer le bundle</>}
               </button>
             </footer>
           </section>

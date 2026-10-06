@@ -78,7 +78,7 @@ export default function ComponentLibrary({ nodes, selection, onAdd, onSelect }: 
         </>
       ) : (
         <div className="project-tree">
-          <p className="project-tree__caption">Hiérarchie réelle du projet</p>
+          <p className="project-tree__caption">Hiérarchie réelle du bundle</p>
           {nodes.map((node) => {
             const selectedNode = selection?.nodeId === node.id;
             return (

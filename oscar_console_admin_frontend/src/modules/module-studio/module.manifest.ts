@@ -8,7 +8,7 @@ import { STUDIO_ACCESS_POLICY } from "./module-permissions";
 // bandeau d'organisation. C'est un module a part entiere, mais l'operateur ne
 // change pas d'environnement en passant de la flotte a sa configuration.
 const AdminLayout = lazy(() => import("@/modules/module-administration/shared-module/components/AdminLayout.jsx"));
-const StudioProjectsPage = lazy(() => import("./features/deployment-studio/feature-ui/pages/StudioProjectsPage"));
+const StudioBundlesPage = lazy(() => import("./features/deployment-studio/feature-ui/pages/StudioBundlesPage"));
 const StudioEditorPage = lazy(() => import("./features/deployment-studio/feature-ui/pages/StudioEditorPage"));
 const StudioPresetsPage = lazy(() => import("./features/deployment-studio/feature-ui/pages/StudioPresetsPage"));
 const StudioDeploymentsPage = lazy(() => import("./features/deployment-studio/feature-ui/pages/StudioDeploymentsPage"));
@@ -61,12 +61,13 @@ export const studioModuleManifest: ApplicationModuleManifest = {
   navigation: STUDIO_NAVIGATION,
   routes: [
     {
+      // La liste des bundles de l'organisation.
       id: "studio.projects",
       index: true,
       // Politique du module : c'est elle que le routeur applique aussi a la
       // coquille, avant meme d'afficher la barre laterale.
       policy: STUDIO_ACCESS_POLICY,
-      component: StudioProjectsPage,
+      component: StudioBundlesPage,
     },
     {
       id: "studio.presets",
@@ -76,26 +77,27 @@ export const studioModuleManifest: ApplicationModuleManifest = {
     },
     {
       // Cette route reste avant l'identifiant dynamique : « deploiements »
-      // est un ecran, jamais une cle de projet.
+      // est un écran, jamais l'identifiant d'un bundle.
       id: "studio.deployments",
       path: "deploiements",
       policy: pagePolicy("studio.deploiements.route", DEPLOYMENT_STUDIO_PERMISSIONS.DEPLOYMENT_READ),
       component: StudioDeploymentsPage,
     },
     {
-      // Le nouveau canevas, en lecture, à côté de l'ancien éditeur le temps
-      // du passage (lot L1). Deux segments : il ne se confond avec aucune
-      // autre route. Le nom du paramètre dit à la page lequel ouvrir.
-      id: "studio.composition",
-      path: ":bundleId/composition",
+      // L'ancien éditeur, gardé à part le temps que le nouveau soit validé
+      // (lot L1, on ajoute avant de retirer). Deux segments : il ne se
+      // confond avec aucune autre route. Le nom du paramètre dit à la page
+      // lequel ouvrir.
+      id: "studio.ancien",
+      path: ":projectId/ancien",
       policy: pagePolicy("studio.editor.route", DEPLOYMENT_STUDIO_PERMISSIONS.PAGE),
       component: StudioEditorPage,
     },
     {
-      // Route dynamique en dernier : les ecrans nommes seraient sinon pris
-      // pour des identifiants de projet.
+      // Le nouveau Studio. Route dynamique en dernier : les écrans nommés
+      // seraient sinon pris pour des identifiants de bundle.
       id: "studio.editor",
-      path: ":projectId",
+      path: ":bundleId",
       policy: pagePolicy("studio.editor.route", DEPLOYMENT_STUDIO_PERMISSIONS.PAGE),
       component: StudioEditorPage,
     },

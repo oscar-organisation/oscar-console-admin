@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeError } from "@/shared/kernel/errors";
 import { brouillonDeReference, catalogueDeTest, type BrouillonDeTest } from "../donnees-de-test";
-import { enregistrerBrouillon, lireBrouillon, lireCatalogue, type BrouillonServeur } from "../feature-data/studioApi";
+import { enregistrerBrouillon, lireBrouillon, lireCatalogue, verifierBrouillon, type BrouillonServeur } from "../feature-data/studioApi";
 import {
   abandonnerLaCopieLocale,
   annuler,
@@ -13,6 +13,7 @@ import {
   reessayer,
   remplacerLaVersionDuServeur,
   reprendreLaCopieLocale,
+  verifier,
 } from "./brouillonStore";
 
 /**
@@ -26,6 +27,7 @@ vi.mock("../feature-data/studioApi", () => ({
   lireCatalogue: vi.fn(),
   lireBrouillon: vi.fn(),
   enregistrerBrouillon: vi.fn(),
+  verifierBrouillon: vi.fn(),
 }));
 
 const BUNDLE = "bundle-reference";
@@ -145,6 +147,11 @@ describe("l'enregistrement", () => {
     await vi.advanceTimersByTimeAsync(1200);
     expect(lireEtat()).toMatchObject({ enregistrement: "CONFLIT", messageDEnregistrement: message });
 
+    // La version du serveur est relue, pour montrer ce qui diffère de chaque côté ; la base reste celle d'avant.
+    await vi.advanceTimersByTimeAsync(0);
+    expect(lireBrouillon).toHaveBeenCalledTimes(2);
+    expect(lireEtat().versionEnConflit?.revision).toBe(3);
+    expect(lireEtat().base?.modele).toEqual(brouillonDeReference.modele);
     // Les gestes continuent, gardés à l'écran et dans la copie locale, mais rien ne part.
     jouer({ operation: "regler", id: "zon-01", champs: { nom: "Robot de l'accueil" } });
     await vi.advanceTimersByTimeAsync(60_000);
@@ -166,7 +173,9 @@ describe("l'enregistrement", () => {
     vi.mocked(enregistrerBrouillon).mockResolvedValueOnce(enregistre(6));
     await remplacerLaVersionDuServeur();
     expect(vi.mocked(enregistrerBrouillon).mock.calls[1]?.[1]).toMatchObject({ revisionAttendue: 5 });
-    expect(lireEtat()).toMatchObject({ revision: 6, enregistrement: "ENREGISTRE" });
+    expect(lireEtat()).toMatchObject({ revision: 6, enregistrement: "ENREGISTRE", versionEnConflit: null });
+    // La base est maintenant ce que le serveur vient d'accepter.
+    expect(lireEtat().base).toBe(present());
 
     // « Ouvrir la version du serveur » : l'historique repart à vide.
     vi.mocked(lireBrouillon).mockResolvedValueOnce(brouillonDuServeur(7));
@@ -214,6 +223,46 @@ describe("l'enregistrement", () => {
     expect(enregistrerBrouillon).toHaveBeenCalledTimes(5);
     expect(lireEtat()).toMatchObject({ enregistrement: "ENREGISTRE", revision: 4 });
     expect(lireLaCopie()).toBeNull();
+  });
+});
+
+describe("la vérification", () => {
+  const PROBLEMES = {
+    revision: 4,
+    problemes: [{ niveau: "AVERTISSEMENT" as const, code: "SERVICE_SANS_UNITE", titre: "Service sans unité",
+      explication: "Le service média n'a pas d'unité.", correction: "Ajoutez-lui une unité.", element: "svc-02" }],
+    erreurs: 0,
+    avertissements: 1,
+  };
+
+  it("vérifier enregistre d'abord ce qui attend, puis lit les problèmes du serveur, sans rien écrire d'autre", async () => {
+    await ouvrir(BUNDLE);
+    vi.mocked(enregistrerBrouillon).mockResolvedValueOnce(enregistre(4));
+    vi.mocked(verifierBrouillon).mockResolvedValueOnce(PROBLEMES);
+    jouer({ operation: "regler", id: "zon-01", champs: { nom: "Robot de l'accueil" } });
+    expect(lireEtat().enregistrement).toBe("MODIFIE");
+    // Sans attendre le délai : ce qu'on vérifie, c'est ce qu'on voit.
+    await verifier();
+    expect(enregistrerBrouillon).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(enregistrerBrouillon).mock.invocationCallOrder[0])
+      .toBeLessThan(vi.mocked(verifierBrouillon).mock.invocationCallOrder[0] ?? 0);
+    expect(verifierBrouillon).toHaveBeenCalledWith(BUNDLE);
+    expect(lireEtat()).toMatchObject({ verification: PROBLEMES, verificationPerimee: false, verificationEnCours: false, enregistrement: "ENREGISTRE" });
+    // Plus rien ne part ensuite : le délai d'enregistrement n'a pas laissé d'envoi en attente.
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(enregistrerBrouillon).toHaveBeenCalledTimes(1);
+    // Un geste après la vérification la rend périmée.
+    jouer({ operation: "placer", id: "zon-01", position: { x: 60, y: 140 } });
+    expect(lireEtat().verificationPerimee).toBe(true);
+  });
+
+  it("un brouillon jamais enregistré ne s'écrit pas pour être vérifié : l'écran le dit", async () => {
+    vi.mocked(lireBrouillon).mockResolvedValue(brouillonDuServeur(0));
+    await ouvrir(BUNDLE);
+    await verifier();
+    expect(enregistrerBrouillon).not.toHaveBeenCalled();
+    expect(verifierBrouillon).not.toHaveBeenCalled();
+    expect(lireEtat().messageDeVerification).toContain("pas encore enregistré");
   });
 });
 

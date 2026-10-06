@@ -216,7 +216,7 @@ function demoProject(): OscarProject {
   return {
     id: 'projet-demonstration-oscar',
     name: 'Robot magasin, démonstration',
-    description: 'Projet exemple montrant les services embarqués et la télécommande web.',
+    description: 'Bundle exemple montrant les services embarqués et la télécommande web.',
     target: 'ENVIRONNEMENT_EXECUTION_ROBOT',
     status: 'BROUILLON',
     version: 3,

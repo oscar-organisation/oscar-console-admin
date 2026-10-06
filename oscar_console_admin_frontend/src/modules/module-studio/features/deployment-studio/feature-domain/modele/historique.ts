@@ -68,6 +68,16 @@ export function previsualiser(historique: Historique, etat: EtatStudio): Histori
   };
 }
 
+/**
+ * Un geste qui dure, abandonné (on a appuyé sur Échap, ou le geste final sera
+ * joué autrement) : l'état d'avant revient, et rien n'entre dans le passé.
+ */
+export function abandonner(historique: Historique): Historique {
+  const origine = historique.origineDuGesteEnCours;
+  if (origine === null) return historique;
+  return { ...historique, present: origine, origineDuGesteEnCours: null };
+}
+
 export function peutAnnuler(historique: Historique): boolean {
   return historique.passe.length > 0
     || (historique.origineDuGesteEnCours !== null && historique.origineDuGesteEnCours !== historique.present);

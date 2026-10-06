@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { contexteDeTest, etatDeReference, gelerSurPlace } from "../../donnees-de-test";
 import {
   LIMITE_DE_L_HISTORIQUE,
+  abandonner,
   annuler,
   conclure,
   creerHistorique,
@@ -187,6 +188,23 @@ describe("annuler et rétablir", () => {
     expect(historique.present.miseEnPage.blocs["zon-01"]).toEqual({ x: 40, y: 260 });
     historique = annuler(historique);
     expect(historique.present).toBe(depart.present);
+  });
+
+  it("un aperçu abandonné rend l'état d'avant, sans rien ajouter à l'historique", () => {
+    const contexte = contexteDeTest();
+    const depart = creerHistorique(etatDeReference());
+    let historique: Historique = depart;
+    for (const nom of ["Rob", "Robot à l'accueil"]) {
+      const resultat = appliquerGeste(historique.present, { operation: "regler", id: "zon-01", champs: { nom } }, contexte);
+      if (resultat.accepte) historique = previsualiser(historique, resultat.etat);
+    }
+    expect(historique.present).not.toBe(depart.present);
+    historique = abandonner(historique);
+    expect(historique.present).toBe(depart.present);
+    expect(historique.passe).toHaveLength(0);
+    expect(peutAnnuler(historique)).toBe(false);
+    // Sans geste en cours, abandonner ne change rien.
+    expect(abandonner(historique)).toBe(historique);
   });
 
   it("un champ compte quand on le quitte", () => {

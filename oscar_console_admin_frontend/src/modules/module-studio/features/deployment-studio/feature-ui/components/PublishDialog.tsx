@@ -217,7 +217,7 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
         </header>
 
         <div className="publish-summary">
-          <div><Box size={17} /><span><small>Projet</small><strong>{project.name}</strong></span></div>
+          <div><Box size={17} /><span><small>Bundle</small><strong>{project.name}</strong></span></div>
           <div>
             <CloudUpload size={17} />
             <span>
@@ -238,8 +238,8 @@ export default function PublishDialog({ project, issues, canDeploy, onClose, onP
 
         {!project.bundleId && (
           <div className="publish-blocked">
-            <span>Projet local</span>
-            <strong>Ce projet n’existe que dans ce navigateur.</strong>
+            <span>Bundle local</span>
+            <strong>Ce bundle n’existe que dans ce navigateur.</strong>
             <p>Il sera publiable dès que la console aura pu l’enregistrer sur le serveur.</p>
           </div>
         )}
